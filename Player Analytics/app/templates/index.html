@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}D-backs Analytics — 2025{% endblock %}
+
+{% block content %}
+<!-- ── Hero ──────────────────────────────────────────────── -->
+<div class="home-hero">
+    <div class="hero-bg-letters">ARI</div>
+    <div class="hero-content">
+        <h1 class="hero-title">Arizona Diamondbacks</h1>
+        <p class="hero-sub">2025 Season Analytics</p>
+        <div class="hero-stats">
+            <span>{{ batters|length }} Position Players</span>
+            <span class="hero-sep">·</span>
+            <span>{{ pitchers|length }} Pitchers</span>
+        </div>
+    </div>
+</div>
+
+<!-- ── Search ────────────────────────────────────────────── -->
+<div class="search-bar">
+    <input type="text" id="player-search" placeholder="Search players by name or position…" autocomplete="off">
+    <span class="search-icon">⌕</span>
+</div>
+
+<!-- ── Tabs ──────────────────────────────────────────────── -->
+<div class="roster-tabs">
+    <button class="roster-tab active" data-roster="all">All Players</button>
+    <button class="roster-tab" data-roster="batters">Position Players</button>
+    <button class="roster-tab" data-roster="pitchers">Pitchers</button>
+</div>
+
+<!-- ── Position Players ──────────────────────────────────── -->
+<div class="roster-section" id="section-batters">
+    {% set pos_order = ['C','1B','2B','3B','SS','LF','CF','RF','DH','OF'] %}
+    {% set batters_by_pos = {} %}
+    {% for b in batters %}
+        {% set pos = b.position or 'OF' %}
+        {% if pos not in batters_by_pos %}{% set _ = batters_by_pos.update({pos: []}) %}{% endif %}
+        {% set _ = batters_by_pos[pos].append(b) %}
+    {% endfor %}
+
+    {% for pos in pos_order %}
+    {% if pos in batters_by_pos %}
+    <div class="pos-group">
+        <h3 class="pos-label">{{ pos }}</h3>
+        <div class="player-cards">
+            {% for p in batters_by_pos[pos] %}
+            <a href="/batter/{{ p.player_id }}" class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
+                <div class="card-photo-wrap">
+                    <img class="card-photo"
+                         src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_180,q_auto:best/v1/people/{{ p.player_id }}/headshot/67/current"
+                         alt="{{ p.full_name }}"
+                         loading="lazy"
+                         onerror="this.parentElement.classList.add('no-photo')">
+                    <span class="card-jersey">#{{ p.jersey_number or '—' }}</span>
+                </div>
+                <div class="card-info">
+                    <span class="card-name">{{ p.full_name }}</span>
+                    <span class="card-pos">{{ p.position }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <!-- Catch-all for positions not in our order -->
+    {% for b in batters %}
+    {% if b.position not in pos_order %}
+    <!-- rendered via JS fallback -->
+    {% endif %}
+    {% endfor %}
+</div>
+
+<!-- ── Pitchers ───────────────────────────────────────────── -->
+<div class="roster-section" id="section-pitchers" style="display:none">
+    {% set starters  = pitchers | selectattr('position', 'equalto', 'SP') | list %}
+    {% set relievers = pitchers | rejectattr('position', 'equalto', 'SP') | list %}
+
+    {% if starters %}
+    <div class="pos-group">
+        <h3 class="pos-label">Starting Pitchers</h3>
+        <div class="player-cards">
+            {% for p in starters %}
+            <a href="/pitcher/{{ p.player_id }}" class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
+                <div class="card-photo-wrap">
+                    <img class="card-photo"
+                         src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_180,q_auto:best/v1/people/{{ p.player_id }}/headshot/67/current"
+                         alt="{{ p.full_name }}"
+                         loading="lazy"
+                         onerror="this.parentElement.classList.add('no-photo')">
+                    <span class="card-jersey">#{{ p.jersey_number or '—' }}</span>
+                </div>
+                <div class="card-info">
+                    <span class="card-name">{{ p.full_name }}</span>
+                    <span class="card-pos">SP</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if relievers %}
+    <div class="pos-group">
+        <h3 class="pos-label">Relief Pitchers</h3>
+        <div class="player-cards">
+            {% for p in relievers %}
+            <a href="/pitcher/{{ p.player_id }}" class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
+                <div class="card-photo-wrap">
+                    <img class="card-photo"
+                         src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_180,q_auto:best/v1/people/{{ p.player_id }}/headshot/67/current"
+                         alt="{{ p.full_name }}"
+                         loading="lazy"
+                         onerror="this.parentElement.classList.add('no-photo')">
+                    <span class="card-jersey">#{{ p.jersey_number or '—' }}</span>
+                </div>
+                <div class="card-info">
+                    <span class="card-name">{{ p.full_name }}</span>
+                    <span class="card-pos">{{ p.position or 'RP' }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ── All Players (search results) ──────────────────────── -->
+<div class="roster-section" id="section-all" style="display:none">
+    <div class="player-cards" id="all-cards">
+        {% for p in batters + pitchers %}
+        <a href="/{% if p.position_type == 'Pitcher' %}pitcher{% else %}batter{% endif %}/{{ p.player_id }}"
+           class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
+            <div class="card-photo-wrap">
+                <img class="card-photo"
+                     src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_180,q_auto:best/v1/people/{{ p.player_id }}/headshot/67/current"
+                     alt="{{ p.full_name }}"
+                     loading="lazy"
+                     onerror="this.parentElement.classList.add('no-photo')">
+                <span class="card-jersey">#{{ p.jersey_number or '—' }}</span>
+            </div>
+            <div class="card-info">
+                <span class="card-name">{{ p.full_name }}</span>
+                <span class="card-pos">{{ p.position }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+{% if not batters and not pitchers %}
+<div style="text-align:center;padding:4rem;color:var(--text-muted)">
+    <p>No roster data loaded yet.</p>
+    <p style="margin-top:.5rem">Run <code>python run_pipeline.py --step 1</code> to fetch the roster.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Roster tab switching ─────────────────────────────────
+const sections = { all:'section-all', batters:'section-batters', pitchers:'section-pitchers' };
+let currentTab = 'batters';
+
+document.querySelectorAll('.roster-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.roster-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTab = btn.dataset.roster;
+        showSection(currentTab, document.getElementById('player-search').value);
+    });
+});
+
+function showSection(tab, search) {
+    // Hide all
+    Object.values(sections).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    if (search.trim()) {
+        // Search mode: show all-cards section with filtered cards
+        const sec = document.getElementById('section-all');
+        sec.style.display = 'block';
+        document.querySelectorAll('#all-cards .player-card-new').forEach(card => {
+            const name = card.dataset.name || '';
+            const pos  = card.dataset.pos || '';
+            const q    = search.toLowerCase();
+            card.style.display = (name.includes(q) || pos.toLowerCase().includes(q)) ? '' : 'none';
+        });
+        return;
+    }
+
+    const id = sections[tab] || sections['batters'];
+    const el = document.getElementById(id);
+    if (el) el.style.display = '';
+}
+
+// ── Search ───────────────────────────────────────────────
+document.getElementById('player-search').addEventListener('input', e => {
+    showSection(currentTab, e.target.value);
+    document.querySelectorAll('.roster-tab').forEach(b => {
+        b.classList.toggle('active', !e.target.value.trim() && b.dataset.roster === currentTab);
+    });
+});
+
+// Initial display
+showSection('batters', '');
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}D-backs Analytics{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Plotly for charts -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="/" class="logo">
+                <span class="logo-text">D-backs Analytics</span>
+                <span class="logo-year">2025</span>
+            </a>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/#batters">Batters</a>
+                <a href="/#pitchers">Pitchers</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>Data sourced from Baseball Savant / MLB Stats API. Not affiliated with the Arizona Diamondbacks or MLB.</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
