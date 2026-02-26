@@ -520,7 +520,7 @@ function renderPanelChart(id, rows, splitType, statKey) {
         ...BASE_LAYOUT,
         title: { text: `${info.label} by ${splitType.replace(/_/g,' ')}`, font:{size:13,color:SAND} },
         dragmode: 'pan',
-        xaxis: { tickangle: -40, tickfont:{size:10}, automargin: true },
+        xaxis: { type: 'category', tickangle: -40, tickfont:{size:10}, automargin: true },
         yaxis: { title: info.label, gridcolor:'#2a2a2a',
                  range: [0, maxV * 1.22],
                  fixedrange: true },
