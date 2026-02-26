@@ -18,7 +18,7 @@
              onerror="this.src='/static/img/silhouette.svg'">
         <div>
             <div class="player-name-row">
-                <span class="jersey-big">#{{ player.jersey_number or '—' }}</span>
+                <span class="jersey-big">#{{ player.jersey_number|int if player.jersey_number else '—' }}</span>
                 <h1>{{ player.full_name }}</h1>
             </div>
             <p class="position-label">{{ player.position }} · 2025 Season</p>

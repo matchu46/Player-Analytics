@@ -61,7 +61,7 @@
                          alt="{{ p.full_name }}"
                          loading="lazy"
                          onerror="this.parentElement.classList.add('no-photo')">
-                    <span class="card-jersey">#{{ p.jersey_number or '—' }}</span>
+                    <span class="card-jersey">#{{ p.jersey_number|int if p.jersey_number else '—' }}</span>
                 </div>
                 <div class="card-info">
                     <span class="card-name">{{ p.full_name }}</span>
@@ -99,7 +99,7 @@
                          alt="{{ p.full_name }}"
                          loading="lazy"
                          onerror="this.parentElement.classList.add('no-photo')">
-                    <span class="card-jersey">#{{ p.jersey_number or '—' }}</span>
+                    <span class="card-jersey">#{{ p.jersey_number|int if p.jersey_number else '—' }}</span>
                 </div>
                 <div class="card-info">
                     <span class="card-name">{{ p.full_name }}</span>
@@ -123,7 +123,7 @@
                          alt="{{ p.full_name }}"
                          loading="lazy"
                          onerror="this.parentElement.classList.add('no-photo')">
-                    <span class="card-jersey">#{{ p.jersey_number or '—' }}</span>
+                    <span class="card-jersey">#{{ p.jersey_number|int if p.jersey_number else '—' }}</span>
                 </div>
                 <div class="card-info">
                     <span class="card-name">{{ p.full_name }}</span>
@@ -148,7 +148,7 @@
                      alt="{{ p.full_name }}"
                      loading="lazy"
                      onerror="this.parentElement.classList.add('no-photo')">
-                <span class="card-jersey">#{{ p.jersey_number or '—' }}</span>
+                <span class="card-jersey">#{{ p.jersey_number|int if p.jersey_number else '—' }}</span>
             </div>
             <div class="card-info">
                 <span class="card-name">{{ p.full_name }}</span>

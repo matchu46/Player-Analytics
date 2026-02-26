@@ -44,7 +44,7 @@
             <tbody>
                 {% for p in players %}
                 <tr>
-                    <td style="color:var(--text-muted);">{{ p.jersey_number or '—' }}</td>
+                    <td style="color:var(--text-muted);">{{ p.jersey_number|int if p.jersey_number else '—' }}</td>
                     <td>
                         <a href="/{% if p.position_type == 'Pitcher' %}pitcher{% else %}batter{% endif %}/{{ p.player_id }}"
                            style="color:var(--text); text-decoration:none;">
