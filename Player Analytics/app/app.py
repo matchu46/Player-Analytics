@@ -2,8 +2,10 @@
 app.py — Flask web application for MLB team analytics.
 """
 
+import gzip
 import json
 import os
+import shutil
 import sys
 import sqlite3
 
@@ -11,9 +13,34 @@ from flask import Flask, jsonify, render_template, abort, request, redirect, Res
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
-DB_PATH = os.path.join(DATA_DIR, "db", "baseball.db")
+DB_PATH  = os.path.join(DATA_DIR, "db", "baseball.db")
+DB_GZ    = os.path.join(DATA_DIR, "db", "baseball.db.gz")
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
-STATIC_DIR = os.path.join(BASE_DIR, "static")
+STATIC_DIR   = os.path.join(BASE_DIR, "static")
+
+
+def _is_valid_sqlite(path: str) -> bool:
+    """Return True if path is a real SQLite database (not an LFS pointer)."""
+    try:
+        with open(path, "rb") as f:
+            return f.read(16).startswith(b"SQLite format 3")
+    except OSError:
+        return False
+
+
+def _ensure_db():
+    """Decompress baseball.db.gz → baseball.db if needed (cold-start on Railway)."""
+    if not _is_valid_sqlite(DB_PATH):
+        if os.path.exists(DB_GZ):
+            print(f"[startup] decompressing {DB_GZ} …", flush=True)
+            os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+            with gzip.open(DB_GZ, "rb") as f_in, open(DB_PATH, "wb") as f_out:
+                shutil.copyfileobj(f_in, f_out)
+            print("[startup] database ready.", flush=True)
+        else:
+            print(f"[startup] WARNING: neither {DB_PATH} nor {DB_GZ} found.", flush=True)
+
+_ensure_db()
 
 # Allow importing from src/
 sys.path.insert(0, os.path.join(BASE_DIR, "..", "src"))

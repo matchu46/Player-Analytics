@@ -26,3 +26,4 @@ Thumbs.db
 
 # Claude context (local only)
 CLAUDE.md
+Player Analytics/data/db/baseball.db
