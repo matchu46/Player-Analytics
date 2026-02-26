@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <!-- Plotly for charts -->
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6203828588530023"
+         crossorigin="anonymous"></script>
 </head>
 <body>
     <header class="site-header">
@@ -29,6 +32,7 @@
 
     <footer class="site-footer">
         <p>Data sourced from Baseball Savant / MLB Stats API. Not affiliated with the Arizona Diamondbacks or MLB.</p>
+        <p><a href="/privacy" style="color:var(--text-muted); font-size:0.8rem;">Privacy Policy</a></p>
     </footer>
 
     {% block scripts %}{% endblock %}
