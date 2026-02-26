@@ -31,7 +31,8 @@
 
 <!-- ── Position Players ──────────────────────────────────── -->
 <div class="roster-section" id="section-batters" style="display:none">
-    {% set pos_order = ['C','1B','2B','3B','SS','LF','CF','RF','DH','OF'] %}
+    {% set pos_order = ['C','1B','2B','3B','SS','LF','CF','RF','DH','TWP','OF'] %}
+    {% set pos_labels = {'TWP': 'Two-Way Players'} %}
     {% set batters_by_pos = {} %}
     {% for b in batters %}
         {% set pos = b.position or 'OF' %}
@@ -42,7 +43,7 @@
     {% for pos in pos_order %}
     {% if pos in batters_by_pos %}
     <div class="pos-group">
-        <h3 class="pos-label">{{ pos }}</h3>
+        <h3 class="pos-label">{{ pos_labels[pos] if pos in pos_labels else pos }}</h3>
         <div class="player-cards">
             {% for p in batters_by_pos[pos] %}
             <a href="/batter/{{ p.player_id }}" class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">

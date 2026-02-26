@@ -275,7 +275,7 @@ def roster(team_code: str):
 
     def jersey_key(p):
         try:
-            return int(p["jersey_number"] or 9999)
+            return int(float(p["jersey_number"] or 9999))
         except (ValueError, TypeError):
             return 9999
 
@@ -292,8 +292,12 @@ def roster(team_code: str):
         (SEASON, team_code)
     )
 
+    # Two-way players (e.g. Ohtani) appear in batters; also add them to pitchers tab
+    twp = [dict(p) for p in batters if p["position_type"] == "Two-Way Player"]
+    pitchers_for_tab = pitchers + twp
+
     # Classify pitchers as SP vs RP: starters pitched in inning 1 in 3+ games
-    pitcher_ids = tuple(p["player_id"] for p in pitchers)
+    pitcher_ids = tuple(p["player_id"] for p in pitchers_for_tab)
     if pitcher_ids:
         placeholders = ",".join("?" * len(pitcher_ids))
         starter_rows = query(
@@ -306,14 +310,16 @@ def roster(team_code: str):
     else:
         starter_ids = set()
 
-    for p in pitchers:
+    for p in pitchers_for_tab:
         p["position"] = "SP" if p["player_id"] in starter_ids else "RP"
 
     batters.sort(key=jersey_key)
-    pitchers.sort(key=jersey_key)
-    all_players = sorted(batters + pitchers, key=jersey_key)
+    pitchers_for_tab.sort(key=jersey_key)
+    # all_players: batters (includes TWP) + pure pitchers — no duplicates
+    pure_pitchers = [p for p in pitchers_for_tab if p["position_type"] == "Pitcher"]
+    all_players = sorted(batters + pure_pitchers, key=jersey_key)
 
-    return render_template("index.html", batters=batters, pitchers=pitchers,
+    return render_template("index.html", batters=batters, pitchers=pitchers_for_tab,
                            all_players=all_players, team=team, season=SEASON)
 
 
@@ -357,7 +363,7 @@ def pitcher_page(player_id: int):
     if not player:
         abort(404)
     player = player[0]
-    if player["position_type"] != "Pitcher":
+    if player["position_type"] not in ("Pitcher", "Two-Way Player"):
         abort(404)
 
     team_code = player.get("team", "ARI")

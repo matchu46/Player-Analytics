@@ -121,6 +121,20 @@ def fetch_war(season: int, team_cfg: dict) -> pd.DataFrame:
             if _normalize(row["Name"]) not in already:
                 rows.append({"Name": row["Name"], "WAR": row.get("WAR"), "position_type": pos_type})
 
+    # Two-way players appear in both bat and pit — sum their WAR into one row
+    from collections import defaultdict
+    grouped: dict = defaultdict(list)
+    for r in rows:
+        grouped[r["Name"]].append(r)
+    merged_rows = []
+    for name, entries in grouped.items():
+        if len(entries) == 1:
+            merged_rows.append(entries[0])
+        else:
+            total_war = sum(e["WAR"] for e in entries if e.get("WAR") is not None)
+            merged_rows.append({"Name": name, "WAR": round(total_war, 1), "position_type": "Two-Way Player"})
+    rows = merged_rows
+
     return pd.DataFrame(rows)
 
 
