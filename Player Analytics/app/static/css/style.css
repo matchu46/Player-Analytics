@@ -224,6 +224,58 @@ nav a:hover { color: var(--team-secondary); }
     transition: color 0.15s, border-color 0.15s;
 }
 .btn-reset:hover { color: var(--text); border-color: #555; }
+
+/* ── Opponent player search ─────────────────────────────── */
+.player-search-wrap {
+    position: relative;
+}
+.player-search-input {
+    background: var(--bg-input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.28rem 0.5rem;
+    font-size: 0.78rem;
+    width: 148px;
+    transition: border-color 0.15s;
+}
+.player-search-input:focus { outline: none; border-color: var(--team-primary); }
+.player-search-input::placeholder { color: var(--text-muted); }
+.player-search-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    z-index: 300;
+    min-width: 200px;
+    max-height: 260px;
+    overflow-y: auto;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+}
+.player-search-result {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.1s;
+    white-space: nowrap;
+}
+.player-search-result:hover { background: var(--bg-hover); color: var(--team-secondary); }
+.player-search-clear {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0.15rem 0.3rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 3px;
+}
+.player-search-clear:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+
 .filter-badge {
     background: var(--team-primary);
     color: #fff;

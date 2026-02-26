@@ -86,6 +86,12 @@ def build_pitch_filter(player_col: str, player_id: int) -> tuple[str, list]:
     elif runners == "on1b":
         clauses.append("on_1b IS NOT NULL AND on_2b IS NULL AND on_3b IS NULL")
 
+    opponent_id = request.args.get("opponent_id")
+    if opponent_id:
+        opposite_col = "pitcher" if player_col == "batter" else "batter"
+        clauses.append(f"{opposite_col} = ?")
+        params.append(int(opponent_id))
+
     home_away = request.args.get("home_away")
     if home_away in ("home", "away"):
         # Look up the player's team statcast code dynamically
@@ -548,6 +554,28 @@ def api_pitcher_velocity(player_id: int):
     for r in rows:
         r["usage_pct"] = round(r["pitches"] / total * 100, 1) if total > 0 else 0
     return jsonify(rows)
+
+
+# ---------------------------------------------------------------------------
+# Player search (proxied to MLB Stats API)
+# ---------------------------------------------------------------------------
+
+@app.route("/api/search/players")
+def search_players():
+    import requests as _req
+    q = request.args.get("q", "").strip()
+    if not q or len(q) < 2:
+        return jsonify([])
+    try:
+        resp = _req.get(
+            "https://statsapi.mlb.com/api/v1/people/search",
+            params={"names": q, "sportId": 1},
+            timeout=5,
+        )
+        people = resp.json().get("people", [])[:12]
+        return jsonify([{"id": p["id"], "name": p.get("fullName", "")} for p in people])
+    except Exception:
+        return jsonify([])
 
 
 # ---------------------------------------------------------------------------

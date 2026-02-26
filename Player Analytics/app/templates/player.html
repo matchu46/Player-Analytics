@@ -141,6 +141,17 @@
     </div>
     {% endif %}
 
+    <div class="filter-group filter-group--search">
+        <label>{% if player_type == 'batter' %}vs. Pitcher{% else %}vs. Batter{% endif %}</label>
+        <div class="player-search-wrap">
+            <input type="text" id="f-opponent-name" class="player-search-input"
+                   placeholder="Search name…" autocomplete="off">
+            <div id="f-opponent-dropdown" class="player-search-dropdown" style="display:none"></div>
+        </div>
+        <button id="f-opponent-clear" class="player-search-clear" style="display:none" title="Clear">✕</button>
+        <input type="hidden" id="f-opponent-id" value="">
+    </div>
+
     <button class="btn-apply" id="apply-filters">Apply</button>
     <button class="btn-reset" id="reset-filters">Reset</button>
     <span class="filter-badge" id="filter-badge" style="display:none"></span>
@@ -365,6 +376,8 @@ function getFilters() {
         f.balls = b; f.strikes = s;
         delete f.count;
     }
+    const oppId = document.getElementById('f-opponent-id').value;
+    if (oppId) f['opponent_id'] = oppId;
     return f;
 }
 
@@ -391,9 +404,64 @@ document.getElementById('apply-filters').addEventListener('click', () => {
 });
 document.getElementById('reset-filters').addEventListener('click', () => {
     document.querySelectorAll('#filter-bar .filter-select').forEach(s => s.value = '');
+    document.getElementById('f-opponent-name').value = '';
+    document.getElementById('f-opponent-id').value = '';
+    document.getElementById('f-opponent-clear').style.display = 'none';
+    document.getElementById('f-opponent-dropdown').style.display = 'none';
     updateFilterBadge();
     refreshActiveTab();
 });
+
+// ── Opponent player search ────────────────────────────────
+(function() {
+    const oppName  = document.getElementById('f-opponent-name');
+    const oppDrop  = document.getElementById('f-opponent-dropdown');
+    const oppId    = document.getElementById('f-opponent-id');
+    const oppClear = document.getElementById('f-opponent-clear');
+    let _timer = null;
+
+    oppName.addEventListener('input', () => {
+        clearTimeout(_timer);
+        oppId.value = '';
+        oppClear.style.display = 'none';
+        const q = oppName.value.trim();
+        if (q.length < 2) { oppDrop.style.display = 'none'; return; }
+        _timer = setTimeout(async () => {
+            try {
+                const resp = await fetch(`/api/search/players?q=${encodeURIComponent(q)}`);
+                const people = await resp.json();
+                if (!people.length) { oppDrop.style.display = 'none'; return; }
+                oppDrop.innerHTML = people
+                    .map(p => `<div class="player-search-result" data-id="${p.id}" data-name="${p.name}">${p.name}</div>`)
+                    .join('');
+                oppDrop.style.display = 'block';
+                oppDrop.querySelectorAll('.player-search-result').forEach(item => {
+                    item.addEventListener('click', () => {
+                        oppId.value = item.dataset.id;
+                        oppName.value = item.dataset.name;
+                        oppDrop.style.display = 'none';
+                        oppClear.style.display = 'inline-flex';
+                        updateFilterBadge();
+                    });
+                });
+            } catch (e) { oppDrop.style.display = 'none'; }
+        }, 300);
+    });
+
+    oppClear.addEventListener('click', () => {
+        oppName.value = '';
+        oppId.value = '';
+        oppClear.style.display = 'none';
+        oppDrop.style.display = 'none';
+        updateFilterBadge();
+    });
+
+    document.addEventListener('click', e => {
+        if (!oppName.contains(e.target) && !oppDrop.contains(e.target)) {
+            oppDrop.style.display = 'none';
+        }
+    });
+})();
 
 // ── Tab navigation ────────────────────────────────────────
 let activeTab = 'splits';
