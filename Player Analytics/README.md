@@ -1,6 +1,6 @@
 # Dugout Intel
 
-An MLB player analytics web app live at **[dugoutintel.com](https://dugoutintel.com)**. Currently covering the **Arizona Diamondbacks 2025 season**, built for easy expansion to all 30 teams. Built with Python, Flask, SQLite, and Plotly.
+An MLB player analytics web app live at **[dugoutintel.com](https://dugoutintel.com)**. Currently covering **all NL West teams** (Arizona Diamondbacks, Los Angeles Dodgers, San Francisco Giants, San Diego Padres, Colorado Rockies) for the 2025 season — built for easy expansion to all 30 teams. Built with Python, Flask, SQLite, and Plotly.
 
 ---
 
@@ -9,8 +9,9 @@ An MLB player analytics web app live at **[dugoutintel.com](https://dugoutintel.
 ### Team Picker (`/`)
 - Homepage shows all teams with loaded data
 - "Coming Soon" grid for teams not yet loaded
+- Team-specific color theming throughout the site
 
-### Roster Page (`/<team>`, e.g. `/ari`)
+### Roster Page (`/<team>`, e.g. `/ari`, `/lad`)
 - Browse all players organized by position (C, 1B, 2B, SS, LF, CF, RF, DH for batters; SP and RP for pitchers)
 - Toggle between All Players, Position Players, and Pitchers tabs — sorted by jersey number
 - Click any player card to open their full profile
@@ -28,10 +29,12 @@ Both batter and pitcher pages share a common layout with a persistent filter bar
 - Pitcher Hand (vs LHP / vs RHP) — batters only
 - Batter Hand (vs LHB / vs RHB) — pitchers only
 - Inning, Count (0-0 through 3-2), Runners on Base, Outs, Home/Away, Pitch Type
+- **vs. Player search** — type a pitcher/batter name to filter stats to matchups against that specific player
 
 **Splits Tab** — Up to 2 side-by-side comparison panels:
-- Split dimensions: Count, Inning, Runners, Handedness, Outs, Venue (Home/Away), Stadium, Pitch Type, Leverage, Score State, Month
-- Stats: AVG, OBP, SLG, OPS, wOBA, HR, K, BB, PA, EV, Hard Hit%, Barrel%, Whiff%, Swing% (batters); K%, BB%, K-BB, wOBA, AVG, Velo, BF, etc. (pitchers)
+- Split dimensions: Count, Inning, Runners, Handedness, Outs, Venue (Home/Away), Stadium, Pitch Type, Leverage, Score State, Month, **Opponent Team, Opponent Division, Opponent League**
+- Batter stats: AVG, OBP, SLG, OPS, wOBA, HR, K, BB, PA, EV, Hard Hit%, Barrel%, Whiff%, Swing%
+- Pitcher stats: **ERA, WHIP, IP**, K%, BB%, K-BB, wOBA, AVG against, Velo, BF, etc.
 
 **Strike Zone Tab** — Pitch location visualization
 
@@ -74,7 +77,7 @@ Player Analytics/
 │       ├── privacy.html        # Privacy policy
 │       └── 404.html
 ├── src/
-│   ├── teams.py                # Central config: all 30 MLB teams
+│   ├── teams.py                # Central config: all 30 MLB teams (division, league, colors, IDs)
 │   ├── fetch.py                # Pull roster + Statcast data (--team ARI)
 │   ├── fetch_value.py          # Pull WAR/salary/awards (--team ARI)
 │   ├── fetch_defense.py        # Pull fielding stats + sprint speed (--team ARI)
@@ -152,7 +155,7 @@ Then open [http://localhost:5000](http://localhost:5000).
 | URL | Page |
 |---|---|
 | `/` | Team picker homepage |
-| `/<team>` | Team roster (e.g. `/ari`, `/lad`) |
+| `/<team>` | Team roster (e.g. `/ari`, `/lad`, `/sf`, `/sd`, `/col`) |
 | `/<team>/payroll` | Team payroll page |
 | `/batter/<id>` | Batter profile (player IDs are globally unique) |
 | `/pitcher/<id>` | Pitcher profile |
@@ -172,18 +175,20 @@ load_db.py       -->  baseball.db (players, pitches, player_value, player_awards
 process.py       -->  baseball.db (batter_splits, pitcher_splits)
 ```
 
-**Split dimensions:** overall, inning, count, runners, outs, handedness, venue (home/away), stadium, pitch type, score state, leverage, month
+**Split dimensions:** overall, inning, count, runners, outs, handedness, venue (home/away), stadium, pitch type, score state, leverage, month, opponent team, opponent division, opponent league
 
 ---
 
 ## Data Notes
 
-- **Team codes**: `src/teams.py` maps every team to its MLB API ID, Statcast code, FanGraphs code, and Spotrac slug. Statcast stores Arizona as `AZ` (not `ARI`).
+- **Team codes**: `src/teams.py` maps every team to its MLB API ID, Statcast code, FanGraphs code, Spotrac slug, division, and league. Statcast stores Arizona as `AZ` (not `ARI`).
 - **Database**: Single `baseball.db` with a `team` column on all tables. The `pitches` table is shared (no team column — uses `home_team`/`away_team`).
-- **Pitcher classification**: SP vs RP determined dynamically — pitcher who started in inning 1 in 3+ games = SP
+- **Pitcher classification**: SP vs RP determined dynamically — pitcher who started in inning 1 in 3+ games = SP.
+- **ERA/WHIP/IP**: Computed from Statcast event data. Runs = post_bat_score − bat_score changes on terminal PAs (approximation — all runs, not just earned). IP uses standard baseball X.Y convention (e.g. 6.2 = 6⅔ innings).
 - **WAR**: Full-season fWAR from FanGraphs. Players who split time between teams show combined season totals.
 - **Salary**: Scraped from Spotrac. Players on minor league deals may not appear.
 - **$/WAR**: Calculated only for WAR > 0. 0 WAR = ∞, negative WAR shown as the raw value.
+- **Two-way players** (e.g. Shohei Ohtani): shown on both batter and pitcher tabs of their team roster.
 
 ---
 
@@ -203,9 +208,10 @@ process.py       -->  baseball.db (batter_splits, pitcher_splits)
 | `GET /api/pitcher/<id>/value` | WAR, salary, $/WAR, awards |
 | `GET /api/batter/<id>/defense` | Fielding stats + sprint speed |
 | `GET /api/pitcher/<id>/defense` | Sprint speed |
+| `GET /api/search/players?q=<name>&type=<pitcher\|batter>` | Player name search (proxied from MLB Stats API) |
 | `GET /sitemap.xml` | Auto-generated sitemap |
 
-**Filter params:** `inning`, `balls`, `strikes`, `p_throws`, `stand`, `runners`, `home_away`, `outs`, `pitch_type`
+**Filter params:** `inning`, `balls`, `strikes`, `p_throws`, `stand`, `runners`, `home_away`, `outs`, `pitch_type`, `opponent_id`
 
 ---
 

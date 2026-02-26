@@ -1,5 +1,13 @@
 {% extends "base.html" %}
-{% block title %}{{ team.full_name }} Analytics — {{ season }}{% endblock %}
+{% block title %}{{ team.full_name }} {{ season }} Analytics & Statcast Stats | Dugout Intel{% endblock %}
+{% block meta_description %}{{ season }} {{ team.full_name }} player analytics — browse the full roster and explore Statcast splits, spray charts, ERA, wOBA, and advanced stats for every batter and pitcher.{% endblock %}
+{% block meta_keywords %}{{ team.full_name }} stats, {{ team.short_name }} analytics, {{ team.code }} Statcast, {{ season }} baseball stats, {{ team.full_name }} player data{% endblock %}
+{% block og_title %}{{ team.full_name }} {{ season }} Analytics | Dugout Intel{% endblock %}
+{% block og_description %}Explore {{ season }} {{ team.full_name }} player stats — Statcast splits, spray charts, ERA, wOBA, and more for every batter and pitcher.{% endblock %}
+{% block og_url %}/{{ team.code|lower }}{% endblock %}
+{% block canonical_url %}/{{ team.code|lower }}{% endblock %}
+{% block twitter_title %}{{ team.full_name }} {{ season }} Analytics | Dugout Intel{% endblock %}
+{% block twitter_description %}{{ season }} {{ team.full_name }} Statcast analytics — splits, spray charts, and advanced stats for every player.{% endblock %}
 
 {% block content %}
 <!-- ── Hero ──────────────────────────────────────────────── -->

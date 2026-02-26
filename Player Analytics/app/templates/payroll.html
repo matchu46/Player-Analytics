@@ -1,6 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{{ team.full_name }} 2025 Payroll &amp; Value | Dugout Intel{% endblock %}
-{% block meta_description %}{{ team.full_name }} 2025 payroll breakdown — salary, WAR, and cost per win for every player on the roster.{% endblock %}
+{% block title %}{{ team.full_name }} {{ season }} Payroll & Value | Dugout Intel{% endblock %}
+{% block meta_description %}{{ team.full_name }} {{ season }} payroll breakdown — salary, fWAR, and cost per win for every player. See who's earning their contract and who isn't.{% endblock %}
+{% block meta_keywords %}{{ team.full_name }} payroll, {{ team.short_name }} salary, {{ team.code }} WAR, {{ season }} baseball contracts, $/WAR, cost per win{% endblock %}
+{% block og_title %}{{ team.full_name }} {{ season }} Payroll & Value | Dugout Intel{% endblock %}
+{% block og_description %}{{ team.full_name }} {{ season }} salary vs. fWAR — see which players are earning their contracts and which aren't.{% endblock %}
+{% block og_url %}/{{ team.code|lower }}/payroll{% endblock %}
+{% block canonical_url %}/{{ team.code|lower }}/payroll{% endblock %}
 
 {% block content %}
 <div style="max-width:1100px; margin:2rem auto; padding:0 1.5rem;">
