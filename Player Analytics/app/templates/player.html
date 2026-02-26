@@ -418,6 +418,8 @@ document.getElementById('reset-filters').addEventListener('click', () => {
     const oppDrop  = document.getElementById('f-opponent-dropdown');
     const oppId    = document.getElementById('f-opponent-id');
     const oppClear = document.getElementById('f-opponent-clear');
+    // When on a batter page we search for pitchers they faced, and vice versa
+    const SEARCH_TYPE = '{{ "pitcher" if player_type == "batter" else "batter" }}';
     let _timer = null;
 
     oppName.addEventListener('input', () => {
@@ -428,7 +430,7 @@ document.getElementById('reset-filters').addEventListener('click', () => {
         if (q.length < 2) { oppDrop.style.display = 'none'; return; }
         _timer = setTimeout(async () => {
             try {
-                const resp = await fetch(`/api/search/players?q=${encodeURIComponent(q)}`);
+                const resp = await fetch(`/api/search/players?q=${encodeURIComponent(q)}&type=${SEARCH_TYPE}`);
                 const people = await resp.json();
                 if (!people.length) { oppDrop.style.display = 'none'; return; }
                 oppDrop.innerHTML = people

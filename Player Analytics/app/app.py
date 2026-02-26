@@ -564,6 +564,7 @@ def api_pitcher_velocity(player_id: int):
 def search_players():
     import requests as _req
     q = request.args.get("q", "").strip()
+    position_type = request.args.get("type", "").lower()  # "pitcher" or "batter"
     if not q or len(q) < 2:
         return jsonify([])
     try:
@@ -572,8 +573,14 @@ def search_players():
             params={"names": q, "sportId": 1},
             timeout=5,
         )
-        people = resp.json().get("people", [])[:12]
-        return jsonify([{"id": p["id"], "name": p.get("fullName", "")} for p in people])
+        people = resp.json().get("people", [])
+        if position_type == "pitcher":
+            people = [p for p in people
+                      if p.get("primaryPosition", {}).get("type") == "Pitcher"]
+        elif position_type == "batter":
+            people = [p for p in people
+                      if p.get("primaryPosition", {}).get("type") != "Pitcher"]
+        return jsonify([{"id": p["id"], "name": p.get("fullName", "")} for p in people[:12]])
     except Exception:
         return jsonify([])
 
