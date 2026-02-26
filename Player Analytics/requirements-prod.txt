@@ -1,0 +1,7 @@
+# Production-only dependencies (web server)
+# Data pipeline packages (pybaseball, pandas, jupyter, etc.) are NOT needed
+# since the database is pre-built and committed to the repo.
+
+flask==3.1.0
+flask-caching==2.3.0
+gunicorn==23.0.0
