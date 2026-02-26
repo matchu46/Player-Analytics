@@ -17,45 +17,33 @@
         <p style="color:var(--text-muted); font-size:1rem;">{{ season }} MLB Season Analytics</p>
     </div>
 
-    {% if teams %}
-    <h2 style="font-size:1rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:1rem;">Available Teams</h2>
-    <div class="teams-grid">
-        {% for team in teams %}
-        <a href="/{{ team.code|lower }}" class="team-card" style="--card-primary: {{ team.primary_color }}; --card-secondary: {{ team.secondary_color }};">
-            <div class="team-card-abbr">{{ team.code }}</div>
-            <div class="team-card-name">{{ team.full_name }}</div>
-            <div class="team-card-links">
-                <span class="team-card-link">Roster</span>
-                <span class="team-card-sep">·</span>
-                <span class="team-card-link" onclick="event.preventDefault(); event.stopPropagation(); window.location='/{{ team.code|lower }}/payroll';">Payroll</span>
-            </div>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div style="text-align:center; padding:4rem; color:var(--text-muted);">
-        <p style="font-size:1.2rem;">No team data loaded yet.</p>
-        <p style="margin-top:0.75rem; font-size:0.9rem;">Run <code>python src/load_db.py --migrate</code> to load Arizona data.</p>
-    </div>
-    {% endif %}
-
-    {% if teams|length < 30 %}
-    <div style="margin-top:2.5rem;">
-        <h2 style="font-size:1rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:1rem;">Coming Soon</h2>
-        <div class="teams-grid teams-grid--dim">
-            {% set active_codes = teams | map(attribute='code') | list %}
-            {% for code, cfg in all_teams.items() | sort(attribute='1.full_name') %}
-            {% if code not in active_codes %}
+    {% for div in division_order %}
+    {% set teams = divisions[div] %}
+    <div class="division-section">
+        <h2 class="division-heading">{{ div }}</h2>
+        <div class="teams-grid">
+            {% for team in teams %}
+            {% if team.has_data %}
+            <a href="/{{ team.code|lower }}" class="team-card" style="--card-primary: {{ team.primary_color }}; --card-secondary: {{ team.secondary_color }};">
+                <div class="team-card-abbr">{{ team.code }}</div>
+                <div class="team-card-name">{{ team.full_name }}</div>
+                <div class="team-card-links">
+                    <span class="team-card-link">Roster</span>
+                    <span class="team-card-sep">·</span>
+                    <span class="team-card-link" onclick="event.preventDefault(); event.stopPropagation(); window.location='/{{ team.code|lower }}/payroll';">Payroll</span>
+                </div>
+            </a>
+            {% else %}
             <div class="team-card team-card--disabled">
-                <div class="team-card-abbr">{{ code }}</div>
-                <div class="team-card-name">{{ cfg.full_name }}</div>
+                <div class="team-card-abbr">{{ team.code }}</div>
+                <div class="team-card-name">{{ team.full_name }}</div>
                 <div class="team-card-links" style="color:var(--text-muted);">Coming Soon</div>
             </div>
             {% endif %}
             {% endfor %}
         </div>
     </div>
-    {% endif %}
+    {% endfor %}
 
 </div>
 {% endblock %}

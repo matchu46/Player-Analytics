@@ -288,17 +288,31 @@ def _get_player_team_statcast_code(player_id: int) -> str:
 # Routes — Pages
 # ---------------------------------------------------------------------------
 
+_DIVISION_ORDER = [
+    "NL West", "NL Central", "NL East",
+    "AL West", "AL Central", "AL East",
+]
+
 @app.route("/")
 def home():
-    """Team picker — show all teams with data in DB."""
+    """Team picker — show all teams grouped by division."""
     available = query("SELECT DISTINCT team FROM players")
-    teams_with_data = []
-    for r in available:
-        code = r['team']
-        if code in TEAMS:
-            teams_with_data.append({**TEAMS[code], 'code': code})
-    teams_with_data.sort(key=lambda t: t['full_name'])
-    return render_template("teams.html", teams=teams_with_data, all_teams=TEAMS, season=SEASON)
+    active_codes = {r['team'] for r in available}
+
+    divisions = {div: [] for div in _DIVISION_ORDER}
+    for code, cfg in TEAMS.items():
+        div = cfg.get('division', 'Other')
+        if div in divisions:
+            divisions[div].append({
+                **cfg,
+                'code': code,
+                'has_data': code in active_codes,
+            })
+    for div in divisions:
+        divisions[div].sort(key=lambda t: t['full_name'])
+
+    return render_template("teams.html", divisions=divisions,
+                           division_order=_DIVISION_ORDER, season=SEASON)
 
 
 @app.route("/<team_code>")

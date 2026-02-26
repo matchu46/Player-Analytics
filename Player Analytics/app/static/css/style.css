@@ -819,6 +819,19 @@ nav a:hover { color: var(--team-secondary); }
 }
 
 /* ── Team picker ────────────────────────────────────────── */
+.division-section {
+    margin-bottom: 2rem;
+}
+.division-heading {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.75rem;
+}
 .teams-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
