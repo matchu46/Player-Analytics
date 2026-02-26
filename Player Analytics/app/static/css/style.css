@@ -9,6 +9,12 @@
     --red-glow:   rgba(167,25,48,0.25);
     --sand:       #E3D4AD;
     --sand-dim:   #b8a882;
+    /* Team-specific theme colors — overridden per-page via inline <style> */
+    --team-primary:      var(--team-primary);
+    --team-primary-dark: var(--team-primary-dark);
+    --team-primary-glow: var(--team-primary-glow);
+    --team-secondary:    var(--team-secondary);
+    --team-secondary-dim: var(--team-secondary-dim);
     --black:      #000000;
     --bg:         #111111;
     --bg-card:    #1c1c1c;
@@ -34,14 +40,14 @@ body {
     flex-direction: column;
 }
 
-a { color: var(--sand); text-decoration: none; }
+a { color: var(--team-secondary); text-decoration: none; }
 a:hover { color: #fff; }
 code { background: #222; padding: 1px 5px; border-radius: 3px; font-size: 0.85em; }
 
 /* ── Header ─────────────────────────────────────────────── */
 .site-header {
     background: var(--black);
-    border-bottom: 3px solid var(--red);
+    border-bottom: 3px solid var(--team-primary);
     padding: 0 1.5rem;
     position: sticky;
     top: 0;
@@ -56,11 +62,11 @@ code { background: #222; padding: 1px 5px; border-radius: 3px; font-size: 0.85em
     height: 54px;
 }
 .logo { display: flex; align-items: baseline; gap: 0.5rem; }
-.logo-text { font-size: 1.2rem; font-weight: 700; color: var(--sand); letter-spacing: 0.02em; }
+.logo-text { font-size: 1.2rem; font-weight: 700; color: var(--team-secondary); letter-spacing: 0.02em; }
 .logo-year { font-size: 0.75rem; color: var(--text-muted); }
 nav { display: flex; gap: 1.5rem; margin-left: auto; }
 nav a { font-size: 0.85rem; color: var(--text-muted); transition: color 0.15s; }
-nav a:hover { color: var(--sand); }
+nav a:hover { color: var(--team-secondary); }
 
 /* ── Main ───────────────────────────────────────────────── */
 .main-content {
@@ -77,14 +83,14 @@ nav a:hover { color: var(--sand); }
     border-bottom: 1px solid var(--border);
     margin-bottom: 2rem;
 }
-.hero h1 { font-size: 2.2rem; color: var(--sand); }
+.hero h1 { font-size: 2.2rem; color: var(--team-secondary); }
 .hero-sub { color: var(--text-muted); margin-top: 0.35rem; }
 
 /* ── Roster sections ────────────────────────────────────── */
 .roster-section { margin-bottom: 2.5rem; }
 .roster-section h2 {
     font-size: 1.2rem;
-    color: var(--red);
+    color: var(--team-primary);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 0.9rem;
@@ -107,13 +113,13 @@ nav a:hover { color: var(--sand); }
     transition: border-color 0.15s, transform 0.1s, background 0.15s;
 }
 .player-card:hover {
-    border-color: var(--red);
+    border-color: var(--team-primary);
     background: var(--bg-hover);
     transform: translateY(-2px);
 }
 .jersey { font-size: 0.7rem; color: var(--text-muted); }
 .name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
-.position { font-size: 0.75rem; color: var(--red); font-weight: 600; }
+.position { font-size: 0.75rem; color: var(--team-primary); font-weight: 600; }
 .empty { color: var(--text-muted); font-style: italic; padding: 0.5rem 0; }
 
 /* ── Player header ──────────────────────────────────────── */
@@ -124,10 +130,10 @@ nav a:hover { color: var(--sand); }
     margin-bottom: 0.9rem;
     transition: color 0.15s;
 }
-.back-link:hover { color: var(--sand); }
+.back-link:hover { color: var(--team-secondary); }
 .player-meta { display: flex; align-items: center; gap: 1.2rem; }
-.jersey-big { font-size: 2.2rem; font-weight: 800; color: var(--red); min-width: 1.8rem; }
-.player-meta h1 { font-size: 1.7rem; color: var(--sand); font-weight: 700; }
+.jersey-big { font-size: 2.2rem; font-weight: 800; color: var(--team-primary); min-width: 1.8rem; }
+.player-meta h1 { font-size: 1.7rem; color: var(--team-secondary); font-weight: 700; }
 .position-label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.15rem; }
 
 /* ── Stat bar ───────────────────────────────────────────── */
@@ -137,7 +143,7 @@ nav a:hover { color: var(--sand); }
     gap: 0.5rem;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-left: 4px solid var(--red);
+    border-left: 4px solid var(--team-primary);
     border-radius: var(--radius);
     padding: 0.9rem 1.25rem;
     margin-bottom: 1rem;
@@ -152,7 +158,7 @@ nav a:hover { color: var(--sand); }
 }
 .stat-item:last-child { border-right: none; }
 .stat-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.15rem; }
-.stat-value { font-size: 1.2rem; font-weight: 700; color: var(--sand); }
+.stat-value { font-size: 1.2rem; font-weight: 700; color: var(--team-secondary); }
 
 /* ── Filter bar ─────────────────────────────────────────── */
 .filter-bar {
@@ -193,10 +199,10 @@ nav a:hover { color: var(--sand); }
     cursor: pointer;
     transition: border-color 0.15s;
 }
-.filter-select:focus { outline: none; border-color: var(--red); }
+.filter-select:focus { outline: none; border-color: var(--team-primary); }
 .filter-select:hover { border-color: #555; }
 .btn-apply {
-    background: var(--red);
+    background: var(--team-primary);
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -206,7 +212,7 @@ nav a:hover { color: var(--sand); }
     cursor: pointer;
     transition: background 0.15s;
 }
-.btn-apply:hover { background: var(--red-dark); }
+.btn-apply:hover { background: var(--team-primary-dark); }
 .btn-reset {
     background: transparent;
     color: var(--text-muted);
@@ -219,7 +225,7 @@ nav a:hover { color: var(--sand); }
 }
 .btn-reset:hover { color: var(--text); border-color: #555; }
 .filter-badge {
-    background: var(--red);
+    background: var(--team-primary);
     color: #fff;
     font-size: 0.7rem;
     font-weight: 600;
@@ -248,8 +254,8 @@ nav a:hover { color: var(--sand); }
     margin-bottom: -2px;
     letter-spacing: 0.02em;
 }
-.tab-btn:hover { color: var(--sand); }
-.tab-btn.active { color: var(--sand); border-bottom-color: var(--red); }
+.tab-btn:hover { color: var(--team-secondary); }
+.tab-btn.active { color: var(--team-secondary); border-bottom-color: var(--team-primary); }
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
@@ -277,8 +283,8 @@ nav a:hover { color: var(--sand); }
 .panels-hint { font-size: 0.8rem; color: var(--text-muted); }
 .btn-add-panel {
     background: transparent;
-    color: var(--red);
-    border: 1px dashed var(--red);
+    color: var(--team-primary);
+    border: 1px dashed var(--team-primary);
     border-radius: 4px;
     padding: 0.3rem 0.9rem;
     font-size: 0.82rem;
@@ -286,7 +292,7 @@ nav a:hover { color: var(--sand); }
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
 }
-.btn-add-panel:hover { background: var(--red-glow); color: #fff; }
+.btn-add-panel:hover { background: var(--team-primary-glow); color: #fff; }
 
 #split-panels {
     display: grid;
@@ -332,7 +338,7 @@ nav a:hover { color: var(--sand); }
     transition: color 0.15s, background 0.15s;
     flex-shrink: 0;
 }
-.btn-remove-panel:hover { color: var(--red); background: rgba(167,25,48,0.1); }
+.btn-remove-panel:hover { color: var(--team-primary); background: rgba(167,25,48,0.1); }
 .panel-chart { min-height: 300px; }
 .panel-table-wrap { overflow-x: auto; max-height: 250px; overflow-y: auto; }
 
@@ -383,15 +389,15 @@ nav a:hover { color: var(--sand); }
     color: var(--text);
     white-space: nowrap;
 }
-.data-table td:first-child { text-align: left; color: var(--sand); font-weight: 500; }
+.data-table td:first-child { text-align: left; color: var(--team-secondary); font-weight: 500; }
 .data-table tbody tr:hover { background: var(--bg-hover); }
-.data-table tr.row-overall td { color: var(--red); font-weight: 700; }
+.data-table tr.row-overall td { color: var(--team-primary); font-weight: 700; }
 .data-table td.cell-high { background: var(--cell-high); color: #7de07d; }
 .data-table td.cell-low  { background: var(--cell-low);  color: #e07d7d; }
 
 /* ── Buttons (shared) ───────────────────────────────────── */
 .btn-primary {
-    background: var(--red);
+    background: var(--team-primary);
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -402,7 +408,7 @@ nav a:hover { color: var(--sand); }
     transition: background 0.15s;
     white-space: nowrap;
 }
-.btn-primary:hover { background: var(--red-dark); }
+.btn-primary:hover { background: var(--team-primary-dark); }
 
 /* ── Footer ─────────────────────────────────────────────── */
 .site-footer {
@@ -435,7 +441,7 @@ nav a:hover { color: var(--sand); }
     border-radius: 50%;
     object-fit: cover;
     object-position: top center;
-    border: 3px solid var(--red);
+    border: 3px solid var(--team-primary);
     background: var(--bg-card);
     flex-shrink: 0;
 }
@@ -451,7 +457,7 @@ nav a:hover { color: var(--sand); }
     overflow: hidden;
     background: linear-gradient(135deg, #0d0d0d 0%, #1a0509 50%, #0d0d0d 100%);
     border: 1px solid var(--border);
-    border-left: 5px solid var(--red);
+    border-left: 5px solid var(--team-primary);
     border-radius: var(--radius);
     padding: 2.5rem 2rem 2rem;
     margin-bottom: 1.5rem;
@@ -473,7 +479,7 @@ nav a:hover { color: var(--sand); }
 .hero-title {
     font-size: 2.2rem;
     font-weight: 800;
-    color: var(--sand);
+    color: var(--team-secondary);
     letter-spacing: 0.01em;
 }
 .hero-sub {
@@ -489,7 +495,7 @@ nav a:hover { color: var(--sand); }
     font-size: 0.82rem;
     color: var(--text-muted);
 }
-.hero-sep { color: var(--red); }
+.hero-sep { color: var(--team-primary); }
 
 /* ── Search bar ─────────────────────────────────────────── */
 .search-bar {
@@ -506,7 +512,7 @@ nav a:hover { color: var(--sand); }
     padding: 0.65rem 1rem 0.65rem 2.5rem;
     transition: border-color 0.15s;
 }
-.search-bar input:focus { outline: none; border-color: var(--red); }
+.search-bar input:focus { outline: none; border-color: var(--team-primary); }
 .search-bar input::placeholder { color: var(--text-muted); }
 .search-icon {
     position: absolute;
@@ -537,8 +543,8 @@ nav a:hover { color: var(--sand); }
 }
 .roster-tab:hover { border-color: #555; color: var(--text); }
 .roster-tab.active {
-    background: var(--red);
-    border-color: var(--red);
+    background: var(--team-primary);
+    border-color: var(--team-primary);
     color: #fff;
 }
 
@@ -547,7 +553,7 @@ nav a:hover { color: var(--sand); }
 .pos-label {
     font-size: 0.72rem;
     font-weight: 700;
-    color: var(--red);
+    color: var(--team-primary);
     text-transform: uppercase;
     letter-spacing: 0.1em;
     margin-bottom: 0.65rem;
@@ -574,7 +580,7 @@ nav a:hover { color: var(--sand); }
     flex-shrink: 0;
 }
 .player-card-new:hover {
-    border-color: var(--red);
+    border-color: var(--team-primary);
     transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(167,25,48,0.25);
 }
@@ -629,7 +635,7 @@ nav a:hover { color: var(--sand); }
 .card-pos {
     font-size: 0.65rem;
     font-weight: 700;
-    color: var(--red);
+    color: var(--team-primary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -668,9 +674,9 @@ nav a:hover { color: var(--sand); }
     gap: 0.6rem;
 }
 .award-badge {
-    background: var(--red-dark);
-    color: var(--sand);
-    border: 1px solid var(--red);
+    background: var(--team-primary-dark);
+    color: var(--team-secondary);
+    border: 1px solid var(--team-primary);
     border-radius: 999px;
     padding: 0.3rem 0.9rem;
     font-size: 0.85rem;
@@ -752,7 +758,7 @@ nav a:hover { color: var(--sand); }
 .payroll-table tr:hover td { background: var(--bg-hover); }
 .payroll-group-header td {
     background: var(--bg-card);
-    color: var(--red);
+    color: var(--team-primary);
     font-weight: 700;
     font-size: 0.78rem;
     text-transform: uppercase;
@@ -781,13 +787,13 @@ nav a:hover { color: var(--sand); }
     transition: border-color 0.15s, background 0.15s;
     cursor: pointer;
 }
-.team-card:hover { border-color: var(--red); background: var(--bg-hover); }
+.team-card:hover { border-color: var(--card-primary, var(--team-primary)); background: var(--bg-hover); }
 .team-card--disabled { cursor: default; pointer-events: none; }
 .team-card-abbr {
     font-size: 1.7rem;
     font-weight: 800;
     letter-spacing: 0.02em;
-    color: var(--red);
+    color: var(--card-primary, var(--team-primary));
     line-height: 1;
     margin-bottom: 0.4rem;
 }

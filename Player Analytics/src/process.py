@@ -380,7 +380,7 @@ def process_pitchers(player_id: int = None, season: int = SEASON, team: str = 'A
     else:
         players = pd.read_sql(
             "SELECT player_id, full_name FROM players "
-            "WHERE position_type = 'Pitcher' AND season=? AND team=?",
+            "WHERE position_type IN ('Pitcher', 'Two-Way Player') AND season=? AND team=?",
             conn, params=(season, team)
         )
 

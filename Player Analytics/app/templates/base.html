@@ -14,6 +14,15 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="https://dugoutintel.com{% block canonical_url %}{% endblock %}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% if team is defined and team %}
+    <style>:root {
+        --team-primary:       {{ team.primary_color }};
+        --team-primary-dark:  color-mix(in srgb, {{ team.primary_color }} 75%, black);
+        --team-primary-glow:  color-mix(in srgb, {{ team.primary_color }} 30%, transparent);
+        --team-secondary:     {{ team.secondary_color }};
+        --team-secondary-dim: color-mix(in srgb, {{ team.secondary_color }} 70%, black);
+    }</style>
+    {% endif %}
     <!-- Plotly for charts -->
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <!-- Google AdSense -->

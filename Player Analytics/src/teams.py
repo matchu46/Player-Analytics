@@ -33,6 +33,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'D-backs',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#A71930',  # Sedona Red
+        'secondary_color': '#E3D4AD',  # Sand
     },
     'ATL': {
         'mlb_team_id':   144,
@@ -43,6 +45,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Braves',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#CE1141',  # Red
+        'secondary_color': '#EAAA00',  # Gold
     },
     'BAL': {
         'mlb_team_id':   110,
@@ -53,6 +57,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Orioles',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#DF4601',  # Orange
+        'secondary_color': '#F5E03A',  # Yellow
     },
     'BOS': {
         'mlb_team_id':   111,
@@ -63,6 +69,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Red Sox',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#BD3039',  # Red
+        'secondary_color': '#C8DFF4',  # Light Blue
     },
     'CHC': {
         'mlb_team_id':   112,
@@ -73,6 +81,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Cubs',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#0E3386',  # Blue
+        'secondary_color': '#CC3433',  # Red
     },
     'CWS': {
         'mlb_team_id':   145,
@@ -83,6 +93,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'White Sox',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#C4CED4',  # Silver
+        'secondary_color': '#FFFFFF',  # White
     },
     'CIN': {
         'mlb_team_id':   113,
@@ -93,6 +105,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Reds',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#C6011F',  # Red
+        'secondary_color': '#F5E4C8',  # Cream
     },
     'CLE': {
         'mlb_team_id':   114,
@@ -103,6 +117,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Guardians',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#E31937',  # Red
+        'secondary_color': '#D8C08C',  # Gold/Tan
     },
     'COL': {
         'mlb_team_id':   115,
@@ -113,6 +129,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Rockies',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#7B2FBE',  # Purple (lightened for visibility)
+        'secondary_color': '#C4CED4',  # Silver
     },
     'DET': {
         'mlb_team_id':   116,
@@ -123,6 +141,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Tigers',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#FA4616',  # Orange
+        'secondary_color': '#D7D3C6',  # Light Gray
     },
     'HOU': {
         'mlb_team_id':   117,
@@ -133,6 +153,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Astros',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#EB6E1F',  # Orange
+        'secondary_color': '#D8C08C',  # Gold/Tan
     },
     'KC': {
         'mlb_team_id':   118,
@@ -143,6 +165,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Royals',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#004687',  # Blue
+        'secondary_color': '#C09A5B',  # Gold
     },
     'LAA': {
         'mlb_team_id':   108,
@@ -153,6 +177,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Angels',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#BA0021',  # Red
+        'secondary_color': '#C4CED4',  # Silver
     },
     'LAD': {
         'mlb_team_id':   119,
@@ -163,6 +189,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Dodgers',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#005A9C',  # Dodger Blue
+        'secondary_color': '#FFFFFF',  # White
     },
     'MIA': {
         'mlb_team_id':   146,
@@ -173,6 +201,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Marlins',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#00A3E0',  # Blue
+        'secondary_color': '#FF6600',  # Orange
     },
     'MIL': {
         'mlb_team_id':   158,
@@ -183,6 +213,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Brewers',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#FFC52F',  # Gold
+        'secondary_color': '#B0C4D4',  # Light Blue
     },
     'MIN': {
         'mlb_team_id':   142,
@@ -193,6 +225,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Twins',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#D31145',  # Red
+        'secondary_color': '#B8CBE4',  # Light Blue
     },
     'NYM': {
         'mlb_team_id':   121,
@@ -203,6 +237,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Mets',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#0055A4',  # Blue
+        'secondary_color': '#FF5910',  # Orange
     },
     'NYY': {
         'mlb_team_id':   147,
@@ -213,6 +249,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Yankees',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#003087',  # Navy
+        'secondary_color': '#C4CED4',  # Silver
     },
     'ATH': {
         'mlb_team_id':   133,
@@ -223,6 +261,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Athletics',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#EFB21E',  # Gold
+        'secondary_color': '#B5CFBB',  # Light Green
     },
     'PHI': {
         'mlb_team_id':   143,
@@ -233,6 +273,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Phillies',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#E81828',  # Red
+        'secondary_color': '#C8D8E8',  # Light Blue
     },
     'PIT': {
         'mlb_team_id':   134,
@@ -243,6 +285,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Pirates',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#FDB827',  # Gold
+        'secondary_color': '#E8E8E8',  # Silver/White
     },
     'SD': {
         'mlb_team_id':   135,
@@ -253,6 +297,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Padres',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#C4A882',  # Sand/Tan
+        'secondary_color': '#FFC425',  # Gold
     },
     'SF': {
         'mlb_team_id':   137,
@@ -263,6 +309,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Giants',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#FD5A1E',  # Giants Orange
+        'secondary_color': '#E8E8E8',  # Light Gray
     },
     'SEA': {
         'mlb_team_id':   136,
@@ -273,6 +321,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Mariners',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#005C5C',  # Teal
+        'secondary_color': '#C4CED4',  # Silver
     },
     'STL': {
         'mlb_team_id':   138,
@@ -283,6 +333,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Cardinals',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#C41E3A',  # Red
+        'secondary_color': '#FEDB00',  # Gold
     },
     'TB': {
         'mlb_team_id':   139,
@@ -293,6 +345,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Rays',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#092C5C',  # Navy
+        'secondary_color': '#8FBCE6',  # Light Blue
     },
     'TEX': {
         'mlb_team_id':   140,
@@ -303,6 +357,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Rangers',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#003278',  # Navy
+        'secondary_color': '#C8D8F5',  # Light Blue
     },
     'TOR': {
         'mlb_team_id':   141,
@@ -313,6 +369,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Blue Jays',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#134A8E',  # Blue
+        'secondary_color': '#E8291C',  # Red
     },
     'WSH': {
         'mlb_team_id':   120,
@@ -323,6 +381,8 @@ TEAMS: dict[str, dict] = {
         'short_name':    'Nationals',
         'season_start':  '2025-03-27',
         'season_end':    '2025-10-01',
+        'primary_color': '#AB0003',  # Red
+        'secondary_color': '#D4B483',  # Gold/Tan
     },
 }
 

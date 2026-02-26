@@ -14,7 +14,7 @@
     <h2 style="font-size:1rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:1rem;">Available Teams</h2>
     <div class="teams-grid">
         {% for team in teams %}
-        <a href="/{{ team.code|lower }}" class="team-card">
+        <a href="/{{ team.code|lower }}" class="team-card" style="--card-primary: {{ team.primary_color }}; --card-secondary: {{ team.secondary_color }};">
             <div class="team-card-abbr">{{ team.code }}</div>
             <div class="team-card-name">{{ team.full_name }}</div>
             <div class="team-card-links">
