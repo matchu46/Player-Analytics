@@ -148,18 +148,64 @@ process.py →  data/db/dbacks.db
 | Code | Name |
 |---|---|
 | FF | Four-Seam Fastball |
+| FA | Fastball (generic) |
 | SI | Sinker |
 | FC | Cutter |
 | SL | Slider |
-| SW | Sweeper |
-| ST | Sweeping Curve |
+| ST | Sweeper |
+| SV | Slurve |
 | CU | Curveball |
 | KC | Knuckle Curve |
+| CS | Slow Curve |
 | CH | Changeup |
 | FS | Splitter |
 | FO | Forkball |
 | EP | Eephus |
 | KN | Knuckleball |
+| SC | Screwball |
+| PO | Pitchout |
+
+---
+
+## Deployment (Free Hosting)
+
+The easiest free option is **Render.com** — it connects directly to your GitHub repo and auto-deploys on push.
+
+### Render.com (Recommended)
+
+1. Push this repo to GitHub (the `data/db/dbacks.db` file is already committed — 14 MB, well under GitHub's 100 MB limit)
+2. Go to [render.com](https://render.com) → **New → Web Service**
+3. Connect your GitHub repo
+4. Set **Root Directory** to `Player Analytics`
+5. Set **Runtime** to `Python 3`
+6. Set **Build Command** to `pip install -r requirements.txt`
+7. Set **Start Command** to `gunicorn --chdir app --bind 0.0.0.0:$PORT app:app`
+8. Click **Deploy**
+
+> **Note:** Render's free tier spins down after 15 minutes of inactivity. The first request after inactivity takes ~30 seconds to wake up. Subsequent requests are instant.
+
+### PythonAnywhere (Always-On Free Tier)
+
+PythonAnywhere's free tier never spins down but requires more manual setup:
+
+1. Create a free account at [pythonanywhere.com](https://pythonanywhere.com)
+2. Open a **Bash console** and clone your repo:
+   ```bash
+   git clone https://github.com/<you>/<repo>.git
+   ```
+3. Install dependencies:
+   ```bash
+   pip install --user -r "Player Analytics/requirements.txt"
+   ```
+4. Go to **Web** tab → **Add a new web app** → **Manual configuration** → **Python 3.12**
+5. Set the **Source code** path to `/home/<user>/<repo>/Player Analytics/app`
+6. Edit the **WSGI configuration file** — replace the contents with:
+   ```python
+   import sys
+   sys.path.insert(0, '/home/<user>/<repo>/Player Analytics/app')
+   from app import app as application
+   ```
+7. Click **Reload**
 
 ---
 

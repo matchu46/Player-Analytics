@@ -303,20 +303,22 @@ const BASE_LAYOUT = {
 };
 
 const PT_COLORS = {
-    FF:'#e05c5c', SI:'#e07a5c', FC:'#e0a05c', FO:'#e0c860',
-    SL:'#5cd45c', SW:'#5cce5c', ST:'#5caa5c',
-    CU:'#5c8ae0', KC:'#5c6ce0',
+    FF:'#e05c5c', FA:'#e05c5c', SI:'#e07a5c', FC:'#e0a05c', FO:'#e0c860',
+    SL:'#5cd45c', ST:'#5cce5c', SV:'#5cb87c',
+    CU:'#5c8ae0', KC:'#5c6ce0', CS:'#4a78d0',
     CH:'#c05ce0', FS:'#9c5ce0',
     EP:'#a0a0a0', KN:'#bbbbbb', SC:'#d4a0c0',
+    PO:'#555555',
 };
 const ptColor = pt => PT_COLORS[pt] || '#888';
 
 const PT_NAMES = {
-    FF:'Four-Seam Fastball', SI:'Sinker', FC:'Cutter', FO:'Forkball',
-    SL:'Slider', SW:'Sweeper', ST:'Sweeping Curve',
-    CU:'Curveball', KC:'Knuckle Curve',
+    FF:'Four-Seam Fastball', FA:'Fastball', SI:'Sinker', FC:'Cutter', FO:'Forkball',
+    SL:'Slider', ST:'Sweeper', SV:'Slurve',
+    CU:'Curveball', KC:'Knuckle Curve', CS:'Slow Curve',
     CH:'Changeup', FS:'Splitter',
     EP:'Eephus', KN:'Knuckleball', SC:'Screwball',
+    PO:'Pitchout',
 };
 const ptName = pt => PT_NAMES[pt] || pt;
 
@@ -691,13 +693,18 @@ async function loadHeatMap() {
             height: nRows * 300 + 60,
             grid:{ rows:nRows, columns:cols, pattern:'independent' },
             margin:{t:50,b:40,l:50,r:20},
-            annotations: groups.map((g,i) => ({
-                text:`<b>${ptName(g)||g}</b>`,
-                x: (i % cols + 0.5) / cols,
-                y: 1 - Math.floor(i / cols) / nRows + 0.02,
-                xref:'paper', yref:'paper', showarrow:false,
-                font:{color:SAND,size:12},
-            })),
+            annotations: groups.map((g, i) => {
+                const axSufx = i === 0 ? '' : String(i + 1);
+                const xid = i === 0 ? 'x' : `x${i + 1}`;
+                const yid = i === 0 ? 'y' : `y${i + 1}`;
+                return {
+                    text: `<b>${ptName(g) || g}</b>`,
+                    xref: `${xid} domain`, yref: `${yid} domain`,
+                    x: 0.5, y: 1.08,
+                    showarrow: false,
+                    font: { color: SAND, size: 12 },
+                };
+            }),
         }, {responsive:true});
         return;
     }
