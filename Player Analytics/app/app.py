@@ -230,6 +230,37 @@ def _compute_split_groups(df, player_type: str, split_type: str,
         for m in sorted(df["_m"].dropna().unique()):
             add(_cal.month_name[int(m)], df[df["_m"] == m])
 
+    elif split_type in ("opponent_team", "opponent_division", "opponent_league"):
+        from teams import TEAMS as _TEAMS
+        _SC_NAME = {cfg['statcast_code']: cfg['full_name'] for cfg in _TEAMS.values()}
+        _SC_DIV  = {cfg['statcast_code']: cfg.get('division', '') for cfg in _TEAMS.values()}
+        _SC_LEA  = {cfg['statcast_code']: cfg.get('league', '') for cfg in _TEAMS.values()}
+
+        df = df.copy()
+        if player_type == "pitcher":
+            df["_opp"] = df.apply(
+                lambda r: r["away_team"] if r["home_team"] == team_statcast_code else r["home_team"],
+                axis=1,
+            )
+        else:
+            df["_opp"] = df.apply(
+                lambda r: r["away_team"] if r.get("inning_topbot") == "Bot" else r["home_team"],
+                axis=1,
+            )
+
+        if split_type == "opponent_team":
+            for opp_code in sorted(df["_opp"].dropna().unique()):
+                name = _SC_NAME.get(opp_code, opp_code)
+                add(name, df[df["_opp"] == opp_code])
+        elif split_type == "opponent_division":
+            for div in sorted({v for v in _SC_DIV.values() if v}):
+                div_codes = {k for k, v in _SC_DIV.items() if v == div}
+                add(div, df[df["_opp"].isin(div_codes)])
+        else:  # opponent_league
+            for league in ["AL", "NL"]:
+                league_codes = {k for k, v in _SC_LEA.items() if v == league}
+                add(league, df[df["_opp"].isin(league_codes)])
+
     # Prepend overall (filtered) row
     overall = compute_fn(df)
     if overall:

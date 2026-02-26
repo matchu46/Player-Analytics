@@ -41,10 +41,12 @@
     <div class="stat-item"><span class="stat-label">EV</span><span class="stat-value">{{ overall.avg_exit_velo or '—' }}</span></div>
     <div class="stat-item"><span class="stat-label">Hard%</span><span class="stat-value">{% if overall.hard_hit_pct %}{{ "%.1f"|format(overall.hard_hit_pct * 100) }}%{% else %}—{% endif %}</span></div>
     {% else %}
+    <div class="stat-item"><span class="stat-label">ERA</span><span class="stat-value">{{ "%.2f"|format(overall.era) if overall.era is not none else '—' }}</span></div>
+    <div class="stat-item"><span class="stat-label">IP</span><span class="stat-value">{{ overall.innings_pitched or '—' }}</span></div>
     <div class="stat-item"><span class="stat-label">BF</span><span class="stat-value">{{ overall.batters_faced or 0 }}</span></div>
     <div class="stat-item"><span class="stat-label">K%</span><span class="stat-value">{{ "%.1f"|format((overall.k_pct or 0) * 100) }}%</span></div>
     <div class="stat-item"><span class="stat-label">BB%</span><span class="stat-value">{{ "%.1f"|format((overall.bb_pct or 0) * 100) }}%</span></div>
-    <div class="stat-item"><span class="stat-label">K-BB%</span><span class="stat-value">{{ "%.1f"|format(((overall.k_pct or 0) - (overall.bb_pct or 0)) * 100) }}%</span></div>
+    <div class="stat-item"><span class="stat-label">WHIP</span><span class="stat-value">{{ "%.2f"|format(overall.whip) if overall.whip is not none else '—' }}</span></div>
     <div class="stat-item"><span class="stat-label">AVG vs</span><span class="stat-value">{{ "%.3f"|format(overall.avg_against or 0) }}</span></div>
     <div class="stat-item"><span class="stat-label">wOBA vs</span><span class="stat-value">{{ "%.3f"|format(overall.woba_against or 0) }}</span></div>
     <div class="stat-item"><span class="stat-label">Avg Velo</span><span class="stat-value">{{ overall.avg_velo or '—' }}</span></div>
@@ -603,6 +605,7 @@ const BATTER_STATS = [
     {v:'barrel_pct',label:'Barrel%'},{v:'whiff_pct',label:'Whiff%'},{v:'swing_pct',label:'Swing%'},
 ];
 const PITCHER_STATS = [
+    {v:'era',label:'ERA'},{v:'whip',label:'WHIP'},{v:'innings_pitched',label:'IP'},
     {v:'k_pct',label:'K%'},{v:'bb_pct',label:'BB%'},{v:'k_bb',label:'K-BB'},
     {v:'woba_against',label:'wOBA vs'},{v:'avg_against',label:'AVG vs'},
     {v:'slg_against',label:'SLG vs'},{v:'avg_velo',label:'Avg Velo'},
@@ -720,12 +723,18 @@ function renderPanelChart(id, rows, splitType, statKey) {
         return (BAD_STATS.has(statKey) ? v < med : v >= med) ? RED : '#3a3a3a';
     });
     const isRate = ['avg','obp','slg','ops','woba','k_pct','bb_pct','hard_hit_pct',
-        'barrel_pct','whiff_pct','swing_pct','woba_against','avg_against','slg_against'].includes(statKey);
+        'barrel_pct','whiff_pct','swing_pct','woba_against','avg_against','slg_against',
+        'era','whip'].includes(statKey);
 
     Plotly.react(`${id}-chart`, [{
         x: labels, y: vals, type: 'bar',
         marker: { color: colors, line: { color: '#111', width: 1 } },
-        text: vals.map(v => v == null ? '' : isRate ? v.toFixed(3) : String(v)),
+        text: vals.map(v => {
+            if (v == null) return '';
+            if (['era','whip'].includes(statKey)) return v.toFixed(2);
+            if (statKey === 'innings_pitched') return v.toFixed(1);
+            return isRate ? v.toFixed(3) : String(v);
+        }),
         textposition: 'outside',
         cliponaxis: false,  // prevent text clipping
         hovertemplate: `<b>%{x}</b><br>${info.label}: %{y}<extra></extra>`,
@@ -746,14 +755,16 @@ function renderPanelChart(id, rows, splitType, statKey) {
 function renderPanelTable(id, rows, primaryStat) {
     const bCols = ['split_value','pa','avg','obp','slg','ops','woba',
                    'home_runs','strikeouts','walks','avg_exit_velo','hard_hit_pct','whiff_pct'];
-    const pCols = ['split_value','batters_faced','k_pct','bb_pct','avg_against',
-                   'woba_against','strikeouts','walks_allowed','home_runs_allowed','avg_velo'];
+    const pCols = ['split_value','era','whip','innings_pitched','batters_faced',
+                   'k_pct','bb_pct','avg_against','woba_against',
+                   'strikeouts','walks_allowed','home_runs_allowed','avg_velo'];
     const cols  = PLAYER_TYPE === 'batter' ? bCols : pCols;
     const LABELS = {
         split_value:'Split',pa:'PA',avg:'AVG',obp:'OBP',slg:'SLG',ops:'OPS',woba:'wOBA',
         home_runs:'HR',strikeouts:'K',walks:'BB',avg_exit_velo:'EV',hard_hit_pct:'Hard%',
         whiff_pct:'Whiff%',batters_faced:'BF',k_pct:'K%',bb_pct:'BB%',avg_against:'AVG',
         woba_against:'wOBA',walks_allowed:'BB',home_runs_allowed:'HR',avg_velo:'Velo',
+        era:'ERA',whip:'WHIP',innings_pitched:'IP',
     };
 
     const thead = document.getElementById(`${id}-thead`);
@@ -781,6 +792,8 @@ function renderPanelTable(id, rows, primaryStat) {
             }
             if (v == null) v = '—';
             else if (c === 'split_value') { /* keep */ }
+            else if (['era','whip'].includes(c) && typeof v === 'number') v = v.toFixed(2);
+            else if (c === 'innings_pitched' && typeof v === 'number') v = v.toFixed(1);
             else if (typeof v === 'number' && Math.abs(v)<10 && v!==Math.floor(v)) v = v.toFixed(3);
             else if (typeof v === 'number') v = v%1!==0 ? v.toFixed(1) : v;
             return `<td${cls}>${v}</td>`;

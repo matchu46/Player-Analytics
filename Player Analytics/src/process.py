@@ -17,7 +17,18 @@ import sqlite3
 import pandas as pd
 import numpy as np
 
-from teams import get_team, SEASON
+from teams import get_team, SEASON, TEAMS
+
+# ---------------------------------------------------------------------------
+# Opponent lookup tables (built from TEAMS config)
+# ---------------------------------------------------------------------------
+
+# statcast_code → full team name
+STATCAST_TO_NAME = {cfg['statcast_code']: cfg['full_name'] for cfg in TEAMS.values()}
+# statcast_code → division
+STATCAST_TO_DIVISION = {cfg['statcast_code']: cfg.get('division', '') for cfg in TEAMS.values()}
+# statcast_code → league
+STATCAST_TO_LEAGUE = {cfg['statcast_code']: cfg.get('league', '') for cfg in TEAMS.values()}
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 DB_PATH = os.path.join(DATA_DIR, "db", "baseball.db")
@@ -119,6 +130,19 @@ def compute_batter_stats(df: pd.DataFrame) -> dict:
     }
 
 
+# Outs recorded per event type
+_OUTS_PER_EVENT = {
+    "strikeout": 1, "field_out": 1, "force_out": 1,
+    "fielders_choice": 1, "fielders_choice_out": 1,
+    "sac_fly": 1, "sac_bunt": 1, "catcher_interf": 0,
+    "strikeout_double_play": 2, "grounded_into_double_play": 2,
+    "double_play": 2, "sac_fly_double_play": 2,
+    "triple_play": 3,
+    "walk": 0, "hit_by_pitch": 0, "field_error": 0,
+    "single": 0, "double": 0, "triple": 0, "home_run": 0,
+}
+
+
 def compute_pitcher_stats(df: pd.DataFrame) -> dict:
     """Given pitches thrown by one pitcher in a situational slice, compute pitching stats."""
     pa_df = df[df["events"].notna() & df["events"].isin(PA_EVENTS)]
@@ -152,6 +176,23 @@ def compute_pitcher_stats(df: pd.DataFrame) -> dict:
     woba_denom = ab + walks + hbp + pa_df["events"].isin(["sac_fly"]).sum()
     woba_against = woba_num / woba_denom if woba_denom > 0 else None
 
+    # Innings pitched + ERA
+    outs_recorded = int(pa_df["events"].map(lambda e: _OUTS_PER_EVENT.get(e, 0)).sum())
+    ip_whole = outs_recorded // 3
+    ip_thirds = outs_recorded % 3
+    innings_pitched = ip_whole + ip_thirds / 10.0  # baseball convention: 6.2 = 6⅔
+    ip_true = outs_recorded / 3.0
+
+    # Runs allowed: score-change at terminal PAs
+    if "post_bat_score" in pa_df.columns and "bat_score" in pa_df.columns:
+        run_diff = (pa_df["post_bat_score"].fillna(0) - pa_df["bat_score"].fillna(0)).clip(lower=0)
+        runs_allowed = int(run_diff.sum())
+    else:
+        runs_allowed = 0
+
+    era = round(9.0 * runs_allowed / ip_true, 2) if ip_true > 0 else None
+    whip = round((walks + hits) / ip_true, 2) if ip_true > 0 else None
+
     # Pitch mix
     pitch_counts = df["pitch_type"].value_counts()
     total_pitches = pitch_counts.sum()
@@ -168,6 +209,10 @@ def compute_pitcher_stats(df: pd.DataFrame) -> dict:
         "walks_allowed": int(walks),
         "strikeouts": int(ks),
         "hbp": int(hbp),
+        "innings_pitched": round(innings_pitched, 1),
+        "runs_allowed": runs_allowed,
+        "era": era,
+        "whip": whip,
         "k_pct": round(k_pct, 3) if k_pct is not None else None,
         "bb_pct": round(bb_pct, 3) if bb_pct is not None else None,
         "k_bb": round(k_bb, 2) if k_bb is not None else None,
@@ -283,6 +328,35 @@ def get_splits(df: pd.DataFrame, player_col: str, team_statcast_code: str = "AZ"
     # --- By pitch type (pitchers) or pitch faced (batters) ---
     for pt in df["pitch_type"].dropna().unique():
         add("pitch_type", pt, df[df["pitch_type"] == pt], compute_fn)
+
+    # --- By opponent team / division / league ---
+    if "home_team" in df.columns and "away_team" in df.columns:
+        if player_col == "batter":
+            # batter at home (Bot) → opponent = away_team; batting away (Top) → opponent = home_team
+            opp = df.apply(
+                lambda r: r["away_team"] if r.get("inning_topbot") == "Bot" else r["home_team"],
+                axis=1
+            )
+        else:
+            # pitcher at home → opponent = away_team; pitching away → opponent = home_team
+            opp = df.apply(
+                lambda r: r["away_team"] if r["home_team"] == team_statcast_code else r["home_team"],
+                axis=1
+            )
+        df = df.copy()
+        df["_opp"] = opp
+
+        for opp_code in sorted(df["_opp"].dropna().unique()):
+            name = STATCAST_TO_NAME.get(opp_code, opp_code)
+            add("opponent_team", name, df[df["_opp"] == opp_code], compute_fn)
+
+        for div in sorted({v for v in STATCAST_TO_DIVISION.values() if v}):
+            div_codes = {k for k, v in STATCAST_TO_DIVISION.items() if v == div}
+            add("opponent_division", div, df[df["_opp"].isin(div_codes)], compute_fn)
+
+        for league in ["AL", "NL"]:
+            league_codes = {k for k, v in STATCAST_TO_LEAGUE.items() if v == league}
+            add("opponent_league", league, df[df["_opp"].isin(league_codes)], compute_fn)
 
     # --- By Month ---
     import calendar as _cal
