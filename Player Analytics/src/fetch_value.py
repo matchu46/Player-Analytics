@@ -67,18 +67,59 @@ def _normalize(name: str) -> str:
 # ---------------------------------------------------------------------------
 
 def fetch_war(season: int = 2025) -> pd.DataFrame:
-    """Return DataFrame with columns: Name, WAR, position_type for D-backs players."""
-    print(f"Fetching FanGraphs batting stats for {season}...")
+    """Return full-season WAR for all D-backs players from FanGraphs.
+
+    Matches by player name against the DB roster rather than filtering by team,
+    so players who split time between teams get their full-season WAR totals.
+    """
+    # Load roster names from DB for matching
+    roster_names = []
+    if os.path.exists(DB_PATH):
+        conn = sqlite3.connect(DB_PATH)
+        roster_names = [
+            r[0] for r in conn.execute(
+                "SELECT full_name FROM players WHERE season=?", (season,)
+            ).fetchall()
+        ]
+        conn.close()
+    roster_norms = {_normalize(n): n for n in roster_names}
+
+    print(f"Fetching FanGraphs batting stats for {season} (all teams)...")
     bat = pb.batting_stats(season, qual=1)
-    bat_az = bat[bat["Team"] == FG_TEAM][["Name", "WAR"]].copy()
-    bat_az["position_type"] = "Batter"
 
-    print(f"Fetching FanGraphs pitching stats for {season}...")
+    print(f"Fetching FanGraphs pitching stats for {season} (all teams)...")
     pit = pb.pitching_stats(season, qual=1)
-    pit_az = pit[pit["Team"] == FG_TEAM][["Name", "WAR"]].copy()
-    pit_az["position_type"] = "Pitcher"
 
-    return pd.concat([bat_az, pit_az], ignore_index=True)
+    rows = []
+
+    # For players who split time, FanGraphs has a "- - -" / "TOT" row with combined stats.
+    # Prefer TOT row if it exists; otherwise take Team=FG_TEAM row.
+    for df, pos_type in [(bat, "Batter"), (pit, "Pitcher")]:
+        for name_norm, roster_name in roster_norms.items():
+            # Match rows by normalized name
+            mask = df["Name"].apply(_normalize) == name_norm
+            matched = df[mask]
+            if matched.empty:
+                continue
+            # Prefer multi-team combined row (Team == '- - -' or '---' or contains 'TOT')
+            multi = matched[matched["Team"].str.contains(r"^-+$|TOT", na=False, regex=True)]
+            row = multi.iloc[0] if not multi.empty else matched.iloc[0]
+            rows.append({
+                "Name": roster_name,
+                "WAR": row.get("WAR"),
+                "position_type": pos_type,
+            })
+
+    # Fall back: also include any D-backs–only rows not yet matched
+    az_bat = bat[bat["Team"] == FG_TEAM].copy()
+    az_pit = pit[pit["Team"] == FG_TEAM].copy()
+    already = {_normalize(r["Name"]) for r in rows}
+    for df, pos_type in [(az_bat, "Batter"), (az_pit, "Pitcher")]:
+        for _, row in df.iterrows():
+            if _normalize(row["Name"]) not in already:
+                rows.append({"Name": row["Name"], "WAR": row.get("WAR"), "position_type": pos_type})
+
+    return pd.DataFrame(rows)
 
 
 # ---------------------------------------------------------------------------

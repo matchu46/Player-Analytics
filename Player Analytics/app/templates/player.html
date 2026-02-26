@@ -427,24 +427,31 @@ function fmtSalary(n) {
     return '$' + n.toLocaleString();
 }
 
-function fmtDPW(n) {
-    if (n === null || n === undefined) return 'N/A';
-    return '$' + n.toFixed(1) + 'M / WAR';
+function fmtDPW(d) {
+    const war = d.war, sal = d.salary;
+    if (sal === null || sal === undefined) return 'No salary data';
+    if (war === null || war === undefined) return 'N/A';
+    if (war === 0) return '∞ (0 WAR)';
+    if (war < 0)   return war.toFixed(1) + ' WAR (below avg)';
+    if (!d.dollars_per_war) return 'N/A';
+    return '$' + d.dollars_per_war.toFixed(1) + 'M / WAR';
 }
 
-function dpwColor(dpw, war) {
-    if (dpw === null || dpw === undefined || war === null) return '#888';
-    if (war <= 0) return '#e05c5c';       // negative/zero WAR = red
-    if (dpw < 5)  return '#5cd45c';       // great value = green
-    if (dpw < 10) return '#e0c860';       // fair value = yellow
+function dpwColor(d) {
+    const war = d.war, dpw = d.dollars_per_war;
+    if (war === null || war === undefined) return '#888';
+    if (war <= 0)  return '#e05c5c';      // zero/negative WAR = red
+    if (!dpw)      return '#888';
+    if (dpw < 5)   return '#5cd45c';      // great value = green
+    if (dpw < 10)  return '#e0c860';      // fair value = yellow
     return '#e05c5c';                     // overpaid = red
 }
 
 function renderValue(d) {
     const war     = d.war !== null && d.war !== undefined ? d.war.toFixed(1) : 'N/A';
     const salary  = fmtSalary(d.salary);
-    const dpw     = fmtDPW(d.dollars_per_war);
-    const dpwClr  = dpwColor(d.dollars_per_war, d.war);
+    const dpw     = fmtDPW(d);
+    const dpwClr  = dpwColor(d);
     const awards  = (d.awards || []);
 
     const awardsHtml = awards.length

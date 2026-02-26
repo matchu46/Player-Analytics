@@ -60,13 +60,17 @@
                             <span style="color:var(--text-muted);">N/A</span>
                         {% endif %}
                     </td>
-                    <td data-val="{{ p.dollars_per_war if p.dollars_per_war is not none else 999 }}">
+                    <td data-val="{{ p.dollars_per_war if p.dollars_per_war is not none else (999 if (p.war is none or p.war >= 0) else 998) }}">
                         {% if p.dollars_per_war is not none %}
                             <span style="color:{% if p.dollars_per_war < 5 %}#5cd45c{% elif p.dollars_per_war < 10 %}#e0c860{% else %}#e05c5c{% endif %}">
                                 ${{ "%.1f"|format(p.dollars_per_war) }}M
                             </span>
-                        {% elif p.war is not none and p.war <= 0 %}
-                            <span style="color:#e05c5c;">—</span>
+                        {% elif p.war is not none and p.war == 0 %}
+                            <span style="color:#e05c5c;" title="0 WAR — infinite cost per win">∞ (0 WAR)</span>
+                        {% elif p.war is not none and p.war < 0 %}
+                            <span style="color:#e05c5c;" title="Below replacement level">{{ "%.1f"|format(p.war) }} WAR</span>
+                        {% elif not p.salary %}
+                            <span style="color:var(--text-muted);">No salary data</span>
                         {% else %}
                             <span style="color:var(--text-muted);">N/A</span>
                         {% endif %}
