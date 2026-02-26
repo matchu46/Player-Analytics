@@ -221,9 +221,13 @@ def get_splits(df: pd.DataFrame, player_col: str) -> list[dict]:
     add("overall", "All", df, compute_fn)
 
     # --- By inning ---
-    for inning in sorted(df["inning"].dropna().unique()):
-        label = f"{int(inning)}+" if inning >= 9 else str(int(inning))
-        add("inning", label, df[df["inning"] == inning], compute_fn)
+    for inning in range(1, 9):
+        sub = df[df["inning"] == inning]
+        if not sub.empty:
+            add("inning", str(inning), sub, compute_fn)
+    sub9 = df[df["inning"] >= 9]
+    if not sub9.empty:
+        add("inning", "9+", sub9, compute_fn)
 
     # --- By count ---
     for balls in range(4):

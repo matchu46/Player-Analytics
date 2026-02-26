@@ -519,14 +519,15 @@ function renderPanelChart(id, rows, splitType, statKey) {
     }], {
         ...BASE_LAYOUT,
         title: { text: `${info.label} by ${splitType.replace(/_/g,' ')}`, font:{size:13,color:SAND} },
+        dragmode: 'pan',
         xaxis: { tickangle: -40, tickfont:{size:10}, automargin: true },
         yaxis: { title: info.label, gridcolor:'#2a2a2a',
-                 // Add 20% headroom so outside labels aren't clipped
-                 range: [0, maxV * 1.22] },
+                 range: [0, maxV * 1.22],
+                 fixedrange: true },
         height: 320,
         margin: { t:45, b:10, l:55, r:15 },
         uniformtext: { mode: 'hide', minsize: 8 },
-    }, { responsive:true, displayModeBar:false });
+    }, { responsive:true, displayModeBar:false, scrollZoom:false });
 }
 
 function renderPanelTable(id, rows, primaryStat) {

@@ -147,9 +147,13 @@ def _compute_split_groups(df, player_type: str, split_type: str) -> list:
             results.append({"split_type": split_type, "split_value": sv, **stats})
 
     if split_type == "inning":
-        for v in sorted(df["inning"].dropna().unique()):
-            lbl = f"{int(v)}+" if int(v) >= 9 else str(int(v))
-            add(lbl, df[df["inning"] == v])
+        for v in range(1, 9):
+            sub = df[df["inning"] == v]
+            if not sub.empty:
+                add(str(v), sub)
+        sub9 = df[df["inning"] >= 9]
+        if not sub9.empty:
+            add("9+", sub9)
 
     elif split_type == "count":
         for b in range(4):
