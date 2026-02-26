@@ -1,6 +1,6 @@
 # D-backs Analytics — 2025
 
-A local web application for exploring pitch-by-pitch Statcast data for the **Arizona Diamondbacks' 2025 season**. Built with Python, Flask, SQLite, and Plotly.
+A web application for exploring pitch-by-pitch Statcast data for the **Arizona Diamondbacks' 2025 season**. Built with Python, Flask, SQLite, and Plotly.
 
 ---
 
