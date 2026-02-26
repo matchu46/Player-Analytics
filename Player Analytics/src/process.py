@@ -20,7 +20,7 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 DB_PATH = os.path.join(DATA_DIR, "db", "dbacks.db")
 
 SEASON = 2025
-ARI_CODE = "ARI"
+ARI_CODE = "AZ"   # Statcast stores Arizona as 'AZ', not 'ARI'
 
 # ---------------------------------------------------------------------------
 # Helpers — counting stats from a filtered DataFrame
@@ -186,13 +186,13 @@ def compute_pitcher_stats(df: pd.DataFrame) -> dict:
 # ---------------------------------------------------------------------------
 
 VENUE_MAP = {
-    "ARI": "Chase Field", "ATL": "Truist Park", "BAL": "Camden Yards",
+    "AZ": "Chase Field", "ATL": "Truist Park", "BAL": "Camden Yards",
     "BOS": "Fenway Park", "CHC": "Wrigley Field", "CWS": "Guaranteed Rate Field",
     "CIN": "Great American Ball Park", "CLE": "Progressive Field",
     "COL": "Coors Field", "DET": "Comerica Park", "HOU": "Minute Maid Park",
     "KC": "Kauffman Stadium", "LAA": "Angel Stadium", "LAD": "Dodger Stadium",
     "MIA": "loanDepot Park", "MIL": "American Family Field", "MIN": "Target Field",
-    "NYM": "Citi Field", "NYY": "Yankee Stadium", "OAK": "Oakland Coliseum",
+    "NYM": "Citi Field", "NYY": "Yankee Stadium", "ATH": "Sutter Health Park",
     "PHI": "Citizens Bank Park", "PIT": "PNC Park", "SD": "Petco Park",
     "SF": "Oracle Park", "SEA": "T-Mobile Park", "STL": "Busch Stadium",
     "TB": "Tropicana Field", "TEX": "Globe Life Field", "TOR": "Rogers Centre",
@@ -340,12 +340,11 @@ def process_batters(player_id: int = None, season: int = SEASON):
             print(f"    No pitch data found.")
             continue
 
-        # Ensure batting_team column
-        if "batting_team" not in df.columns:
-            df["batting_team"] = df.apply(
-                lambda r: r["home_team"] if r["inning_topbot"] == "Bot" else r["away_team"],
-                axis=1
-            )
+        # Always recompute batting_team (stored column may be NULL)
+        df["batting_team"] = df.apply(
+            lambda r: r["home_team"] if r["inning_topbot"] == "Bot" else r["away_team"],
+            axis=1
+        )
 
         splits = get_splits(df, player_col="batter")
         rows = [{"player_id": pid, "season": season, **s} for s in splits]

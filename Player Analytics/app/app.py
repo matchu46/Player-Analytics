@@ -79,9 +79,9 @@ def build_pitch_filter(player_col: str, player_id: int) -> tuple[str, list]:
 
     home_away = request.args.get("home_away")
     if home_away == "home":
-        clauses.append("home_team = 'ARI'")
+        clauses.append("home_team = 'AZ'")
     elif home_away == "away":
-        clauses.append("home_team != 'ARI'")
+        clauses.append("home_team != 'AZ'")
 
     outs = request.args.get("outs")
     if outs is not None:
@@ -107,13 +107,13 @@ RUNNER_LABELS = {
 }
 
 VENUE_MAP = {
-    "ARI": "Chase Field", "ATL": "Truist Park", "BAL": "Camden Yards",
+    "AZ": "Chase Field", "ATL": "Truist Park", "BAL": "Camden Yards",
     "BOS": "Fenway Park", "CHC": "Wrigley Field", "CWS": "Guaranteed Rate Field",
     "CIN": "Great American Ball Park", "CLE": "Progressive Field",
     "COL": "Coors Field", "DET": "Comerica Park", "HOU": "Minute Maid Park",
     "KC": "Kauffman Stadium", "LAA": "Angel Stadium", "LAD": "Dodger Stadium",
     "MIA": "loanDepot Park", "MIL": "American Family Field", "MIN": "Target Field",
-    "NYM": "Citi Field", "NYY": "Yankee Stadium", "OAK": "Oakland Coliseum",
+    "NYM": "Citi Field", "NYY": "Yankee Stadium", "ATH": "Sutter Health Park",
     "PHI": "Citizens Bank Park", "PIT": "PNC Park", "SD": "Petco Park",
     "SF": "Oracle Park", "SEA": "T-Mobile Park", "STL": "Busch Stadium",
     "TB": "Tropicana Field", "TEX": "Globe Life Field", "TOR": "Rogers Centre",
@@ -173,12 +173,16 @@ def _compute_split_groups(df, player_type: str, split_type: str) -> list:
             add("vs RHB", df[df["stand"] == "R"])
 
     elif split_type == "venue_type":
-        batting_team = df.apply(
-            lambda r: r["home_team"] if r["inning_topbot"] == "Bot" else r["away_team"],
-            axis=1,
-        )
-        add("Home", df[batting_team == df["home_team"]])
-        add("Away", df[batting_team != df["home_team"]])
+        if player_type == "pitcher":
+            add("Home", df[df["home_team"] == "AZ"])
+            add("Away", df[df["home_team"] != "AZ"])
+        else:
+            bt = df.apply(
+                lambda r: r["home_team"] if r["inning_topbot"] == "Bot" else r["away_team"],
+                axis=1,
+            )
+            add("Home", df[bt == df["home_team"]])
+            add("Away", df[bt != df["home_team"]])
 
     elif split_type == "pitch_type":
         for pt in sorted(df["pitch_type"].dropna().unique()):
@@ -231,6 +235,16 @@ def index():
         "WHERE p.position_type = 'Pitcher' AND p.season = 2025 "
         "ORDER BY p.full_name"
     )
+    # Classify pitchers as SP vs RP: starters pitched in inning 1 in 3+ games
+    starter_rows = query(
+        "SELECT pitcher FROM pitches "
+        "WHERE pitcher IN (SELECT player_id FROM players WHERE position_type='Pitcher' AND season=2025) "
+        "AND inning = 1 "
+        "GROUP BY pitcher HAVING COUNT(DISTINCT game_pk) >= 3"
+    )
+    starter_ids = {r["pitcher"] for r in starter_rows}
+    for p in pitchers:
+        p["position"] = "SP" if p["player_id"] in starter_ids else "RP"
     return render_template("index.html", batters=batters, pitchers=pitchers)
 
 
@@ -367,7 +381,7 @@ def api_batter_pitches(player_id: int):
     rows = query(
         f"SELECT plate_x, plate_z, type, description, events, bb_type, "
         f"hc_x, hc_y, launch_speed, launch_angle, pitch_type, p_throws, "
-        f"inning, balls, strikes, outs_when_up "
+        f"release_speed, inning, balls, strikes, outs_when_up "
         f"FROM pitches WHERE {where} LIMIT 15000",
         tuple(params)
     )

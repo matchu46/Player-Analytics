@@ -307,9 +307,18 @@ const PT_COLORS = {
     SL:'#5cd45c', SW:'#5cce5c', ST:'#5caa5c',
     CU:'#5c8ae0', KC:'#5c6ce0',
     CH:'#c05ce0', FS:'#9c5ce0',
-    EP:'#a0a0a0',
+    EP:'#a0a0a0', KN:'#bbbbbb', SC:'#d4a0c0',
 };
 const ptColor = pt => PT_COLORS[pt] || '#888';
+
+const PT_NAMES = {
+    FF:'Four-Seam Fastball', SI:'Sinker', FC:'Cutter', FO:'Forkball',
+    SL:'Slider', SW:'Sweeper', ST:'Sweeping Curve',
+    CU:'Curveball', KC:'Knuckle Curve',
+    CH:'Changeup', FS:'Splitter',
+    EP:'Eephus', KN:'Knuckleball', SC:'Screwball',
+};
+const ptName = pt => PT_NAMES[pt] || pt;
 
 const HIT_EVENTS  = new Set(['single','double','triple','home_run']);
 const BIP_EVENTS  = new Set(['single','double','triple','home_run','field_out',
@@ -611,43 +620,81 @@ async function loadHeatMap() {
     };
 
     if (splitBy !== 'none') {
-        // Side-by-side split charts
         const splitKey = splitBy === 'p_throws' ? 'p_throws' : splitBy === 'stand' ? 'stand' : 'pitch_type';
         const groups = [...new Set(pitches.map(p => p[splitKey]).filter(Boolean))].sort();
-
         const cols = Math.min(groups.length, 3);
-        const subplots = [];
+        const nRows = Math.ceil(groups.length / cols);
         const allTraces = [];
+        const allShapes = [];
+        const axConfig  = {};
 
         groups.forEach((g, i) => {
-            const sub  = pitches.filter(p => p[splitKey] === g);
-            const xs   = sub.map(p => p.plate_x).filter(v=>v!=null);
-            const ys   = sub.map(p => p.plate_z).filter(v=>v!=null);
-            const col  = (i % cols) + 1;
-            const row  = Math.floor(i / cols) + 1;
-            const axSuffix = i === 0 ? '' : `${i+1}`;
+            const sub    = pitches.filter(p => p[splitKey] === g);
+            const axSufx = i === 0 ? '' : String(i + 1);
+            const xid    = i === 0 ? 'x'  : `x${i + 1}`;
+            const yid    = i === 0 ? 'y'  : `y${i + 1}`;
 
-            allTraces.push({
-                x: xs, y: ys,
-                type: 'histogram2dcontour',
-                xaxis: `x${axSuffix}`, yaxis: `y${axSuffix}`,
-                colorscale:[[0,'rgba(0,0,0,0)'],[0.1,`rgba(167,25,48,0.3)`],[0.7,`rgba(167,25,48,0.85)`],[1,`rgba(227,212,173,1)`]],
-                showscale: false,
-                contours:{coloring:'fill'}, ncontours:20, line:{width:0},
-                name: g,
-            });
+            axConfig[`xaxis${axSufx}`] = { range:[-1.8,1.8], zeroline:false, gridcolor:'#2a2a2a', tickfont:{size:9} };
+            axConfig[`yaxis${axSufx}`] = { range:[-0.5,5.0], zeroline:false, gridcolor:'#2a2a2a', tickfont:{size:9} };
+
+            // Strike zone box and home plate for this subplot
+            allShapes.push(
+                { type:'rect',  layer:'above', xref:xid, yref:yid,
+                  x0:-0.708, x1:0.708, y0:1.5, y1:3.5,
+                  line:{color:'white',width:2}, fillcolor:'rgba(255,255,255,0)' },
+                { type:'path',  layer:'above', xref:xid, yref:yid,
+                  path:'M -0.708 0.15 L 0.708 0.15 L 0.708 -0.05 L 0 -0.25 L -0.708 -0.05 Z',
+                  line:{color:'#ccc',width:1.5}, fillcolor:'rgba(180,160,120,0.12)' }
+            );
+
+            if (viewMode === 'density') {
+                const xs = sub.map(p => p.plate_x).filter(v => v != null);
+                const ys = sub.map(p => p.plate_z).filter(v => v != null);
+                allTraces.push({
+                    x:xs, y:ys, type:'histogram2dcontour',
+                    xaxis:`x${axSufx}`, yaxis:`y${axSufx}`,
+                    colorscale:[[0,'rgba(0,0,0,0)'],[0.1,'rgba(167,25,48,0.3)'],[0.7,'rgba(167,25,48,0.85)'],[1,'rgba(227,212,173,1)']],
+                    showscale:false, contours:{coloring:'fill'}, ncontours:20, line:{width:0}, name:g,
+                });
+            } else {
+                const pts = sub.filter(p => p.plate_x != null && p.plate_z != null);
+                allTraces.push({
+                    x:pts.map(p=>p.plate_x), y:pts.map(p=>p.plate_z),
+                    mode:'markers', type:'scatter',
+                    xaxis:`x${axSufx}`, yaxis:`y${axSufx}`,
+                    marker:{
+                        color: pts.map(p => {
+                            const d = p.description||'';
+                            if (d==='called_strike') return '#5c8ae0';
+                            if (['swinging_strike','swinging_strike_blocked','missed_bunt'].includes(d)) return RED;
+                            if (CONTACT_DESC.has(d)) return '#5ce05c';
+                            if (d==='ball'||d==='blocked_ball') return '#777';
+                            return '#555';
+                        }),
+                        size:4, opacity:0.75,
+                    },
+                    text: pts.map(p=>`${ptName(p.pitch_type)||'?'} · ${p.description||''}`),
+                    hovertemplate:'<b>%{text}</b><extra></extra>',
+                    name:g, showlegend:false,
+                });
+            }
         });
 
+        const splitLabel = splitBy === 'p_throws' ? 'Pitcher Hand'
+                         : splitBy === 'stand'    ? 'Batter Hand'
+                         :                          'Pitch Type';
         Plotly.react('heatmap-chart', allTraces, {
-            ...BASE_LAYOUT, ...sharedAxis,
-            title: { text:`Strike Zone by ${splitBy} (${mode})`, font:{size:13,color:SAND} },
-            height: 460,
-            grid: { rows: Math.ceil(groups.length/cols), columns:cols, pattern:'independent' },
-            margin:{t:50,b:50,l:60,r:20},
+            ...BASE_LAYOUT,
+            ...axConfig,
+            shapes: allShapes,
+            title:{ text:`Strike Zone by ${splitLabel} — ${mode}`, font:{size:13,color:SAND} },
+            height: nRows * 300 + 60,
+            grid:{ rows:nRows, columns:cols, pattern:'independent' },
+            margin:{t:50,b:40,l:50,r:20},
             annotations: groups.map((g,i) => ({
-                text: `<b>${g}</b>`,
-                x: (i % cols) / cols + 0.5/cols,
-                y: 1 - Math.floor(i/cols) / Math.ceil(groups.length/cols),
+                text:`<b>${ptName(g)||g}</b>`,
+                x: (i % cols + 0.5) / cols,
+                y: 1 - Math.floor(i / cols) / nRows + 0.02,
                 xref:'paper', yref:'paper', showarrow:false,
                 font:{color:SAND,size:12},
             })),
@@ -685,7 +732,7 @@ async function loadHeatMap() {
             y: pitches.filter(p=>p.plate_z!=null).map(p=>p.plate_z),
             mode:'markers', type:'scatter',
             marker:{ color:byOutcome, size:5, opacity:0.75 },
-            text: pitches.filter(p=>p.plate_x!=null).map(p=>`${p.pitch_type||'?'} · ${p.description||''}`),
+            text: pitches.filter(p=>p.plate_x!=null).map(p=>`${ptName(p.pitch_type)||'?'} · ${p.description||''}`),
             hovertemplate:'<b>%{text}</b><extra></extra>',
         }], {
             ...layout,
@@ -848,7 +895,9 @@ async function loadSpray() {
             line:{color:'rgba(0,0,0,0.4)',width:0.5} };
 
     const hover = pitches.map(p =>
-        `<b>${p.events||'out'}</b><br>EV: ${p.launch_speed?.toFixed(1)||'—'} mph · LA: ${p.launch_angle?.toFixed(1)||'—'}°`);
+        `<b>${p.events||'out'}</b><br>` +
+        `Pitch: ${ptName(p.pitch_type)||p.pitch_type||'—'} (${p.p_throws||'?'}HP) · ${p.release_speed?.toFixed(1)||'—'} mph<br>` +
+        `EV: ${p.launch_speed?.toFixed(1)||'—'} mph · LA: ${p.launch_angle?.toFixed(1)||'—'}°`);
 
     // Build legend annotations for categorical modes
     let annotations = [];
@@ -915,7 +964,7 @@ async function loadMovement() {
                 colorscale:[[0,'#333'],[0.5,'#5c8ae0'],[1,'#e05c5c']],
                 size:5, opacity:0.7, showscale:false }
             : { color:ptColor(pt), size:5, opacity:0.7 },
-        hovertemplate:`<b>${pt}</b><br>H-Break: %{x:.1f}"<br>V-Break: %{y:.1f}"<extra></extra>`,
+        hovertemplate:`<b>${pt} — ${ptName(pt)}</b><br>H-Break: %{x:.1f}"<br>V-Break: %{y:.1f}"<extra></extra>`,
     }));
 
     Plotly.react('movement-chart', traces, {
@@ -960,7 +1009,7 @@ async function loadBattedBall() {
         { x:bip.map(p=>p.launch_speed), y:bip.map(p=>p.launch_angle),
           mode:'markers', type:'scatter', name:'Batted Balls',
           marker:{color:colors,size:5,opacity:0.75},
-          text:bip.map(p=>`${p.events||'out'} · ${p.bb_type||''}`),
+          text:bip.map(p=>`${p.events||'out'} · ${p.bb_type||''}<br>Pitch: ${ptName(p.pitch_type)||p.pitch_type||'—'} · ${p.release_speed?.toFixed(1)||'—'} mph`),
           hovertemplate:'EV: %{x} mph · LA: %{y}°<br><b>%{text}</b><extra></extra>' },
         // Barrel zone
         { x:[98,98,116,116,98], y:[26,30,30,26,26], mode:'lines', type:'scatter',
@@ -1007,7 +1056,8 @@ async function loadVelocity() {
         x:data.map(r=>r.pitch_type), y:data.map(r=>r.usage_pct),
         type:'bar', marker:{color:data.map(r=>ptColor(r.pitch_type))},
         text:data.map(r=>`${r.usage_pct}%`), textposition:'outside', cliponaxis:false,
-        hovertemplate:'<b>%{x}</b><br>Usage: %{y}%<br><extra></extra>',
+        customdata:data.map(r=>ptName(r.pitch_type)),
+        hovertemplate:'<b>%{x} — %{customdata}</b><br>Usage: %{y}%<extra></extra>',
     }], {
         ...BASE_LAYOUT,
         title:{text:'Pitch Usage %',font:{size:13,color:SAND}},
@@ -1025,7 +1075,7 @@ async function loadVelocity() {
                  visible:true,color:'#888',thickness:2},
         marker:{color:ptColor(r.pitch_type)},
         text:[`${r.avg_velo?.toFixed(1)}`], textposition:'outside', cliponaxis:false,
-        hovertemplate:`<b>${r.pitch_type}</b><br>Avg: %{y:.1f} mph<br>` +
+        hovertemplate:`<b>${r.pitch_type} — ${ptName(r.pitch_type)}</b><br>Avg: %{y:.1f} mph<br>` +
             `Max: ${r.max_velo?.toFixed(1)}<br>Min: ${r.min_velo?.toFixed(1)}<br>` +
             `Spin: ${r.avg_spin?.toFixed(0)||'—'} rpm<extra></extra>`,
         showlegend:false,
@@ -1041,6 +1091,13 @@ async function loadVelocity() {
 
 // ── Initial load ──────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+    // Expand pitch type abbreviations in all dropdowns
+    document.querySelectorAll('#hm-pitch-type option, #f-pitch_type option').forEach(opt => {
+        if (opt.value && PT_NAMES[opt.value]) {
+            opt.textContent = `${opt.value} — ${PT_NAMES[opt.value]}`;
+        }
+    });
+
     const defaults = PLAYER_TYPE === 'batter'
         ? [['count','avg'],['handedness','ops']]
         : [['count','k_pct'],['handedness','woba_against']];

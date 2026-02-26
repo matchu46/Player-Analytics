@@ -581,10 +581,10 @@ nav a:hover { color: var(--sand); }
 .card-photo-wrap {
     position: relative;
     background: linear-gradient(180deg, #1a0509 0%, #2a1010 100%);
-    height: 90px;
+    height: 130px;
     overflow: hidden;
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: center;
 }
 .card-photo-wrap.no-photo {
@@ -594,7 +594,7 @@ nav a:hover { color: var(--sand); }
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: top center;
+    object-position: center 10%;
     display: block;
 }
 .card-photo-wrap.no-photo .card-photo {
@@ -645,7 +645,7 @@ nav a:hover { color: var(--sand); }
     .chart-pair { grid-template-columns: 1fr; }
     .panels-toolbar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
     .player-card-new { width: 100px; }
-    .card-photo-wrap { height: 75px; }
+    .card-photo-wrap { height: 95px; }
     .hero-title { font-size: 1.6rem; }
     .hero-bg-letters { font-size: 7rem; }
 }
