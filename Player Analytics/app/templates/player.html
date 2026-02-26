@@ -694,6 +694,7 @@ async function loadHeatMap() {
             height: nRows * 300 + 60,
             grid:{ rows:nRows, columns:cols, pattern:'independent' },
             margin:{t:50,b:40,l:50,r:20},
+            dragmode:'pan',
             annotations: groups.map((g, i) => {
                 const axSufx = i === 0 ? '' : String(i + 1);
                 const xid = i === 0 ? 'x' : `x${i + 1}`;
@@ -706,7 +707,7 @@ async function loadHeatMap() {
                     font: { color: SAND, size: 12 },
                 };
             }),
-        }, {responsive:true});
+        }, {responsive:true, scrollZoom:false});
         return;
     }
 
@@ -716,7 +717,7 @@ async function loadHeatMap() {
     const layout = {
         ...BASE_LAYOUT, ...sharedAxis,
         title: { text:`Strike Zone — ${mode} · n=${xs.length}${ptFilter?' · '+ptFilter:''}`, font:{size:13,color:SAND} },
-        height: 500, margin:{t:50,b:50,l:65,r:20},
+        height: 500, margin:{t:50,b:50,l:65,r:20}, dragmode:'pan',
     };
 
     if (viewMode === 'density') {
@@ -725,7 +726,7 @@ async function loadHeatMap() {
             colorscale:[[0,'rgba(0,0,0,0)'],[0.05,'rgba(167,25,48,0.2)'],[0.5,'rgba(167,25,48,0.7)'],[1,'rgba(227,212,173,1)']],
             reversescale:false, showscale:true, contours:{coloring:'fill'},
             ncontours:25, line:{width:0},
-        }], layout, {responsive:true});
+        }], layout, {responsive:true, scrollZoom:false});
     } else {
         const byOutcome = pitches.filter(p=>p.plate_x!=null&&p.plate_z!=null).map(p => {
             const d = p.description||'';
@@ -750,7 +751,7 @@ async function loadHeatMap() {
                 {x:-1.55,y:4.35,text:'● Contact',      font:{color:'#5ce05c',size:11},showarrow:false,xref:'x',yref:'y'},
                 {x:-1.55,y:4.10,text:'● Ball',         font:{color:'#777',size:11},showarrow:false,xref:'x',yref:'y'},
             ],
-        }, {responsive:true});
+        }, {responsive:true, scrollZoom:false});
     }
 }
 
@@ -1029,8 +1030,8 @@ async function loadBattedBall() {
         xaxis:{title:'Exit Velocity (mph)',gridcolor:'#2a2a2a',range:[40,120]},
         yaxis:{title:'Launch Angle (°)',gridcolor:'#2a2a2a',range:[-60,60]},
         height:340, showlegend:true, legend:{bgcolor:'rgba(0,0,0,0.4)',font:{color:LIGHT}},
-        margin:{t:45,b:55,l:60,r:15},
-    }, {responsive:true,displayModeBar:false});
+        margin:{t:45,b:55,l:60,r:15}, dragmode:'pan',
+    }, {responsive:true,displayModeBar:false,scrollZoom:false});
 
     // EV histogram
     const hitsEV = bip.filter(p=>HIT_EVENTS.has(p.events)).map(p=>p.launch_speed);
@@ -1044,10 +1045,10 @@ async function loadBattedBall() {
         ...BASE_LAYOUT, barmode:'overlay',
         title:{text:'Exit Velocity Distribution',font:{size:13,color:SAND}},
         xaxis:{title:'Exit Velocity (mph)',gridcolor:'#2a2a2a',range:[40,120]},
-        yaxis:{title:'# Pitches',gridcolor:'#2a2a2a'},
+        yaxis:{title:'# Pitches',gridcolor:'#2a2a2a',fixedrange:true},
         height:340, showlegend:true, legend:{bgcolor:'rgba(0,0,0,0.4)',font:{color:LIGHT}},
-        margin:{t:45,b:55,l:55,r:15},
-    }, {responsive:true,displayModeBar:false});
+        margin:{t:45,b:55,l:55,r:15}, dragmode:'pan',
+    }, {responsive:true,displayModeBar:false,scrollZoom:false});
 }
 document.getElementById('bb-show').addEventListener('change', loadBattedBall);
 document.getElementById('bb-color').addEventListener('change', loadBattedBall);
@@ -1071,9 +1072,9 @@ async function loadVelocity() {
         title:{text:'Pitch Usage %',font:{size:13,color:SAND}},
         xaxis:{title:'Pitch Type'},
         yaxis:{title:'Usage %',gridcolor:'#2a2a2a',
-               range:[0,Math.max(...data.map(r=>r.usage_pct),0)*1.2]},
-        height:340, margin:{t:45,b:55,l:55,r:15},
-    }, {responsive:true,displayModeBar:false});
+               range:[0,Math.max(...data.map(r=>r.usage_pct),0)*1.2], fixedrange:true},
+        height:340, margin:{t:45,b:55,l:55,r:15}, dragmode:'pan',
+    }, {responsive:true,displayModeBar:false,scrollZoom:false});
 
     const vd = data.filter(r=>r.avg_velo);
     Plotly.react('velo-spin-chart', vd.map(r=>({
@@ -1091,9 +1092,9 @@ async function loadVelocity() {
         ...BASE_LAYOUT,
         title:{text:'Velocity by Pitch Type (avg ± range)',font:{size:13,color:SAND}},
         xaxis:{title:'Pitch Type'},
-        yaxis:{title:'Velocity (mph)',gridcolor:'#2a2a2a'},
-        height:340, margin:{t:45,b:55,l:55,r:15},
-    }, {responsive:true,displayModeBar:false});
+        yaxis:{title:'Velocity (mph)',gridcolor:'#2a2a2a',fixedrange:true},
+        height:340, margin:{t:45,b:55,l:55,r:15}, dragmode:'pan',
+    }, {responsive:true,displayModeBar:false,scrollZoom:false});
 }
 {% endif %}
 
