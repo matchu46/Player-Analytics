@@ -283,8 +283,11 @@ def get_splits(df: pd.DataFrame, player_col: str) -> list[dict]:
     for pt in df["pitch_type"].dropna().unique():
         add("pitch_type", pt, df[df["pitch_type"] == pt], compute_fn)
 
-    # --- Day / Night (inferred from game_date — approximate; true day/night requires schedule) ---
-    # We can't determine day/night from Statcast alone without schedule data; skip for now
+    # --- By Month ---
+    import calendar as _cal
+    df["_month"] = pd.to_datetime(df["game_date"], errors="coerce").dt.month
+    for m in sorted(df["_month"].dropna().unique()):
+        add("month", _cal.month_name[int(m)], df[df["_month"] == m], compute_fn)
 
     # --- By score differential ---
     if "bat_score" in df.columns and "fld_score" in df.columns:

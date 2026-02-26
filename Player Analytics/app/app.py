@@ -214,6 +214,13 @@ def _compute_split_groups(df, player_type: str, split_type: str) -> list:
             add("Leading (1-2)", df[diff.between(1, 2)])
             add("Leading (>2)",  df[diff > 2])
 
+    elif split_type == "month":
+        import calendar as _cal
+        df = df.copy()
+        df["_m"] = pd.to_datetime(df["game_date"], errors="coerce").dt.month
+        for m in sorted(df["_m"].dropna().unique()):
+            add(_cal.month_name[int(m)], df[df["_m"] == m])
+
     # Prepend overall (filtered) row
     from process import compute_batter_stats, compute_pitcher_stats
     overall = compute_fn(df)
@@ -484,6 +491,29 @@ def batter_value(player_id: int):
 @app.route("/api/pitcher/<int:player_id>/value")
 def pitcher_value(player_id: int):
     return jsonify(_get_value_data(player_id))
+
+
+# ---------------------------------------------------------------------------
+# Defense — fielding stats + sprint speed
+# ---------------------------------------------------------------------------
+
+def _get_defense_data(player_id: int):
+    row = query(
+        "SELECT position, games, innings, errors, fielding_pct, drs, def_runs, oaa, "
+        "sprint_speed, sprint_pct FROM player_defense WHERE player_id=? AND season=2025",
+        (player_id,)
+    )
+    return dict(row[0]) if row else {}
+
+
+@app.route("/api/batter/<int:player_id>/defense")
+def batter_defense(player_id: int):
+    return jsonify(_get_defense_data(player_id))
+
+
+@app.route("/api/pitcher/<int:player_id>/defense")
+def pitcher_defense(player_id: int):
+    return jsonify(_get_defense_data(player_id))
 
 
 @app.route("/payroll")

@@ -151,6 +151,7 @@
     <button class="tab-btn" data-tab="spray">{% if player_type == 'batter' %}Spray Chart{% else %}Pitch Movement{% endif %}</button>
     <button class="tab-btn" data-tab="advanced">{% if player_type == 'batter' %}Batted Ball{% else %}Velocity{% endif %}</button>
     <button class="tab-btn" data-tab="value">Value</button>
+    <button class="tab-btn" data-tab="defense">Defense</button>
 </div>
 
 <!-- ── TAB: Splits ────────────────────────────────────── -->
@@ -294,6 +295,13 @@
         <p class="text-muted" style="text-align:center;color:var(--text-muted);">Loading...</p>
     </div>
 </div>
+
+<!-- ── TAB: Defense ───────────────────────────────────── -->
+<div class="tab-content" id="tab-defense">
+    <div id="defense-content" style="padding:1.5rem 0;">
+        <p style="text-align:center;color:var(--text-muted);">Loading...</p>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -405,6 +413,7 @@ function refreshActiveTab() {
     if (activeTab === 'spray')    PLAYER_TYPE === 'batter' ? loadSpray() : loadMovement();
     if (activeTab === 'advanced') PLAYER_TYPE === 'batter' ? loadBattedBall() : loadVelocity();
     if (activeTab === 'value')    loadValue();
+    if (activeTab === 'defense')  loadDefense();
 }
 
 // ── VALUE TAB ─────────────────────────────────────────────
@@ -480,6 +489,111 @@ function renderValue(d) {
     `;
 }
 
+// ── DEFENSE TAB ───────────────────────────────────────────
+let defenseLoaded = false;
+function loadDefense() {
+    if (defenseLoaded) return;
+    defenseLoaded = true;
+    fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/defense`)
+        .then(r => r.json())
+        .then(d => renderDefense(d))
+        .catch(() => {
+            document.getElementById('defense-content').innerHTML =
+                '<p style="text-align:center;color:var(--text-muted);">Defensive data not available.</p>';
+        });
+}
+
+function renderDefense(d) {
+    const el = document.getElementById('defense-content');
+    if (!d || Object.keys(d).length === 0) {
+        el.innerHTML = '<p style="text-align:center;color:var(--text-muted);">No defensive data available for this player.</p>';
+        return;
+    }
+
+    const fmtNum = (v, dec=1) => (v !== null && v !== undefined) ? Number(v).toFixed(dec) : 'N/A';
+    const signColor = v => (v === null || v === undefined) ? '#888' : (v > 0 ? '#5cd45c' : v < 0 ? '#e05c5c' : 'var(--text)');
+
+    // Stat cards
+    const isPitcher = PLAYER_TYPE === 'pitcher';
+    let cardsHtml = '';
+
+    if (!isPitcher) {
+        cardsHtml += `
+        <div class="value-card">
+            <div class="value-card-label">DRS (Def Runs Saved)</div>
+            <div class="value-card-num" style="color:${signColor(d.drs)}">${fmtNum(d.drs, 0)}</div>
+        </div>
+        <div class="value-card">
+            <div class="value-card-label">Def (FanGraphs)</div>
+            <div class="value-card-num" style="color:${signColor(d.def_runs)}">${fmtNum(d.def_runs)}</div>
+        </div>`;
+        if (d.oaa !== null && d.oaa !== undefined) {
+            cardsHtml += `
+        <div class="value-card">
+            <div class="value-card-label">OAA (Outs Above Avg)</div>
+            <div class="value-card-num" style="color:${signColor(d.oaa)}">${fmtNum(d.oaa, 0)}</div>
+        </div>`;
+        }
+    }
+
+    if (d.sprint_speed !== null && d.sprint_speed !== undefined) {
+        cardsHtml += `
+        <div class="value-card">
+            <div class="value-card-label">Sprint Speed</div>
+            <div class="value-card-num">${fmtNum(d.sprint_speed)} <span style="font-size:1rem;font-weight:400;color:var(--text-muted);">ft/s</span></div>
+        </div>`;
+    }
+
+    // Sprint speed percentile bar
+    let pctBarHtml = '';
+    if (d.sprint_pct !== null && d.sprint_pct !== undefined) {
+        const pct = d.sprint_pct;
+        const pctLabel = pct >= 75 ? 'Elite speed' : pct >= 50 ? 'Above average' : pct >= 25 ? 'Below average' : 'Well below average';
+        pctBarHtml = `
+        <div class="pct-bar-wrap">
+            <div class="pct-bar-label">Sprint Speed Percentile</div>
+            <div class="pct-bar-track">
+                <div class="pct-needle" style="left:${pct}%"></div>
+            </div>
+            <div class="pct-bar-caption">${pct}th percentile — ${pctLabel} (${fmtNum(d.sprint_speed)} ft/s)</div>
+        </div>`;
+    }
+
+    // Fielding details table (batters only)
+    let fieldingHtml = '';
+    if (!isPitcher && d.position) {
+        const fp = d.fielding_pct ? (d.fielding_pct * 100).toFixed(1) + '%' : 'N/A';
+        fieldingHtml = `
+        <h3 style="margin:1.5rem 0 0.75rem;font-size:1rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Fielding — Primary Position</h3>
+        <table class="data-table" style="max-width:600px;">
+            <thead><tr>
+                <th>Pos</th><th>G</th><th>Inn</th><th>E</th><th>Fld%</th>
+            </tr></thead>
+            <tbody><tr>
+                <td>${d.position || '—'}</td>
+                <td>${d.games !== null ? d.games : '—'}</td>
+                <td>${d.innings !== null ? fmtNum(d.innings, 1) : '—'}</td>
+                <td>${d.errors !== null ? d.errors : '—'}</td>
+                <td>${fp}</td>
+            </tr></tbody>
+        </table>`;
+    }
+
+    const note = isPitcher
+        ? '<p style="color:var(--text-muted);font-size:0.85rem;margin-top:1rem;">Fielding value metrics (DRS/Def) are not tracked for pitchers.</p>'
+        : '';
+
+    el.innerHTML = `
+        <div class="value-cards">${cardsHtml}</div>
+        ${pctBarHtml}
+        ${fieldingHtml}
+        ${note}
+        <p style="color:var(--text-muted);font-size:0.8rem;margin-top:2rem;">
+            DRS and Def sourced from FanGraphs. Sprint speed sourced from Baseball Savant (Statcast).
+        </p>
+    `;
+}
+
 // ── SPLITS TAB ────────────────────────────────────────────
 const BATTER_STATS = [
     {v:'avg',label:'AVG'},{v:'obp',label:'OBP'},{v:'slg',label:'SLG'},
@@ -497,10 +611,13 @@ const PITCHER_STATS = [
 ];
 const STAT_LIST = PLAYER_TYPE === 'batter' ? BATTER_STATS : PITCHER_STATS;
 
+const MONTH_ORDER = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
 const SPLIT_SORT = {
     inning: v => { const n=parseInt(v); return isNaN(n)?999:n; },
     count:  v => { const [b,s]=v.split('-'); return parseInt(b)*10+parseInt(s); },
     outs:   v => parseInt(v),
+    month:  v => { const i=MONTH_ORDER.indexOf(v); return i===-1?99:i; },
 };
 // Stats where LOWER is better (red = high, green = low)
 // Separate sets because 'strikeouts' is bad for batters but good for pitchers

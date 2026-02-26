@@ -678,6 +678,40 @@ nav a:hover { color: var(--sand); }
     letter-spacing: 0.02em;
 }
 
+/* ── Sprint Speed Percentile Bar ────────────────────────── */
+.pct-bar-wrap {
+    margin: 1rem 0 1.5rem;
+    max-width: 480px;
+}
+.pct-bar-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+}
+.pct-bar-track {
+    position: relative;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(to right, #e05c5c 0%, #e0c860 45%, #5cd45c 100%);
+}
+.pct-needle {
+    position: absolute;
+    top: -5px;
+    width: 3px;
+    height: 22px;
+    background: #fff;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    box-shadow: 0 0 4px rgba(0,0,0,0.7);
+}
+.pct-bar-caption {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+}
+
 /* ── Payroll Page ────────────────────────────────────────── */
 .payroll-header {
     margin-bottom: 2rem;

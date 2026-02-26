@@ -212,6 +212,25 @@ CREATE TABLE IF NOT EXISTS player_awards (
 );
 
 -- -----------------------------------------------------------------------
+-- Player defense: fielding stats + sprint speed
+-- -----------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS player_defense (
+    player_id    INTEGER,
+    season       INTEGER,
+    position     TEXT,
+    games        INTEGER,
+    innings      REAL,
+    errors       INTEGER,
+    fielding_pct REAL,
+    drs          REAL,
+    def_runs     REAL,
+    oaa          REAL,
+    sprint_speed REAL,
+    sprint_pct   INTEGER,
+    PRIMARY KEY (player_id, season)
+);
+
+-- -----------------------------------------------------------------------
 -- Indexes for fast web queries
 -- -----------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_pitches_batter   ON pitches(batter);
@@ -405,6 +424,48 @@ def load_value(season: int = 2025):
     conn.close()
 
 
+def load_defense(season: int = 2025):
+    defense_path = os.path.join(RAW_DIR, f"defense_{season}.csv")
+    if not os.path.exists(defense_path):
+        print(f"Defense file not found: {defense_path}. Run fetch_defense.py first.")
+        return
+
+    conn = sqlite3.connect(DB_PATH)
+    df = pd.read_csv(defense_path)
+    loaded = 0
+    for _, row in df.iterrows():
+        pid = row.get("player_id")
+        if pd.isna(pid):
+            continue
+        pid = int(pid)
+
+        def _f(col):
+            v = row.get(col)
+            return float(v) if pd.notna(v) else None
+
+        def _i(col):
+            v = row.get(col)
+            return int(v) if pd.notna(v) else None
+
+        conn.execute(
+            "INSERT OR REPLACE INTO player_defense "
+            "(player_id, season, position, games, innings, errors, fielding_pct, "
+            " drs, def_runs, oaa, sprint_speed, sprint_pct) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                pid, season,
+                str(row.get("position")) if pd.notna(row.get("position")) else None,
+                _i("games"), _f("innings"), _i("errors"), _f("fielding_pct"),
+                _f("drs"), _f("def_runs"), _f("oaa"),
+                _f("sprint_speed"), _i("sprint_pct"),
+            ),
+        )
+        loaded += 1
+    conn.commit()
+    conn.close()
+    print(f"Loaded {loaded} player defense rows for {season}.")
+
+
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
@@ -414,6 +475,7 @@ if __name__ == "__main__":
     parser.add_argument("--create", action="store_true", help="Create schema")
     parser.add_argument("--load", action="store_true", help="Load CSV data")
     parser.add_argument("--value", action="store_true", help="Load WAR/salary/awards CSVs")
+    parser.add_argument("--defense", action="store_true", help="Load defensive metrics CSV")
     parser.add_argument("--all", action="store_true", help="Create + load everything")
     parser.add_argument("--season", type=int, default=2025)
     args = parser.parse_args()
@@ -427,3 +489,6 @@ if __name__ == "__main__":
 
     if args.value or args.all:
         load_value(args.season)
+
+    if args.defense or args.all:
+        load_defense(args.season)
