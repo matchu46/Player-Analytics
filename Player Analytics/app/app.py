@@ -454,6 +454,53 @@ def privacy():
     return render_template("privacy.html")
 
 
+# ---------------------------------------------------------------------------
+# Value — WAR, salary, awards
+# ---------------------------------------------------------------------------
+
+def _get_value_data(player_id: int):
+    value = query(
+        "SELECT war, salary, dollars_per_war FROM player_value "
+        "WHERE player_id=? AND season=2025", (player_id,)
+    )
+    awards = query(
+        "SELECT award_name FROM player_awards WHERE player_id=? AND season=2025",
+        (player_id,)
+    )
+    v = value[0] if value else {}
+    return {
+        "war": v.get("war"),
+        "salary": v.get("salary"),
+        "dollars_per_war": v.get("dollars_per_war"),
+        "awards": [a["award_name"] for a in awards],
+    }
+
+
+@app.route("/api/batter/<int:player_id>/value")
+def batter_value(player_id: int):
+    return jsonify(_get_value_data(player_id))
+
+
+@app.route("/api/pitcher/<int:player_id>/value")
+def pitcher_value(player_id: int):
+    return jsonify(_get_value_data(player_id))
+
+
+@app.route("/payroll")
+def payroll():
+    players = query("""
+        SELECT p.player_id, p.full_name, p.position, p.position_type,
+               p.jersey_number,
+               v.war, v.salary, v.dollars_per_war
+        FROM players p
+        LEFT JOIN player_value v ON p.player_id = v.player_id AND v.season = 2025
+        WHERE p.season = 2025
+        ORDER BY v.salary DESC
+    """)
+    total_salary = sum(p["salary"] for p in players if p["salary"])
+    return render_template("payroll.html", players=players, total_salary=total_salary)
+
+
 @app.route("/sitemap.xml")
 def sitemap():
     """Generate sitemap for all player pages + static pages."""

@@ -150,6 +150,7 @@
     <button class="tab-btn" data-tab="heatmap">Strike Zone</button>
     <button class="tab-btn" data-tab="spray">{% if player_type == 'batter' %}Spray Chart{% else %}Pitch Movement{% endif %}</button>
     <button class="tab-btn" data-tab="advanced">{% if player_type == 'batter' %}Batted Ball{% else %}Velocity{% endif %}</button>
+    <button class="tab-btn" data-tab="value">Value</button>
 </div>
 
 <!-- ── TAB: Splits ────────────────────────────────────── -->
@@ -286,6 +287,13 @@
     </div>
     {% endif %}
 </div>
+
+<!-- ── TAB: Value ─────────────────────────────────────── -->
+<div class="tab-content" id="tab-value">
+    <div id="value-content" style="padding:1.5rem 0;">
+        <p class="text-muted" style="text-align:center;color:var(--text-muted);">Loading...</p>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -396,6 +404,73 @@ function refreshActiveTab() {
     if (activeTab === 'heatmap')  loadHeatMap();
     if (activeTab === 'spray')    PLAYER_TYPE === 'batter' ? loadSpray() : loadMovement();
     if (activeTab === 'advanced') PLAYER_TYPE === 'batter' ? loadBattedBall() : loadVelocity();
+    if (activeTab === 'value')    loadValue();
+}
+
+// ── VALUE TAB ─────────────────────────────────────────────
+let valueLoaded = false;
+function loadValue() {
+    if (valueLoaded) return;
+    valueLoaded = true;
+    fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/value`)
+        .then(r => r.json())
+        .then(d => renderValue(d))
+        .catch(() => {
+            document.getElementById('value-content').innerHTML =
+                '<p style="text-align:center;color:var(--text-muted);">Value data not available.</p>';
+        });
+}
+
+function fmtSalary(n) {
+    if (!n) return 'N/A';
+    if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(2) + 'M';
+    return '$' + n.toLocaleString();
+}
+
+function fmtDPW(n) {
+    if (n === null || n === undefined) return 'N/A';
+    return '$' + n.toFixed(1) + 'M / WAR';
+}
+
+function dpwColor(dpw, war) {
+    if (dpw === null || dpw === undefined || war === null) return '#888';
+    if (war <= 0) return '#e05c5c';       // negative/zero WAR = red
+    if (dpw < 5)  return '#5cd45c';       // great value = green
+    if (dpw < 10) return '#e0c860';       // fair value = yellow
+    return '#e05c5c';                     // overpaid = red
+}
+
+function renderValue(d) {
+    const war     = d.war !== null && d.war !== undefined ? d.war.toFixed(1) : 'N/A';
+    const salary  = fmtSalary(d.salary);
+    const dpw     = fmtDPW(d.dollars_per_war);
+    const dpwClr  = dpwColor(d.dollars_per_war, d.war);
+    const awards  = (d.awards || []);
+
+    const awardsHtml = awards.length
+        ? awards.map(a => `<span class="award-badge">${a}</span>`).join('')
+        : '<span style="color:var(--text-muted);font-size:0.9rem;">No awards this season</span>';
+
+    document.getElementById('value-content').innerHTML = `
+        <div class="value-cards">
+            <div class="value-card">
+                <div class="value-card-label">2025 Salary</div>
+                <div class="value-card-num">${salary}</div>
+            </div>
+            <div class="value-card">
+                <div class="value-card-label">fWAR (FanGraphs)</div>
+                <div class="value-card-num">${war}</div>
+            </div>
+            <div class="value-card">
+                <div class="value-card-label">Cost per WAR</div>
+                <div class="value-card-num" style="color:${dpwClr}">${dpw}</div>
+            </div>
+        </div>
+        <div class="value-awards">
+            <h3 style="margin:1.5rem 0 0.75rem;font-size:1rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">2025 Awards &amp; Honors</h3>
+            <div class="awards-list">${awardsHtml}</div>
+        </div>
+    `;
 }
 
 // ── SPLITS TAB ────────────────────────────────────────────

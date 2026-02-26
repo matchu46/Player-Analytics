@@ -8,8 +8,10 @@ Usage:
 """
 
 import argparse
+import difflib
 import os
 import sqlite3
+import unicodedata
 import pandas as pd
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
@@ -187,6 +189,29 @@ CREATE TABLE IF NOT EXISTS pitcher_splits (
 );
 
 -- -----------------------------------------------------------------------
+-- Player value: WAR, salary, $/WAR (from FanGraphs via pybaseball)
+-- -----------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS player_value (
+    player_id       INTEGER,
+    season          INTEGER,
+    war             REAL,
+    salary          INTEGER,        -- annual value in dollars
+    dollars_per_war REAL,
+    PRIMARY KEY (player_id, season)
+);
+
+-- -----------------------------------------------------------------------
+-- Player awards: All-Star, Gold Glove, Silver Slugger, MVP, etc.
+-- -----------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS player_awards (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id   INTEGER,
+    season      INTEGER,
+    award_name  TEXT,
+    UNIQUE (player_id, season, award_name)
+);
+
+-- -----------------------------------------------------------------------
 -- Indexes for fast web queries
 -- -----------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_pitches_batter   ON pitches(batter);
@@ -300,6 +325,87 @@ def load_statcast(season: int = 2025):
 
 
 # ---------------------------------------------------------------------------
+# Load value + awards CSVs -> player_value, player_awards tables
+# ---------------------------------------------------------------------------
+
+def _normalize_name(name: str) -> str:
+    """Lowercase, strip accents, remove suffixes for fuzzy matching."""
+    name = str(name).strip()
+    name = unicodedata.normalize("NFD", name)
+    name = "".join(c for c in name if unicodedata.category(c) != "Mn")
+    name = name.lower()
+    for suffix in [" jr.", " sr.", " ii", " iii", " iv"]:
+        name = name.replace(suffix, "")
+    return name.strip()
+
+
+def load_value(season: int = 2025):
+    value_path = os.path.join(RAW_DIR, f"value_{season}.csv")
+    awards_path = os.path.join(RAW_DIR, f"awards_{season}.csv")
+
+    conn = sqlite3.connect(DB_PATH)
+
+    # Build name -> player_id lookup from players table
+    rows = conn.execute(
+        "SELECT player_id, full_name FROM players WHERE season=?", (season,)
+    ).fetchall()
+    name_to_id = {_normalize_name(r[1]): r[0] for r in rows}
+    norm_names = list(name_to_id.keys())
+
+    def resolve_id(fg_name):
+        norm = _normalize_name(fg_name)
+        if norm in name_to_id:
+            return name_to_id[norm]
+        matches = difflib.get_close_matches(norm, norm_names, n=1, cutoff=0.82)
+        if matches:
+            print(f"  Fuzzy match: '{fg_name}' -> '{matches[0]}'")
+            return name_to_id[matches[0]]
+        print(f"  WARNING: No match for '{fg_name}'")
+        return None
+
+    # Load WAR + salary
+    if os.path.exists(value_path):
+        df = pd.read_csv(value_path)
+        loaded = 0
+        for _, row in df.iterrows():
+            pid = resolve_id(row["Name"])
+            if pid is None:
+                continue
+            war = float(row["WAR"]) if pd.notna(row.get("WAR")) else None
+            salary = int(row["Salary"]) if pd.notna(row.get("Salary")) else None
+            dol_per_war = None
+            if war and war > 0 and salary:
+                dol_per_war = round(salary / war / 1_000_000, 2)
+            conn.execute(
+                "INSERT OR REPLACE INTO player_value (player_id, season, war, salary, dollars_per_war) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (pid, season, war, salary, dol_per_war),
+            )
+            loaded += 1
+        conn.commit()
+        print(f"Loaded {loaded} player value rows for {season}.")
+    else:
+        print(f"Value file not found: {value_path}. Run fetch_value.py first.")
+
+    # Load awards
+    if os.path.exists(awards_path):
+        df = pd.read_csv(awards_path)
+        loaded = 0
+        for _, row in df.iterrows():
+            conn.execute(
+                "INSERT OR IGNORE INTO player_awards (player_id, season, award_name) VALUES (?, ?, ?)",
+                (int(row["player_id"]), int(row["season"]), str(row["award_name"])),
+            )
+            loaded += 1
+        conn.commit()
+        print(f"Loaded {loaded} award rows for {season}.")
+    else:
+        print(f"Awards file not found: {awards_path}. Run fetch_value.py first.")
+
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -307,7 +413,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Build/load D-backs SQLite database")
     parser.add_argument("--create", action="store_true", help="Create schema")
     parser.add_argument("--load", action="store_true", help="Load CSV data")
-    parser.add_argument("--all", action="store_true", help="Create + load")
+    parser.add_argument("--value", action="store_true", help="Load WAR/salary/awards CSVs")
+    parser.add_argument("--all", action="store_true", help="Create + load everything")
     parser.add_argument("--season", type=int, default=2025)
     args = parser.parse_args()
 
@@ -317,3 +424,6 @@ if __name__ == "__main__":
     if args.load or args.all:
         load_roster(args.season)
         load_statcast(args.season)
+
+    if args.value or args.all:
+        load_value(args.season)

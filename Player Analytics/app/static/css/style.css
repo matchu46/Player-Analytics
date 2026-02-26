@@ -634,6 +634,98 @@ nav a:hover { color: var(--sand); }
     letter-spacing: 0.05em;
 }
 
+/* ── Value Tab ──────────────────────────────────────────── */
+.value-cards {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+.value-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.75rem;
+    min-width: 160px;
+    text-align: center;
+    flex: 1;
+}
+.value-card-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+}
+.value-card-num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text);
+}
+.awards-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+.award-badge {
+    background: var(--red-dark);
+    color: var(--sand);
+    border: 1px solid var(--red);
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* ── Payroll Page ────────────────────────────────────────── */
+.payroll-header {
+    margin-bottom: 2rem;
+}
+.payroll-total {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-top: 0.4rem;
+}
+.payroll-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 2rem;
+}
+.payroll-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.payroll-table th {
+    background: var(--bg-card);
+    color: var(--text-muted);
+    padding: 0.6rem 0.9rem;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+}
+.payroll-table th:hover { color: var(--text); }
+.payroll-table td {
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.payroll-table tr:hover td { background: var(--bg-hover); }
+.payroll-group-header td {
+    background: var(--bg-card);
+    color: var(--red);
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.4rem 0.9rem;
+}
+
 /* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 768px) {
     .stat-bar { gap: 0.3rem; }
