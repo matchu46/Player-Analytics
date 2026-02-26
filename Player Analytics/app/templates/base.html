@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}D-backs Analytics{% endblock %}</title>
+    <title>{% block title %}Dugout Intel | MLB Player Analytics{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}In-depth Statcast pitch data, splits, and advanced analytics for MLB players. Powered by Baseball Savant data.{% endblock %}">
+    <!-- Open Graph (social sharing previews) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Dugout Intel">
+    <meta property="og:title" content="{% block og_title %}Dugout Intel | MLB Player Analytics{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}In-depth Statcast pitch data, splits, and advanced analytics for MLB players.{% endblock %}">
+    <meta property="og:url" content="https://dugoutintel.com{% block og_url %}{% endblock %}">
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://dugoutintel.com{% block canonical_url %}{% endblock %}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <!-- Plotly for charts -->
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
@@ -15,7 +24,7 @@
     <header class="site-header">
         <div class="header-inner">
             <a href="/" class="logo">
-                <span class="logo-text">D-backs Analytics</span>
+                <span class="logo-text">Dugout Intel</span>
                 <span class="logo-year">2025</span>
             </a>
             <nav>
@@ -31,7 +40,7 @@
     </main>
 
     <footer class="site-footer">
-        <p>Data sourced from Baseball Savant / MLB Stats API. Not affiliated with the Arizona Diamondbacks or MLB.</p>
+        <p>Data sourced from Baseball Savant / MLB Stats API. Not affiliated with MLB or any MLB team.</p>
         <p><a href="/privacy" style="color:var(--text-muted); font-size:0.8rem;">Privacy Policy</a></p>
     </footer>
 

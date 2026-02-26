@@ -7,7 +7,7 @@ import os
 import sys
 import sqlite3
 
-from flask import Flask, jsonify, render_template, abort, request, redirect
+from flask import Flask, jsonify, render_template, abort, request, redirect, Response
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
@@ -452,6 +452,25 @@ def api_pitcher_velocity(player_id: int):
 @app.route("/privacy")
 def privacy():
     return render_template("privacy.html")
+
+
+@app.route("/sitemap.xml")
+def sitemap():
+    """Generate sitemap for all player pages + static pages."""
+    base = "https://dugoutintel.com"
+    players = query(
+        "SELECT player_id, position_type FROM players WHERE season = 2025"
+    )
+    urls = [base + "/", base + "/privacy"]
+    for p in players:
+        route = "pitcher" if p["position_type"] == "Pitcher" else "batter"
+        urls.append(f"{base}/{route}/{p['player_id']}")
+    xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+                 '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for url in urls:
+        xml_lines.append(f"  <url><loc>{url}</loc></url>")
+    xml_lines.append("</urlset>")
+    return Response("\n".join(xml_lines), mimetype="application/xml")
 
 
 # ---------------------------------------------------------------------------
