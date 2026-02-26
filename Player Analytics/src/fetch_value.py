@@ -1,5 +1,5 @@
 """
-fetch_value.py — Fetch WAR, salary, and season awards for D-backs players.
+fetch_value.py — Fetch WAR, salary, and season awards for a team's players.
 
 Data sources:
   - WAR: FanGraphs leaderboards via pybaseball
@@ -7,7 +7,8 @@ Data sources:
   - Awards: MLB Stats API (statsapi) per-player hydration
 
 Usage:
-    python src/fetch_value.py              # fetch all (default season 2025)
+    python src/fetch_value.py                       # fetch all (default: ARI 2025)
+    python src/fetch_value.py --team LAD
     python src/fetch_value.py --season 2024
     python src/fetch_value.py --war-only
     python src/fetch_value.py --salary-only
@@ -27,13 +28,12 @@ import requests
 import statsapi
 from bs4 import BeautifulSoup
 
+from teams import get_team, SEASON
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
 RAW_DIR = os.path.join(DATA_DIR, "raw")
-DB_PATH = os.path.join(DATA_DIR, "db", "dbacks.db")
-
-FG_TEAM = "ARI"       # FanGraphs team abbreviation (NOT 'AZ' — that's Statcast only)
-SPOTRAC_SLUG = "arizona-diamondbacks"
+DB_PATH = os.path.join(DATA_DIR, "db", "baseball.db")
 
 SCRAPE_HEADERS = {
     "User-Agent": (
@@ -66,19 +66,21 @@ def _normalize(name: str) -> str:
 # WAR from FanGraphs via pybaseball
 # ---------------------------------------------------------------------------
 
-def fetch_war(season: int = 2025) -> pd.DataFrame:
-    """Return full-season WAR for all D-backs players from FanGraphs.
+def fetch_war(season: int, team_cfg: dict) -> pd.DataFrame:
+    """Return full-season WAR for all players from FanGraphs.
 
     Matches by player name against the DB roster rather than filtering by team,
     so players who split time between teams get their full-season WAR totals.
     """
+    fg_code = team_cfg['fg_code']
+
     # Load roster names from DB for matching
     roster_names = []
     if os.path.exists(DB_PATH):
         conn = sqlite3.connect(DB_PATH)
         roster_names = [
             r[0] for r in conn.execute(
-                "SELECT full_name FROM players WHERE season=?", (season,)
+                "SELECT full_name FROM players WHERE season=? AND team=?", (season, fg_code)
             ).fetchall()
         ]
         conn.close()
@@ -93,7 +95,7 @@ def fetch_war(season: int = 2025) -> pd.DataFrame:
     rows = []
 
     # For players who split time, FanGraphs has a "- - -" / "TOT" row with combined stats.
-    # Prefer TOT row if it exists; otherwise take Team=FG_TEAM row.
+    # Prefer TOT row if it exists; otherwise take Team=fg_code row.
     for df, pos_type in [(bat, "Batter"), (pit, "Pitcher")]:
         for name_norm, roster_name in roster_norms.items():
             # Match rows by normalized name
@@ -110,11 +112,11 @@ def fetch_war(season: int = 2025) -> pd.DataFrame:
                 "position_type": pos_type,
             })
 
-    # Fall back: also include any D-backs–only rows not yet matched
-    az_bat = bat[bat["Team"] == FG_TEAM].copy()
-    az_pit = pit[pit["Team"] == FG_TEAM].copy()
+    # Fall back: also include any team-only rows not yet matched
+    team_bat = bat[bat["Team"] == fg_code].copy()
+    team_pit = pit[pit["Team"] == fg_code].copy()
     already = {_normalize(r["Name"]) for r in rows}
-    for df, pos_type in [(az_bat, "Batter"), (az_pit, "Pitcher")]:
+    for df, pos_type in [(team_bat, "Batter"), (team_pit, "Pitcher")]:
         for _, row in df.iterrows():
             if _normalize(row["Name"]) not in already:
                 rows.append({"Name": row["Name"], "WAR": row.get("WAR"), "position_type": pos_type})
@@ -126,9 +128,10 @@ def fetch_war(season: int = 2025) -> pd.DataFrame:
 # Salary from Spotrac
 # ---------------------------------------------------------------------------
 
-def fetch_salary_spotrac(season: int = 2025) -> pd.DataFrame:
+def fetch_salary_spotrac(season: int, team_cfg: dict) -> pd.DataFrame:
     """Scrape Spotrac team payroll page. Returns DataFrame: Name, Salary."""
-    url = f"https://www.spotrac.com/mlb/{SPOTRAC_SLUG}/payroll/{season}/"
+    spotrac_slug = team_cfg['spotrac_slug']
+    url = f"https://www.spotrac.com/mlb/{spotrac_slug}/payroll/{season}/"
     print(f"Fetching Spotrac salary data: {url}")
     r = requests.get(url, headers=SCRAPE_HEADERS, timeout=20)
     r.raise_for_status()
@@ -154,6 +157,8 @@ def fetch_salary_spotrac(season: int = 2025) -> pd.DataFrame:
             if name and salary:
                 rows.append({"Name": name, "Salary": salary})
 
+    if not rows:
+        return pd.DataFrame(columns=["Name", "Salary"])
     df = pd.DataFrame(rows).drop_duplicates(subset=["Name"])
     print(f"  Found {len(df)} salary rows from Spotrac.")
     return df
@@ -163,13 +168,14 @@ def fetch_salary_spotrac(season: int = 2025) -> pd.DataFrame:
 # Merge WAR + Salary and save
 # ---------------------------------------------------------------------------
 
-def fetch_war_salary(season: int = 2025, skip_salary: bool = False):
+def fetch_war_salary(season: int, team_cfg: dict, skip_salary: bool = False):
     """Fetch WAR from FanGraphs, salary from Spotrac, merge by name, save CSV."""
-    war_df = fetch_war(season)
+    fg_code = team_cfg['fg_code']
+    war_df = fetch_war(season, team_cfg)
 
     if not skip_salary:
         try:
-            sal_df = fetch_salary_spotrac(season)
+            sal_df = fetch_salary_spotrac(season, team_cfg)
             # Normalize names for matching
             war_df["_norm"] = war_df["Name"].apply(_normalize)
             sal_df["_norm"] = sal_df["Name"].apply(_normalize)
@@ -178,7 +184,6 @@ def fetch_war_salary(season: int = 2025, skip_salary: bool = False):
             # Also include salary-only players (not in FanGraphs stats — injured, etc.)
             sal_only = sal_df[~sal_df["_norm"].isin(war_df["_norm"].values)].copy()
             if not sal_only.empty:
-                sal_only = sal_only.rename(columns={"Name": "Name"})
                 sal_only["WAR"] = None
                 sal_only["position_type"] = None
                 sal_only = sal_only.drop(columns=["_norm"])
@@ -191,17 +196,21 @@ def fetch_war_salary(season: int = 2025, skip_salary: bool = False):
         merged = war_df.copy()
         merged["Salary"] = None
 
-    out_path = os.path.join(RAW_DIR, f"value_{season}.csv")
+    out_path = os.path.join(RAW_DIR, f"value_{fg_code}_{season}.csv")
     merged.to_csv(out_path, index=False)
     print(f"Saved {len(merged)} rows to {out_path}")
-    print(merged[["Name", "WAR", "Salary", "position_type"]].to_string(index=False))
+    display_cols = [c for c in ["Name", "WAR", "Salary", "position_type"] if c in merged.columns]
+    if not merged.empty and display_cols:
+        print(merged[display_cols].to_string(index=False))
 
 
 # ---------------------------------------------------------------------------
 # Awards from MLB Stats API
 # ---------------------------------------------------------------------------
 
-def fetch_awards(season: int = 2025):
+def fetch_awards(season: int, team_cfg: dict):
+    fg_code = team_cfg['fg_code']
+
     if not os.path.exists(DB_PATH):
         print(f"DB not found at {DB_PATH}. Run load_db.py first.")
         return
@@ -209,12 +218,12 @@ def fetch_awards(season: int = 2025):
     conn = sqlite3.connect(DB_PATH)
     player_ids = [
         r[0] for r in conn.execute(
-            "SELECT player_id FROM players WHERE season=?", (season,)
+            "SELECT player_id FROM players WHERE season=? AND team=?", (season, fg_code)
         ).fetchall()
     ]
     conn.close()
 
-    print(f"Fetching awards for {len(player_ids)} players ({season})...")
+    print(f"Fetching awards for {len(player_ids)} {fg_code} players ({season})...")
     rows = []
     for pid in player_ids:
         try:
@@ -234,7 +243,7 @@ def fetch_awards(season: int = 2025):
     df = pd.DataFrame(rows) if rows else pd.DataFrame(
         columns=["player_id", "season", "award_name"]
     )
-    out_path = os.path.join(RAW_DIR, f"awards_{season}.csv")
+    out_path = os.path.join(RAW_DIR, f"awards_{fg_code}_{season}.csv")
     df.to_csv(out_path, index=False)
     print(f"Saved {len(df)} award rows to {out_path}")
     if not df.empty:
@@ -247,21 +256,23 @@ def fetch_awards(season: int = 2025):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fetch WAR/salary/awards data")
-    parser.add_argument("--season", type=int, default=2025)
-    parser.add_argument("--war-only", action="store_true", help="Only fetch WAR (no salary scrape)")
+    parser.add_argument("--team",   type=str, default="ARI", help="Team code (e.g. ARI, LAD)")
+    parser.add_argument("--season", type=int, default=SEASON)
+    parser.add_argument("--war-only",    action="store_true", help="Only fetch WAR (no salary scrape)")
     parser.add_argument("--salary-only", action="store_true", help="Only scrape and print salary")
     parser.add_argument("--awards-only", action="store_true", help="Only fetch awards")
     args = parser.parse_args()
 
+    team_cfg = get_team(args.team)
     os.makedirs(RAW_DIR, exist_ok=True)
 
     if args.salary_only:
-        df = fetch_salary_spotrac(args.season)
+        df = fetch_salary_spotrac(args.season, team_cfg)
         print(df.to_string(index=False))
     elif args.awards_only:
-        fetch_awards(args.season)
+        fetch_awards(args.season, team_cfg)
     elif args.war_only:
-        fetch_war_salary(args.season, skip_salary=True)
+        fetch_war_salary(args.season, team_cfg, skip_salary=True)
     else:
-        fetch_war_salary(args.season)
-        fetch_awards(args.season)
+        fetch_war_salary(args.season, team_cfg)
+        fetch_awards(args.season, team_cfg)

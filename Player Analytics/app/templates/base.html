@@ -29,7 +29,10 @@
             </a>
             <nav>
                 <a href="/">Home</a>
-                <a href="/payroll">Payroll</a>
+                {% if team is defined and team %}
+                <a href="/{{ team.code|lower }}">{{ team.short_name }}</a>
+                <a href="/{{ team.code|lower }}/payroll">Payroll</a>
+                {% endif %}
             </nav>
         </div>
     </header>

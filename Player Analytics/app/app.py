@@ -1,5 +1,5 @@
 """
-app.py — Flask web application for D-backs analytics.
+app.py — Flask web application for MLB team analytics.
 """
 
 import json
@@ -11,12 +11,14 @@ from flask import Flask, jsonify, render_template, abort, request, redirect, Res
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
-DB_PATH = os.path.join(DATA_DIR, "db", "dbacks.db")
+DB_PATH = os.path.join(DATA_DIR, "db", "baseball.db")
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 # Allow importing from src/
 sys.path.insert(0, os.path.join(BASE_DIR, "..", "src"))
+
+from teams import TEAMS, SEASON
 
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 
@@ -85,10 +87,15 @@ def build_pitch_filter(player_col: str, player_id: int) -> tuple[str, list]:
         clauses.append("on_1b IS NOT NULL AND on_2b IS NULL AND on_3b IS NULL")
 
     home_away = request.args.get("home_away")
-    if home_away == "home":
-        clauses.append("home_team = 'AZ'")
-    elif home_away == "away":
-        clauses.append("home_team != 'AZ'")
+    if home_away in ("home", "away"):
+        # Look up the player's team statcast code dynamically
+        player_rows = query("SELECT team FROM players WHERE player_id=?", (player_id,))
+        team_code = player_rows[0]['team'] if player_rows else 'ARI'
+        statcast_code = TEAMS.get(team_code, TEAMS['ARI'])['statcast_code']
+        if home_away == "home":
+            clauses.append(f"home_team = '{statcast_code}'")
+        else:
+            clauses.append(f"home_team != '{statcast_code}'")
 
     outs = request.args.get("outs")
     if outs is not None:
@@ -128,12 +135,14 @@ VENUE_MAP = {
 }
 
 
-def _compute_split_groups(df, player_type: str, split_type: str) -> list:
+def _compute_split_groups(df, player_type: str, split_type: str,
+                          team_statcast_code: str = 'AZ') -> list:
     """
     Given a filtered pitch DataFrame, group by split_type and compute stats.
     Imports compute functions lazily from process.py.
     """
     from process import compute_batter_stats, compute_pitcher_stats
+    import pandas as pd
 
     compute_fn = compute_batter_stats if player_type == "batter" else compute_pitcher_stats
 
@@ -180,8 +189,8 @@ def _compute_split_groups(df, player_type: str, split_type: str) -> list:
 
     elif split_type == "venue_type":
         if player_type == "pitcher":
-            add("Home", df[df["home_team"] == "AZ"])
-            add("Away", df[df["home_team"] != "AZ"])
+            add("Home", df[df["home_team"] == team_statcast_code])
+            add("Away", df[df["home_team"] != team_statcast_code])
         else:
             bt = df.apply(
                 lambda r: r["home_team"] if r["inning_topbot"] == "Bot" else r["away_team"],
@@ -222,7 +231,6 @@ def _compute_split_groups(df, player_type: str, split_type: str) -> list:
             add(_cal.month_name[int(m)], df[df["_m"] == m])
 
     # Prepend overall (filtered) row
-    from process import compute_batter_stats, compute_pitcher_stats
     overall = compute_fn(df)
     if overall:
         results.insert(0, {"split_type": split_type, "split_value": "All (filtered)", **overall})
@@ -230,12 +238,41 @@ def _compute_split_groups(df, player_type: str, split_type: str) -> list:
     return results
 
 
+def _get_player_team_statcast_code(player_id: int) -> str:
+    """Look up a player's team and return its Statcast code."""
+    rows = query("SELECT team FROM players WHERE player_id=?", (player_id,))
+    if not rows:
+        return 'AZ'
+    team_code = rows[0]['team']
+    return TEAMS.get(team_code, TEAMS['ARI'])['statcast_code']
+
+
 # ---------------------------------------------------------------------------
 # Routes — Pages
 # ---------------------------------------------------------------------------
 
 @app.route("/")
-def index():
+def home():
+    """Team picker — show all teams with data in DB."""
+    available = query("SELECT DISTINCT team FROM players")
+    teams_with_data = []
+    for r in available:
+        code = r['team']
+        if code in TEAMS:
+            teams_with_data.append({**TEAMS[code], 'code': code})
+    teams_with_data.sort(key=lambda t: t['full_name'])
+    return render_template("teams.html", teams=teams_with_data, all_teams=TEAMS, season=SEASON)
+
+
+@app.route("/<team_code>")
+def roster(team_code: str):
+    """Team roster page."""
+    team_code = team_code.upper()
+    if team_code not in TEAMS:
+        abort(404)
+
+    team = {**TEAMS[team_code], 'code': team_code}
+
     def jersey_key(p):
         try:
             return int(p["jersey_number"] or 9999)
@@ -245,49 +282,63 @@ def index():
     batters = query(
         "SELECT p.player_id, p.full_name, p.position, p.jersey_number, p.position_type "
         "FROM players p "
-        "WHERE p.position_type != 'Pitcher' AND p.season = 2025"
+        "WHERE p.position_type != 'Pitcher' AND p.season = ? AND p.team = ?",
+        (SEASON, team_code)
     )
     pitchers = query(
         "SELECT p.player_id, p.full_name, p.position, p.jersey_number, p.position_type "
         "FROM players p "
-        "WHERE p.position_type = 'Pitcher' AND p.season = 2025"
+        "WHERE p.position_type = 'Pitcher' AND p.season = ? AND p.team = ?",
+        (SEASON, team_code)
     )
+
     # Classify pitchers as SP vs RP: starters pitched in inning 1 in 3+ games
-    starter_rows = query(
-        "SELECT pitcher FROM pitches "
-        "WHERE pitcher IN (SELECT player_id FROM players WHERE position_type='Pitcher' AND season=2025) "
-        "AND inning = 1 "
-        "GROUP BY pitcher HAVING COUNT(DISTINCT game_pk) >= 3"
-    )
-    starter_ids = {r["pitcher"] for r in starter_rows}
+    pitcher_ids = tuple(p["player_id"] for p in pitchers)
+    if pitcher_ids:
+        placeholders = ",".join("?" * len(pitcher_ids))
+        starter_rows = query(
+            f"SELECT pitcher FROM pitches "
+            f"WHERE pitcher IN ({placeholders}) AND inning = 1 "
+            f"GROUP BY pitcher HAVING COUNT(DISTINCT game_pk) >= 3",
+            pitcher_ids
+        )
+        starter_ids = {r["pitcher"] for r in starter_rows}
+    else:
+        starter_ids = set()
+
     for p in pitchers:
         p["position"] = "SP" if p["player_id"] in starter_ids else "RP"
 
-    # Sort each group by jersey number
     batters.sort(key=jersey_key)
     pitchers.sort(key=jersey_key)
     all_players = sorted(batters + pitchers, key=jersey_key)
 
     return render_template("index.html", batters=batters, pitchers=pitchers,
-                           all_players=all_players)
+                           all_players=all_players, team=team, season=SEASON)
 
 
 @app.route("/batter/<int:player_id>")
 def batter_page(player_id: int):
-    player = query("SELECT * FROM players WHERE player_id=? AND season=2025", (player_id,))
+    player = query(
+        "SELECT * FROM players WHERE player_id=? AND season=?", (player_id, SEASON)
+    )
     if not player:
         abort(404)
     player = player[0]
     if player["position_type"] == "Pitcher":
         abort(404)
+
+    team_code = player.get("team", "ARI")
+    team = {**TEAMS.get(team_code, TEAMS['ARI']), 'code': team_code}
+
     overall = query(
-        "SELECT * FROM batter_splits WHERE player_id=? AND season=2025 AND split_type='overall'",
-        (player_id,)
+        "SELECT * FROM batter_splits WHERE player_id=? AND season=? AND split_type='overall'",
+        (player_id, SEASON)
     )
     overall = overall[0] if overall else {}
     split_types = [r["split_type"] for r in query(
         "SELECT DISTINCT split_type FROM batter_splits "
-        "WHERE player_id=? AND season=2025 ORDER BY split_type", (player_id,)
+        "WHERE player_id=? AND season=? ORDER BY split_type", (player_id, SEASON)
     )]
     pitch_types = [r["pitch_type"] for r in query(
         "SELECT DISTINCT pitch_type FROM pitches WHERE batter=? AND pitch_type IS NOT NULL "
@@ -295,25 +346,31 @@ def batter_page(player_id: int):
     )]
     return render_template("player.html", player=player, overall=overall,
                            split_types=split_types, pitch_types=pitch_types,
-                           player_type="batter")
+                           player_type="batter", team=team)
 
 
 @app.route("/pitcher/<int:player_id>")
 def pitcher_page(player_id: int):
-    player = query("SELECT * FROM players WHERE player_id=? AND season=2025", (player_id,))
+    player = query(
+        "SELECT * FROM players WHERE player_id=? AND season=?", (player_id, SEASON)
+    )
     if not player:
         abort(404)
     player = player[0]
     if player["position_type"] != "Pitcher":
         abort(404)
+
+    team_code = player.get("team", "ARI")
+    team = {**TEAMS.get(team_code, TEAMS['ARI']), 'code': team_code}
+
     overall = query(
-        "SELECT * FROM pitcher_splits WHERE player_id=? AND season=2025 AND split_type='overall'",
-        (player_id,)
+        "SELECT * FROM pitcher_splits WHERE player_id=? AND season=? AND split_type='overall'",
+        (player_id, SEASON)
     )
     overall = overall[0] if overall else {}
     split_types = [r["split_type"] for r in query(
         "SELECT DISTINCT split_type FROM pitcher_splits "
-        "WHERE player_id=? AND season=2025 ORDER BY split_type", (player_id,)
+        "WHERE player_id=? AND season=? ORDER BY split_type", (player_id, SEASON)
     )]
     pitch_types = [r["pitch_type"] for r in query(
         "SELECT DISTINCT pitch_type FROM pitches WHERE pitcher=? AND pitch_type IS NOT NULL "
@@ -321,7 +378,7 @@ def pitcher_page(player_id: int):
     )]
     return render_template("player.html", player=player, overall=overall,
                            split_types=split_types, pitch_types=pitch_types,
-                           player_type="pitcher")
+                           player_type="pitcher", team=team)
 
 
 # ---------------------------------------------------------------------------
@@ -331,8 +388,8 @@ def pitcher_page(player_id: int):
 @app.route("/api/players")
 def api_players():
     players = query(
-        "SELECT player_id, full_name, position, position_type, jersey_number "
-        "FROM players WHERE season=2025 ORDER BY position_type DESC, full_name"
+        f"SELECT player_id, full_name, position, position_type, jersey_number "
+        f"FROM players WHERE season={SEASON} ORDER BY position_type DESC, full_name"
     )
     return jsonify(players)
 
@@ -340,7 +397,7 @@ def api_players():
 @app.route("/api/batter/<int:player_id>/<split_type>")
 def api_batter_split(player_id: int, split_type: str):
     rows = query(
-        "SELECT * FROM batter_splits WHERE player_id=? AND season=2025 AND split_type=? "
+        f"SELECT * FROM batter_splits WHERE player_id=? AND season={SEASON} AND split_type=? "
         "ORDER BY split_value",
         (player_id, split_type)
     )
@@ -350,7 +407,7 @@ def api_batter_split(player_id: int, split_type: str):
 @app.route("/api/pitcher/<int:player_id>/<split_type>")
 def api_pitcher_split(player_id: int, split_type: str):
     rows = query(
-        "SELECT * FROM pitcher_splits WHERE player_id=? AND season=2025 AND split_type=? "
+        f"SELECT * FROM pitcher_splits WHERE player_id=? AND season={SEASON} AND split_type=? "
         "ORDER BY split_value",
         (player_id, split_type)
     )
@@ -378,7 +435,9 @@ def api_batter_splits_live(player_id: int):
     conn.close()
     if df.empty:
         return jsonify([])
-    return jsonify(_compute_split_groups(df, "batter", split_type))
+    statcast_code = _get_player_team_statcast_code(player_id)
+    return jsonify(_compute_split_groups(df, "batter", split_type,
+                                        team_statcast_code=statcast_code))
 
 
 @app.route("/api/pitcher/<int:player_id>/splits_live")
@@ -392,7 +451,9 @@ def api_pitcher_splits_live(player_id: int):
     conn.close()
     if df.empty:
         return jsonify([])
-    return jsonify(_compute_split_groups(df, "pitcher", split_type))
+    statcast_code = _get_player_team_statcast_code(player_id)
+    return jsonify(_compute_split_groups(df, "pitcher", split_type,
+                                        team_statcast_code=statcast_code))
 
 
 # ---------------------------------------------------------------------------
@@ -467,11 +528,11 @@ def privacy():
 
 def _get_value_data(player_id: int):
     value = query(
-        "SELECT war, salary, dollars_per_war FROM player_value "
-        "WHERE player_id=? AND season=2025", (player_id,)
+        f"SELECT war, salary, dollars_per_war FROM player_value "
+        f"WHERE player_id=? AND season={SEASON}", (player_id,)
     )
     awards = query(
-        "SELECT award_name FROM player_awards WHERE player_id=? AND season=2025",
+        f"SELECT award_name FROM player_awards WHERE player_id=? AND season={SEASON}",
         (player_id,)
     )
     v = value[0] if value else {}
@@ -500,7 +561,7 @@ def pitcher_value(player_id: int):
 def _get_defense_data(player_id: int):
     row = query(
         "SELECT position, games, innings, errors, fielding_pct, drs, def_runs, oaa, "
-        "sprint_speed, sprint_pct FROM player_defense WHERE player_id=? AND season=2025",
+        f"sprint_speed, sprint_pct FROM player_defense WHERE player_id=? AND season={SEASON}",
         (player_id,)
     )
     return dict(row[0]) if row else {}
@@ -516,29 +577,55 @@ def pitcher_defense(player_id: int):
     return jsonify(_get_defense_data(player_id))
 
 
-@app.route("/payroll")
-def payroll():
-    players = query("""
+# ---------------------------------------------------------------------------
+# Team payroll pages
+# ---------------------------------------------------------------------------
+
+@app.route("/<team_code>/payroll")
+def payroll(team_code: str):
+    team_code = team_code.upper()
+    if team_code not in TEAMS:
+        abort(404)
+    team = {**TEAMS[team_code], 'code': team_code}
+
+    players = query(f"""
         SELECT p.player_id, p.full_name, p.position, p.position_type,
                p.jersey_number,
                v.war, v.salary, v.dollars_per_war
         FROM players p
-        LEFT JOIN player_value v ON p.player_id = v.player_id AND v.season = 2025
-        WHERE p.season = 2025
+        LEFT JOIN player_value v ON p.player_id = v.player_id
+                                 AND v.season = {SEASON}
+                                 AND v.team = p.team
+        WHERE p.season = {SEASON} AND p.team = ?
         ORDER BY v.salary DESC
-    """)
+    """, (team_code,))
     total_salary = sum(p["salary"] for p in players if p["salary"])
-    return render_template("payroll.html", players=players, total_salary=total_salary)
+    return render_template("payroll.html", players=players, total_salary=total_salary, team=team)
 
+
+# Old /payroll URL → 301 redirect to /ari/payroll
+@app.route("/payroll")
+def payroll_redirect():
+    return redirect("/ari/payroll", code=301)
+
+
+# ---------------------------------------------------------------------------
+# Sitemap
+# ---------------------------------------------------------------------------
 
 @app.route("/sitemap.xml")
 def sitemap():
     """Generate sitemap for all player pages + static pages."""
     base = "https://dugoutintel.com"
     players = query(
-        "SELECT player_id, position_type FROM players WHERE season = 2025"
+        f"SELECT player_id, position_type FROM players WHERE season = {SEASON}"
     )
+    available_teams = query("SELECT DISTINCT team FROM players")
     urls = [base + "/", base + "/privacy"]
+    for r in available_teams:
+        code = r['team'].lower()
+        urls.append(f"{base}/{code}")
+        urls.append(f"{base}/{code}/payroll")
     for p in players:
         route = "pitcher" if p["position_type"] == "Pitcher" else "batter"
         urls.append(f"{base}/{route}/{p['player_id']}")
@@ -562,5 +649,5 @@ def not_found(e):
 if __name__ == "__main__":
     if not os.path.exists(DB_PATH):
         print(f"WARNING: Database not found at {DB_PATH}")
-        print("Run: python run_pipeline.py")
+        print("Run: python src/load_db.py --migrate")
     app.run(debug=True, port=5000)

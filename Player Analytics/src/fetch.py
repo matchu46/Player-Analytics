@@ -1,10 +1,12 @@
 """
-fetch.py — Pull 2025 D-backs Statcast + roster data and save to CSV.
+fetch.py — Pull Statcast + roster data for an MLB team and save to CSV.
 
 Usage:
-    python src/fetch.py --type all        # Fetch roster + all Statcast data
-    python src/fetch.py --type roster     # Fetch roster only
-    python src/fetch.py --type statcast   # Fetch Statcast pitches only
+    python src/fetch.py --type all               # Fetch roster + Statcast (default: ARI 2025)
+    python src/fetch.py --type roster            # Fetch roster only
+    python src/fetch.py --type statcast          # Fetch Statcast pitches only
+    python src/fetch.py --team LAD --type all    # Fetch for a different team
+    python src/fetch.py --team ARI --season 2024 # Historical season
 """
 
 import argparse
@@ -14,25 +16,24 @@ import pandas as pd
 import statsapi
 import pybaseball
 
+from teams import get_team, SEASON
+
 pybaseball.cache.enable()
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 RAW_DIR = os.path.join(DATA_DIR, "raw")
-
-ARI_TEAM_ID = 109
-ARI_CODE = "ARI"
-SEASON_START = "2025-03-27"
-SEASON_END = "2025-10-01"
 
 
 # ---------------------------------------------------------------------------
 # Roster
 # ---------------------------------------------------------------------------
 
-def fetch_roster(season: int = 2025) -> pd.DataFrame:
+def fetch_roster(season: int, team_cfg: dict) -> pd.DataFrame:
     """Pull the full 40-man roster from MLB Stats API and return as DataFrame."""
-    print(f"Fetching {season} D-backs roster...")
-    raw = statsapi.get("team_roster", {"teamId": ARI_TEAM_ID, "rosterType": "40Man", "season": season})
+    team_id = team_cfg['mlb_team_id']
+    fg_code = team_cfg['fg_code']
+    print(f"Fetching {season} {fg_code} roster...")
+    raw = statsapi.get("team_roster", {"teamId": team_id, "rosterType": "40Man", "season": season})
     rows = []
     for entry in raw.get("roster", []):
         person = entry.get("person", {})
@@ -46,7 +47,8 @@ def fetch_roster(season: int = 2025) -> pd.DataFrame:
             "status": entry.get("status", {}).get("description"),
         })
     df = pd.DataFrame(rows)
-    out = os.path.join(RAW_DIR, f"roster_{season}.csv")
+    os.makedirs(RAW_DIR, exist_ok=True)
+    out = os.path.join(RAW_DIR, f"roster_{fg_code}_{season}.csv")
     df.to_csv(out, index=False)
     print(f"  Saved {len(df)} players -> {out}")
     return df
@@ -56,37 +58,40 @@ def fetch_roster(season: int = 2025) -> pd.DataFrame:
 # Statcast (pitch-by-pitch)
 # ---------------------------------------------------------------------------
 
-def fetch_statcast_team(start: str = SEASON_START, end: str = SEASON_END,
-                        season: int = 2025) -> pd.DataFrame:
+def fetch_statcast_team(season: int, team_cfg: dict) -> pd.DataFrame:
     """
-    Pull all Statcast pitches involving ARI players:
+    Pull all Statcast pitches involving a team's players:
 
-    - Pitching side: pybaseball.statcast(team='ARI') returns every pitch
-      thrown BY an ARI pitcher (player_type=pitcher internally).
+    - Pitching side: statcast(team=fg_code) returns every pitch thrown BY a
+      team pitcher.
 
-    - Batting side: statcast_batter() per ARI position player returns every
-      pitch FACED BY that batter. There is NO overlap with the pitching pull
-      because a pitch can only be thrown by one team per plate appearance.
+    - Batting side: statcast_batter() per position player returns every pitch
+      FACED BY that batter. There is NO overlap with the pitching pull because
+      a pitch can only be thrown by one team per plate appearance.
 
-    Both halves are combined and saved to statcast_{season}.csv.
+    Both halves are combined and saved to statcast_{team}_{season}.csv.
     """
-    roster_path = os.path.join(RAW_DIR, f"roster_{season}.csv")
+    fg_code = team_cfg['fg_code']
+    start = team_cfg['season_start']
+    end = team_cfg['season_end']
+
+    roster_path = os.path.join(RAW_DIR, f"roster_{fg_code}_{season}.csv")
     if not os.path.exists(roster_path):
         print(f"Roster file not found. Fetching roster first...")
-        fetch_roster(season)
+        fetch_roster(season, team_cfg)
     roster = pd.read_csv(roster_path)
 
     # --- Pitching side ---
-    print(f"\nFetching Statcast — ARI pitching ({start} to {end})...")
-    ari_pitching = pybaseball.statcast(start_dt=start, end_dt=end, team=ARI_CODE)
-    ari_pitching = ari_pitching.copy()
-    ari_pitching["data_side"] = "pitching"
-    print(f"  Got {len(ari_pitching):,} pitches thrown by ARI pitchers.")
+    print(f"\nFetching Statcast — {fg_code} pitching ({start} to {end})...")
+    team_pitching = pybaseball.statcast(start_dt=start, end_dt=end, team=fg_code)
+    team_pitching = team_pitching.copy()
+    team_pitching["data_side"] = "pitching"
+    print(f"  Got {len(team_pitching):,} pitches thrown by {fg_code} pitchers.")
     time.sleep(3)
 
     # --- Batting side: per-batter pulls ---
     batters = roster[roster["position_type"] != "Pitcher"].dropna(subset=["player_id"])
-    print(f"\nFetching Statcast — ARI batting ({len(batters)} batters)...")
+    print(f"\nFetching Statcast — {fg_code} batting ({len(batters)} batters)...")
 
     batting_frames = []
     for _, row in batters.iterrows():
@@ -107,15 +112,15 @@ def fetch_statcast_team(start: str = SEASON_START, end: str = SEASON_END,
             continue
 
     if batting_frames:
-        ari_batting = pd.concat(batting_frames, ignore_index=True)
-        print(f"  Total ARI batting pitches: {len(ari_batting):,}")
+        team_batting = pd.concat(batting_frames, ignore_index=True)
+        print(f"  Total {fg_code} batting pitches: {len(team_batting):,}")
     else:
         print("  WARNING: No batting data retrieved.")
-        ari_batting = pd.DataFrame()
+        team_batting = pd.DataFrame()
 
     # --- Combine ---
     print("\nCombining pitching + batting data...")
-    combined = pd.concat([ari_pitching, ari_batting], ignore_index=True)
+    combined = pd.concat([team_pitching, team_batting], ignore_index=True)
 
     # Safety dedup in case any pitch somehow appears in both pulls
     before = len(combined)
@@ -124,7 +129,8 @@ def fetch_statcast_team(start: str = SEASON_START, end: str = SEASON_END,
     if len(combined) < before:
         print(f"  Removed {before - len(combined):,} duplicate rows.")
 
-    out = os.path.join(RAW_DIR, f"statcast_{season}.csv")
+    os.makedirs(RAW_DIR, exist_ok=True)
+    out = os.path.join(RAW_DIR, f"statcast_{fg_code}_{season}.csv")
     combined.to_csv(out, index=False)
     print(f"  Saved {len(combined):,} total pitches -> {out}")
     return combined
@@ -135,14 +141,17 @@ def fetch_statcast_team(start: str = SEASON_START, end: str = SEASON_END,
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Fetch D-backs 2025 data")
+    parser = argparse.ArgumentParser(description="Fetch MLB team Statcast + roster data")
     parser.add_argument("--type", choices=["all", "roster", "statcast"],
                         default="roster", help="What to fetch")
-    parser.add_argument("--season", type=int, default=2025)
+    parser.add_argument("--team",   type=str, default="ARI", help="Team code (e.g. ARI, LAD)")
+    parser.add_argument("--season", type=int, default=SEASON)
     args = parser.parse_args()
 
+    team_cfg = get_team(args.team)
+
     if args.type in ("all", "roster"):
-        fetch_roster(args.season)
+        fetch_roster(args.season, team_cfg)
 
     if args.type in ("all", "statcast"):
-        fetch_statcast_team(season=args.season)
+        fetch_statcast_team(args.season, team_cfg)

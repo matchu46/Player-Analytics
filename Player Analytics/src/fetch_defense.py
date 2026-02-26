@@ -1,12 +1,13 @@
 """
-fetch_defense.py — Fetch defensive metrics for D-backs players.
+fetch_defense.py — Fetch defensive metrics for a team's players.
 
 Data sources:
   - FanGraphs fielding stats via pybaseball (DRS, Def, OAA, FP, G, Inn)
   - Statcast sprint speed via pybaseball (ft/sec, computed percentile)
 
 Usage:
-    python src/fetch_defense.py              # default season 2025
+    python src/fetch_defense.py                      # default: ARI 2025
+    python src/fetch_defense.py --team LAD
     python src/fetch_defense.py --season 2024
 """
 
@@ -19,12 +20,12 @@ import difflib
 import pandas as pd
 import pybaseball as pb
 
+from teams import get_team, SEASON
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
 RAW_DIR  = os.path.join(DATA_DIR, "raw")
-DB_PATH  = os.path.join(DATA_DIR, "db", "dbacks.db")
-
-FG_TEAM = "ARI"
+DB_PATH  = os.path.join(DATA_DIR, "db", "baseball.db")
 
 
 # ---------------------------------------------------------------------------
@@ -41,14 +42,14 @@ def _normalize(name: str) -> str:
     return name.strip()
 
 
-def _load_roster(season: int):
-    """Return list of (player_id, full_name) from DB for the given season."""
+def _load_roster(season: int, team: str):
+    """Return list of (player_id, full_name) from DB for the given season+team."""
     if not os.path.exists(DB_PATH):
         print(f"DB not found at {DB_PATH}. Run load_db.py first.")
         return []
     conn = sqlite3.connect(DB_PATH)
     rows = conn.execute(
-        "SELECT player_id, full_name FROM players WHERE season=?", (season,)
+        "SELECT player_id, full_name FROM players WHERE season=? AND team=?", (season, team)
     ).fetchall()
     conn.close()
     return rows  # list of (int, str)
@@ -58,9 +59,10 @@ def _load_roster(season: int):
 # Fielding stats from FanGraphs
 # ---------------------------------------------------------------------------
 
-def fetch_fielding(season: int = 2025) -> pd.DataFrame:
-    """Return one fielding row per ARI player (primary position + aggregated totals)."""
-    roster = _load_roster(season)
+def fetch_fielding(season: int, team_cfg: dict) -> pd.DataFrame:
+    """Return one fielding row per team player (primary position + aggregated totals)."""
+    fg_code = team_cfg['fg_code']
+    roster = _load_roster(season, fg_code)
     if not roster:
         return pd.DataFrame()
 
@@ -69,9 +71,9 @@ def fetch_fielding(season: int = 2025) -> pd.DataFrame:
     print(f"Fetching FanGraphs fielding stats for {season}...")
     f = pb.fielding_stats(season, qual=1)
 
-    # Filter to ARI team rows
-    ari = f[f["Team"] == FG_TEAM].copy()
-    print(f"  Found {len(ari)} ARI fielding rows across all positions.")
+    # Filter to team rows
+    ari = f[f["Team"] == fg_code].copy()
+    print(f"  Found {len(ari)} {fg_code} fielding rows across all positions.")
 
     # Normalize names for matching
     ari["_norm"] = ari["Name"].apply(_normalize)
@@ -108,7 +110,7 @@ def fetch_fielding(season: int = 2025) -> pd.DataFrame:
         })
 
     df = pd.DataFrame(results)
-    print(f"  Matched {len(df)} ARI players with fielding data.")
+    print(f"  Matched {len(df)} {fg_code} players with fielding data.")
     return df
 
 
@@ -116,9 +118,10 @@ def fetch_fielding(season: int = 2025) -> pd.DataFrame:
 # Sprint speed from Statcast
 # ---------------------------------------------------------------------------
 
-def fetch_sprint(season: int = 2025) -> pd.DataFrame:
-    """Return sprint speed + computed percentile for ARI players."""
-    roster = _load_roster(season)
+def fetch_sprint(season: int, team_cfg: dict) -> pd.DataFrame:
+    """Return sprint speed + computed percentile for team players."""
+    fg_code = team_cfg['fg_code']
+    roster = _load_roster(season, fg_code)
     if not roster:
         return pd.DataFrame()
 
@@ -131,29 +134,30 @@ def fetch_sprint(season: int = 2025) -> pd.DataFrame:
     s = s.dropna(subset=["sprint_speed"]).copy()
     s["sprint_pct"] = s["sprint_speed"].rank(pct=True).mul(100).round(0).astype(int)
 
-    # Filter to ARI players by MLBAM player_id
-    ari_sprint = s[s["player_id"].isin(roster_ids)][["player_id", "sprint_speed", "sprint_pct"]]
-    print(f"  Found sprint speed for {len(ari_sprint)} ARI players.")
-    return ari_sprint.reset_index(drop=True)
+    # Filter to team players by MLBAM player_id
+    team_sprint = s[s["player_id"].isin(roster_ids)][["player_id", "sprint_speed", "sprint_pct"]]
+    print(f"  Found sprint speed for {len(team_sprint)} {fg_code} players.")
+    return team_sprint.reset_index(drop=True)
 
 
 # ---------------------------------------------------------------------------
 # Merge and save
 # ---------------------------------------------------------------------------
 
-def fetch_defense(season: int = 2025):
+def fetch_defense(season: int, team_cfg: dict):
     """Fetch fielding + sprint speed, merge by player_id, save CSV."""
+    fg_code = team_cfg['fg_code']
     os.makedirs(RAW_DIR, exist_ok=True)
 
-    fielding_df = fetch_fielding(season)
-    sprint_df   = fetch_sprint(season)
+    fielding_df = fetch_fielding(season, team_cfg)
+    sprint_df   = fetch_sprint(season, team_cfg)
 
     if fielding_df.empty and sprint_df.empty:
         print("No data fetched.")
         return
 
     # Get all roster player_ids as base
-    roster = _load_roster(season)
+    roster = _load_roster(season, fg_code)
     base = pd.DataFrame(roster, columns=["player_id", "full_name"])
 
     # Merge fielding
@@ -171,7 +175,7 @@ def fetch_defense(season: int = 2025):
         merged["sprint_speed"] = None
         merged["sprint_pct"]   = None
 
-    out_path = os.path.join(RAW_DIR, f"defense_{season}.csv")
+    out_path = os.path.join(RAW_DIR, f"defense_{fg_code}_{season}.csv")
     merged.to_csv(out_path, index=False)
     print(f"\nSaved {len(merged)} rows to {out_path}")
 
@@ -186,6 +190,8 @@ def fetch_defense(season: int = 2025):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fetch defensive metrics")
-    parser.add_argument("--season", type=int, default=2025)
+    parser.add_argument("--team",   type=str, default="ARI", help="Team code (e.g. ARI, LAD)")
+    parser.add_argument("--season", type=int, default=SEASON)
     args = parser.parse_args()
-    fetch_defense(args.season)
+    team_cfg = get_team(args.team)
+    fetch_defense(args.season, team_cfg)

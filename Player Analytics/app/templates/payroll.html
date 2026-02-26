@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}2025 Payroll & Value | Dugout Intel{% endblock %}
-{% block meta_description %}Arizona Diamondbacks 2025 payroll breakdown — salary, WAR, and cost per win for every player on the roster.{% endblock %}
+{% block title %}{{ team.full_name }} 2025 Payroll &amp; Value | Dugout Intel{% endblock %}
+{% block meta_description %}{{ team.full_name }} 2025 payroll breakdown — salary, WAR, and cost per win for every player on the roster.{% endblock %}
 
 {% block content %}
 <div style="max-width:1100px; margin:2rem auto; padding:0 1.5rem;">
 
     <div class="payroll-header">
-        <h1 style="font-size:1.8rem; margin-bottom:0.25rem;">2025 Payroll &amp; Value</h1>
+        <h1 style="font-size:1.8rem; margin-bottom:0.25rem;">{{ team.full_name }} 2025 Payroll &amp; Value</h1>
         <p class="payroll-total">
             Total Payroll: <strong style="color:var(--text);">
                 ${{ "{:,.0f}".format(total_salary / 1_000_000) }}M

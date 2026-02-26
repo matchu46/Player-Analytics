@@ -3,10 +3,11 @@ process.py — Compute situational splits from the pitches table and write
              results into batter_splits / pitcher_splits tables.
 
 Usage:
-    python src/process.py --batters    # Process batter splits only
-    python src/process.py --pitchers   # Process pitcher splits only
-    python src/process.py --all        # Both (default)
-    python src/process.py --player 682998   # Single player
+    python src/process.py --batters           # Process batter splits (default: ARI)
+    python src/process.py --pitchers          # Process pitcher splits
+    python src/process.py --all               # Both (default)
+    python src/process.py --team LAD --all    # Process a different team
+    python src/process.py --player 682998     # Single player
 """
 
 import argparse
@@ -16,11 +17,10 @@ import sqlite3
 import pandas as pd
 import numpy as np
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-DB_PATH = os.path.join(DATA_DIR, "db", "dbacks.db")
+from teams import get_team, SEASON
 
-SEASON = 2025
-ARI_CODE = "AZ"   # Statcast stores Arizona as 'AZ', not 'ARI'
+DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+DB_PATH = os.path.join(DATA_DIR, "db", "baseball.db")
 
 # ---------------------------------------------------------------------------
 # Helpers — counting stats from a filtered DataFrame
@@ -200,10 +200,11 @@ VENUE_MAP = {
 }
 
 
-def get_splits(df: pd.DataFrame, player_col: str) -> list[dict]:
+def get_splits(df: pd.DataFrame, player_col: str, team_statcast_code: str = "AZ") -> list[dict]:
     """
     Given a DataFrame of pitches for ONE player (identified by player_col being their ID),
     compute all situational splits and return as list of dicts ready for DB insertion.
+    team_statcast_code: Statcast home_team code for the player's team (e.g. 'AZ' for ARI).
     """
     splits = []
 
@@ -271,8 +272,8 @@ def get_splits(df: pd.DataFrame, player_col: str) -> list[dict]:
         add("venue_type", "Home", df[df["batting_team"] == df["home_team"]], compute_fn)
         add("venue_type", "Away", df[df["batting_team"] != df["home_team"]], compute_fn)
     else:
-        add("venue_type", "Home", df[df["home_team"] == ARI_CODE], compute_fn)
-        add("venue_type", "Away", df[df["home_team"] != ARI_CODE], compute_fn)
+        add("venue_type", "Home", df[df["home_team"] == team_statcast_code], compute_fn)
+        add("venue_type", "Away", df[df["home_team"] != team_statcast_code], compute_fn)
 
     # --- By specific stadium ---
     for team_code, venue_name in VENUE_MAP.items():
@@ -313,22 +314,24 @@ def get_splits(df: pd.DataFrame, player_col: str) -> list[dict]:
 # Main processing loop
 # ---------------------------------------------------------------------------
 
-def process_batters(player_id: int = None, season: int = SEASON):
+def process_batters(player_id: int = None, season: int = SEASON, team: str = 'ARI'):
+    team_cfg = get_team(team)
     conn = sqlite3.connect(DB_PATH)
 
-    # Get all ARI batters from roster
+    # Get batters from roster for this team
     if player_id:
         players = pd.read_sql(
-            "SELECT player_id, full_name FROM players WHERE player_id=? AND season=?",
-            conn, params=(player_id, season)
+            "SELECT player_id, full_name FROM players WHERE player_id=? AND season=? AND team=?",
+            conn, params=(player_id, season, team)
         )
     else:
         players = pd.read_sql(
-            "SELECT player_id, full_name FROM players WHERE position_type != 'Pitcher' AND season=?",
-            conn, params=(season,)
+            "SELECT player_id, full_name FROM players "
+            "WHERE position_type != 'Pitcher' AND season=? AND team=?",
+            conn, params=(season, team)
         )
 
-    print(f"Processing {len(players)} batter(s)...")
+    print(f"Processing {len(players)} {team} batter(s)...")
     for _, row in players.iterrows():
         pid = row["player_id"]
         name = row["full_name"]
@@ -348,12 +351,16 @@ def process_batters(player_id: int = None, season: int = SEASON):
             axis=1
         )
 
-        splits = get_splits(df, player_col="batter")
-        rows = [{"player_id": pid, "season": season, **s} for s in splits]
+        splits = get_splits(df, player_col="batter",
+                            team_statcast_code=team_cfg['statcast_code'])
+        rows = [{"player_id": pid, "season": season, "team": team, **s} for s in splits]
         splits_df = pd.DataFrame(rows)
 
         # Upsert into batter_splits
-        conn.execute("DELETE FROM batter_splits WHERE player_id=? AND season=?", (pid, season))
+        conn.execute(
+            "DELETE FROM batter_splits WHERE player_id=? AND season=? AND team=?",
+            (pid, season, team)
+        )
         splits_df.to_sql("batter_splits", conn, if_exists="append", index=False)
         conn.commit()
         print(f"    Wrote {len(splits_df)} split rows.")
@@ -361,21 +368,23 @@ def process_batters(player_id: int = None, season: int = SEASON):
     conn.close()
 
 
-def process_pitchers(player_id: int = None, season: int = SEASON):
+def process_pitchers(player_id: int = None, season: int = SEASON, team: str = 'ARI'):
+    team_cfg = get_team(team)
     conn = sqlite3.connect(DB_PATH)
 
     if player_id:
         players = pd.read_sql(
-            "SELECT player_id, full_name FROM players WHERE player_id=? AND season=?",
-            conn, params=(player_id, season)
+            "SELECT player_id, full_name FROM players WHERE player_id=? AND season=? AND team=?",
+            conn, params=(player_id, season, team)
         )
     else:
         players = pd.read_sql(
-            "SELECT player_id, full_name FROM players WHERE position_type = 'Pitcher' AND season=?",
-            conn, params=(season,)
+            "SELECT player_id, full_name FROM players "
+            "WHERE position_type = 'Pitcher' AND season=? AND team=?",
+            conn, params=(season, team)
         )
 
-    print(f"Processing {len(players)} pitcher(s)...")
+    print(f"Processing {len(players)} {team} pitcher(s)...")
     for _, row in players.iterrows():
         pid = row["player_id"]
         name = row["full_name"]
@@ -389,11 +398,15 @@ def process_pitchers(player_id: int = None, season: int = SEASON):
             print(f"    No pitch data found.")
             continue
 
-        splits = get_splits(df, player_col="pitcher")
-        rows = [{"player_id": pid, "season": season, **s} for s in splits]
+        splits = get_splits(df, player_col="pitcher",
+                            team_statcast_code=team_cfg['statcast_code'])
+        rows = [{"player_id": pid, "season": season, "team": team, **s} for s in splits]
         splits_df = pd.DataFrame(rows)
 
-        conn.execute("DELETE FROM pitcher_splits WHERE player_id=? AND season=?", (pid, season))
+        conn.execute(
+            "DELETE FROM pitcher_splits WHERE player_id=? AND season=? AND team=?",
+            (pid, season, team)
+        )
         splits_df.to_sql("pitcher_splits", conn, if_exists="append", index=False)
         conn.commit()
         print(f"    Wrote {len(splits_df)} split rows.")
@@ -406,18 +419,21 @@ def process_pitchers(player_id: int = None, season: int = SEASON):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Compute D-backs situational splits")
-    parser.add_argument("--batters", action="store_true")
+    parser = argparse.ArgumentParser(description="Compute situational splits")
+    parser.add_argument("--batters",  action="store_true")
     parser.add_argument("--pitchers", action="store_true")
-    parser.add_argument("--all", action="store_true")
-    parser.add_argument("--player", type=int, default=None, help="Single player MLBAM ID")
-    parser.add_argument("--season", type=int, default=2025)
+    parser.add_argument("--all",      action="store_true")
+    parser.add_argument("--player",   type=int, default=None, help="Single player MLBAM ID")
+    parser.add_argument("--team",     type=str, default="ARI", help="Team code (e.g. ARI, LAD)")
+    parser.add_argument("--season",   type=int, default=SEASON)
     args = parser.parse_args()
 
+    team = args.team.upper()
+
     if args.all or (not args.batters and not args.pitchers):
-        process_batters(player_id=args.player, season=args.season)
-        process_pitchers(player_id=args.player, season=args.season)
+        process_batters(player_id=args.player, season=args.season, team=team)
+        process_pitchers(player_id=args.player, season=args.season, team=team)
     elif args.batters:
-        process_batters(player_id=args.player, season=args.season)
+        process_batters(player_id=args.player, season=args.season, team=team)
     elif args.pitchers:
-        process_pitchers(player_id=args.player, season=args.season)
+        process_pitchers(player_id=args.player, season=args.season, team=team)

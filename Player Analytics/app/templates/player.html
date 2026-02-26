@@ -9,7 +9,7 @@
 {% block content %}
 <!-- ── Player header ───────────────────────────────────── -->
 <div class="player-header">
-    <a href="/" class="back-link">← Roster</a>
+    <a href="/{{ team.code|lower }}" class="back-link">← {{ team.short_name }}</a>
     <div class="player-meta">
         <img class="player-headshot"
              src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_120,q_auto:best/v1/people/{{ player.player_id }}/headshot/67/current"

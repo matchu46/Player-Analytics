@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Dugout Intel | MLB Player Analytics{% endblock %}
+{% block meta_description %}In-depth Statcast pitch data, splits, and advanced analytics for MLB players. Powered by Baseball Savant data.{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px; margin:2rem auto; padding:0 1.5rem;">
+
+    <div style="text-align:center; margin-bottom:2.5rem;">
+        <h1 style="font-size:2rem; margin-bottom:0.4rem;">Dugout Intel</h1>
+        <p style="color:var(--text-muted); font-size:1rem;">{{ season }} MLB Season Analytics</p>
+    </div>
+
+    {% if teams %}
+    <h2 style="font-size:1rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:1rem;">Available Teams</h2>
+    <div class="teams-grid">
+        {% for team in teams %}
+        <a href="/{{ team.code|lower }}" class="team-card">
+            <div class="team-card-abbr">{{ team.code }}</div>
+            <div class="team-card-name">{{ team.full_name }}</div>
+            <div class="team-card-links">
+                <span class="team-card-link">Roster</span>
+                <span class="team-card-sep">·</span>
+                <span class="team-card-link" onclick="event.preventDefault(); event.stopPropagation(); window.location='/{{ team.code|lower }}/payroll';">Payroll</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:4rem; color:var(--text-muted);">
+        <p style="font-size:1.2rem;">No team data loaded yet.</p>
+        <p style="margin-top:0.75rem; font-size:0.9rem;">Run <code>python src/load_db.py --migrate</code> to load Arizona data.</p>
+    </div>
+    {% endif %}
+
+    {% if teams|length < 30 %}
+    <div style="margin-top:2.5rem;">
+        <h2 style="font-size:1rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:1rem;">Coming Soon</h2>
+        <div class="teams-grid teams-grid--dim">
+            {% set active_codes = teams | map(attribute='code') | list %}
+            {% for code, cfg in all_teams.items() | sort(attribute='1.full_name') %}
+            {% if code not in active_codes %}
+            <div class="team-card team-card--disabled">
+                <div class="team-card-abbr">{{ code }}</div>
+                <div class="team-card-name">{{ cfg.full_name }}</div>
+                <div class="team-card-links" style="color:var(--text-muted);">Coming Soon</div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

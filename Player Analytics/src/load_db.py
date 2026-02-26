@@ -2,9 +2,12 @@
 load_db.py — Create the SQLite database schema and load raw CSV data into it.
 
 Usage:
-    python src/load_db.py --create    # Create schema only
-    python src/load_db.py --load      # Load CSVs into existing DB
-    python src/load_db.py --all       # Create schema + load
+    python src/load_db.py --create              # Create baseball.db schema
+    python src/load_db.py --load   --team ARI   # Load CSVs for a team
+    python src/load_db.py --all    --team ARI   # Create + load all
+    python src/load_db.py --value  --team ARI   # Load WAR/salary/awards
+    python src/load_db.py --defense --team ARI  # Load defensive metrics
+    python src/load_db.py --migrate             # One-time: dbacks.db → baseball.db
 """
 
 import argparse
@@ -16,7 +19,8 @@ import pandas as pd
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 RAW_DIR = os.path.join(DATA_DIR, "raw")
-DB_PATH = os.path.join(DATA_DIR, "db", "dbacks.db")
+DB_PATH = os.path.join(DATA_DIR, "db", "baseball.db")
+OLD_DB_PATH = os.path.join(DATA_DIR, "db", "dbacks.db")
 
 
 # ---------------------------------------------------------------------------
@@ -28,18 +32,20 @@ SCHEMA = """
 -- Players / Roster
 -- -----------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS players (
-    player_id       INTEGER PRIMARY KEY,
+    player_id       INTEGER,
     full_name       TEXT NOT NULL,
     jersey_number   TEXT,
     position        TEXT,          -- C, 1B, SS, SP, RP, etc.
     position_type   TEXT,          -- Pitcher or Hitter
     season          INTEGER NOT NULL,
-    status          TEXT
+    status          TEXT,
+    team            TEXT NOT NULL DEFAULT 'ARI',
+    PRIMARY KEY (player_id, team, season)
 );
 
 -- -----------------------------------------------------------------------
 -- Statcast pitch-by-pitch data
--- Each row = one pitch thrown in a game involving ARI
+-- Each row = one pitch thrown in a game involving any tracked team
 -- -----------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS pitches (
     -- Identity
@@ -114,6 +120,7 @@ CREATE TABLE IF NOT EXISTS batter_splits (
     season          INTEGER NOT NULL,
     split_type      TEXT NOT NULL,   -- 'inning', 'count', 'runners', 'venue', 'handedness', etc.
     split_value     TEXT NOT NULL,   -- e.g., '7', '2-2', 'RISP', 'Chase Field', 'vs_LHP'
+    team            TEXT NOT NULL DEFAULT 'ARI',
 
     -- Counting stats
     pa              INTEGER DEFAULT 0,   -- plate appearances
@@ -146,7 +153,7 @@ CREATE TABLE IF NOT EXISTS batter_splits (
     whiff_pct       REAL,
     contact_pct     REAL,
 
-    UNIQUE (player_id, season, split_type, split_value)
+    UNIQUE (team, player_id, season, split_type, split_value)
 );
 
 CREATE TABLE IF NOT EXISTS pitcher_splits (
@@ -155,6 +162,7 @@ CREATE TABLE IF NOT EXISTS pitcher_splits (
     season          INTEGER NOT NULL,
     split_type      TEXT NOT NULL,
     split_value     TEXT NOT NULL,
+    team            TEXT NOT NULL DEFAULT 'ARI',
 
     -- Counting stats
     batters_faced   INTEGER DEFAULT 0,
@@ -185,7 +193,7 @@ CREATE TABLE IF NOT EXISTS pitcher_splits (
     avg_velo        REAL,
     avg_spin_rate   REAL,
 
-    UNIQUE (player_id, season, split_type, split_value)
+    UNIQUE (team, player_id, season, split_type, split_value)
 );
 
 -- -----------------------------------------------------------------------
@@ -194,10 +202,11 @@ CREATE TABLE IF NOT EXISTS pitcher_splits (
 CREATE TABLE IF NOT EXISTS player_value (
     player_id       INTEGER,
     season          INTEGER,
+    team            TEXT NOT NULL DEFAULT 'ARI',
     war             REAL,
     salary          INTEGER,        -- annual value in dollars
     dollars_per_war REAL,
-    PRIMARY KEY (player_id, season)
+    PRIMARY KEY (player_id, team, season)
 );
 
 -- -----------------------------------------------------------------------
@@ -207,8 +216,9 @@ CREATE TABLE IF NOT EXISTS player_awards (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     player_id   INTEGER,
     season      INTEGER,
+    team        TEXT NOT NULL DEFAULT 'ARI',
     award_name  TEXT,
-    UNIQUE (player_id, season, award_name)
+    UNIQUE (team, player_id, season, award_name)
 );
 
 -- -----------------------------------------------------------------------
@@ -217,6 +227,7 @@ CREATE TABLE IF NOT EXISTS player_awards (
 CREATE TABLE IF NOT EXISTS player_defense (
     player_id    INTEGER,
     season       INTEGER,
+    team         TEXT NOT NULL DEFAULT 'ARI',
     position     TEXT,
     games        INTEGER,
     innings      REAL,
@@ -227,7 +238,7 @@ CREATE TABLE IF NOT EXISTS player_defense (
     oaa          REAL,
     sprint_speed REAL,
     sprint_pct   INTEGER,
-    PRIMARY KEY (player_id, season)
+    PRIMARY KEY (player_id, team, season)
 );
 
 -- -----------------------------------------------------------------------
@@ -239,6 +250,8 @@ CREATE INDEX IF NOT EXISTS idx_pitches_game     ON pitches(game_pk);
 CREATE INDEX IF NOT EXISTS idx_pitches_date     ON pitches(game_date);
 CREATE INDEX IF NOT EXISTS idx_batter_splits    ON batter_splits(player_id, season, split_type);
 CREATE INDEX IF NOT EXISTS idx_pitcher_splits   ON pitcher_splits(player_id, season, split_type);
+CREATE INDEX IF NOT EXISTS idx_batter_splits_team  ON batter_splits(team, player_id, season);
+CREATE INDEX IF NOT EXISTS idx_pitcher_splits_team ON pitcher_splits(team, player_id, season);
 """
 
 
@@ -259,22 +272,27 @@ def create_db():
 # Load roster CSV -> players table
 # ---------------------------------------------------------------------------
 
-def load_roster(season: int = 2025):
-    path = os.path.join(RAW_DIR, f"roster_{season}.csv")
+def load_roster(season: int = 2025, team: str = 'ARI'):
+    path = os.path.join(RAW_DIR, f"roster_{team}_{season}.csv")
+    # Fall back to old filename for backwards compat
+    if not os.path.exists(path) and team == 'ARI':
+        path = os.path.join(RAW_DIR, f"roster_{season}.csv")
     if not os.path.exists(path):
-        print(f"Roster file not found: {path}. Run fetch.py --type roster first.")
+        print(f"Roster file not found: {path}. Run fetch.py --type roster --team {team} first.")
         return
 
     df = pd.read_csv(path)
     df["season"] = season
+    df["team"] = team
 
     conn = sqlite3.connect(DB_PATH)
-    # Upsert: replace existing rows for this season
-    df.to_sql("players", conn, if_exists="replace" if season == 2025 else "append",
-              index=False)
+    # Delete existing rows for this team+season before inserting
+    conn.execute("DELETE FROM players WHERE team=? AND season=?", (team, season))
+    conn.commit()
+    df.to_sql("players", conn, if_exists="append", index=False)
     conn.commit()
     conn.close()
-    print(f"Loaded {len(df)} roster entries for {season}.")
+    print(f"Loaded {len(df)} roster entries for {team} {season}.")
 
 
 # ---------------------------------------------------------------------------
@@ -298,10 +316,13 @@ PITCH_COLS = [
 ]
 
 
-def load_statcast(season: int = 2025):
-    path = os.path.join(RAW_DIR, f"statcast_{season}.csv")
+def load_statcast(season: int = 2025, team: str = 'ARI'):
+    path = os.path.join(RAW_DIR, f"statcast_{team}_{season}.csv")
+    # Fall back to old filename for backwards compat
+    if not os.path.exists(path) and team == 'ARI':
+        path = os.path.join(RAW_DIR, f"statcast_{season}.csv")
     if not os.path.exists(path):
-        print(f"Statcast file not found: {path}. Run fetch.py --type statcast first.")
+        print(f"Statcast file not found: {path}. Run fetch.py --type statcast --team {team} first.")
         return
 
     print(f"Loading {path}...")
@@ -323,11 +344,8 @@ def load_statcast(season: int = 2025):
 
     conn = sqlite3.connect(DB_PATH)
 
-    # Clear existing data so re-runs don't hit UNIQUE constraint errors
-    conn.execute("DELETE FROM pitches")
-    conn.commit()
-
-    # Load row by row via executemany using INSERT OR IGNORE as a safety net
+    # For pitches, we use INSERT OR IGNORE since multiple teams may share pitches
+    # (a D-backs pitcher appears in both ARI and LAD data)
     chunk_size = 50_000
     total = 0
     for start in range(0, len(df), chunk_size):
@@ -340,7 +358,7 @@ def load_statcast(season: int = 2025):
         conn.commit()
         print(f"  Inserted {total:,}/{len(df):,} pitches...")
     conn.close()
-    print(f"Done. {total:,} pitches loaded.")
+    print(f"Done. {total:,} pitches loaded for {team} {season}.")
 
 
 # ---------------------------------------------------------------------------
@@ -358,15 +376,20 @@ def _normalize_name(name: str) -> str:
     return name.strip()
 
 
-def load_value(season: int = 2025):
-    value_path = os.path.join(RAW_DIR, f"value_{season}.csv")
-    awards_path = os.path.join(RAW_DIR, f"awards_{season}.csv")
+def load_value(season: int = 2025, team: str = 'ARI'):
+    value_path = os.path.join(RAW_DIR, f"value_{team}_{season}.csv")
+    awards_path = os.path.join(RAW_DIR, f"awards_{team}_{season}.csv")
+    # Fall back to old filenames for backwards compat
+    if not os.path.exists(value_path) and team == 'ARI':
+        value_path = os.path.join(RAW_DIR, f"value_{season}.csv")
+    if not os.path.exists(awards_path) and team == 'ARI':
+        awards_path = os.path.join(RAW_DIR, f"awards_{season}.csv")
 
     conn = sqlite3.connect(DB_PATH)
 
     # Build name -> player_id lookup from players table
     rows = conn.execute(
-        "SELECT player_id, full_name FROM players WHERE season=?", (season,)
+        "SELECT player_id, full_name FROM players WHERE season=? AND team=?", (season, team)
     ).fetchall()
     name_to_id = {_normalize_name(r[1]): r[0] for r in rows}
     norm_names = list(name_to_id.keys())
@@ -396,15 +419,15 @@ def load_value(season: int = 2025):
             if war and war > 0 and salary:
                 dol_per_war = round(salary / war / 1_000_000, 2)
             conn.execute(
-                "INSERT OR REPLACE INTO player_value (player_id, season, war, salary, dollars_per_war) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (pid, season, war, salary, dol_per_war),
+                "INSERT OR REPLACE INTO player_value (player_id, season, team, war, salary, dollars_per_war) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (pid, season, team, war, salary, dol_per_war),
             )
             loaded += 1
         conn.commit()
-        print(f"Loaded {loaded} player value rows for {season}.")
+        print(f"Loaded {loaded} player value rows for {team} {season}.")
     else:
-        print(f"Value file not found: {value_path}. Run fetch_value.py first.")
+        print(f"Value file not found: {value_path}. Run fetch_value.py --team {team} first.")
 
     # Load awards
     if os.path.exists(awards_path):
@@ -412,22 +435,25 @@ def load_value(season: int = 2025):
         loaded = 0
         for _, row in df.iterrows():
             conn.execute(
-                "INSERT OR IGNORE INTO player_awards (player_id, season, award_name) VALUES (?, ?, ?)",
-                (int(row["player_id"]), int(row["season"]), str(row["award_name"])),
+                "INSERT OR IGNORE INTO player_awards (player_id, season, team, award_name) VALUES (?, ?, ?, ?)",
+                (int(row["player_id"]), int(row["season"]), team, str(row["award_name"])),
             )
             loaded += 1
         conn.commit()
-        print(f"Loaded {loaded} award rows for {season}.")
+        print(f"Loaded {loaded} award rows for {team} {season}.")
     else:
-        print(f"Awards file not found: {awards_path}. Run fetch_value.py first.")
+        print(f"Awards file not found: {awards_path}. Run fetch_value.py --team {team} first.")
 
     conn.close()
 
 
-def load_defense(season: int = 2025):
-    defense_path = os.path.join(RAW_DIR, f"defense_{season}.csv")
+def load_defense(season: int = 2025, team: str = 'ARI'):
+    defense_path = os.path.join(RAW_DIR, f"defense_{team}_{season}.csv")
+    # Fall back to old filename for backwards compat
+    if not os.path.exists(defense_path) and team == 'ARI':
+        defense_path = os.path.join(RAW_DIR, f"defense_{season}.csv")
     if not os.path.exists(defense_path):
-        print(f"Defense file not found: {defense_path}. Run fetch_defense.py first.")
+        print(f"Defense file not found: {defense_path}. Run fetch_defense.py --team {team} first.")
         return
 
     conn = sqlite3.connect(DB_PATH)
@@ -449,11 +475,11 @@ def load_defense(season: int = 2025):
 
         conn.execute(
             "INSERT OR REPLACE INTO player_defense "
-            "(player_id, season, position, games, innings, errors, fielding_pct, "
+            "(player_id, season, team, position, games, innings, errors, fielding_pct, "
             " drs, def_runs, oaa, sprint_speed, sprint_pct) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                pid, season,
+                pid, season, team,
                 str(row.get("position")) if pd.notna(row.get("position")) else None,
                 _i("games"), _f("innings"), _i("errors"), _f("fielding_pct"),
                 _f("drs"), _f("def_runs"), _f("oaa"),
@@ -463,7 +489,133 @@ def load_defense(season: int = 2025):
         loaded += 1
     conn.commit()
     conn.close()
-    print(f"Loaded {loaded} player defense rows for {season}.")
+    print(f"Loaded {loaded} player defense rows for {team} {season}.")
+
+
+# ---------------------------------------------------------------------------
+# One-time migration: dbacks.db -> baseball.db with team='ARI'
+# ---------------------------------------------------------------------------
+
+def migrate():
+    """Copy all data from dbacks.db into baseball.db, adding team='ARI' everywhere."""
+    if not os.path.exists(OLD_DB_PATH):
+        print(f"Old database not found at {OLD_DB_PATH}. Nothing to migrate.")
+        return
+
+    print(f"Migrating {OLD_DB_PATH} -> {DB_PATH}")
+
+    # Create new DB with current schema
+    create_db()
+
+    old = sqlite3.connect(OLD_DB_PATH)
+    new = sqlite3.connect(DB_PATH)
+    old.row_factory = sqlite3.Row
+
+    # --- players ---
+    rows = old.execute("SELECT * FROM players").fetchall()
+    print(f"  Migrating {len(rows)} players...")
+    for r in rows:
+        d = dict(r)
+        new.execute(
+            "INSERT OR IGNORE INTO players "
+            "(player_id, full_name, jersey_number, position, position_type, season, status, team) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (d['player_id'], d['full_name'], d.get('jersey_number'), d.get('position'),
+             d.get('position_type'), d['season'], d.get('status'), 'ARI')
+        )
+
+    # --- pitches (no team column needed — already has home_team/away_team) ---
+    rows = old.execute("SELECT * FROM pitches").fetchall()
+    print(f"  Migrating {len(rows):,} pitches...")
+    chunk_size = 50_000
+    total = 0
+    all_rows = list(rows)
+    for start in range(0, len(all_rows), chunk_size):
+        chunk = all_rows[start:start + chunk_size]
+        for r in chunk:
+            d = dict(r)
+            cols = list(d.keys())
+            vals = [d[c] for c in cols]
+            ph = ','.join(['?'] * len(cols))
+            new.execute(
+                f"INSERT OR IGNORE INTO pitches ({','.join(cols)}) VALUES ({ph})", vals
+            )
+        total += len(chunk)
+        new.commit()
+        print(f"    {total:,}/{len(all_rows):,} pitches...")
+
+    # --- batter_splits ---
+    rows = old.execute("SELECT * FROM batter_splits").fetchall()
+    print(f"  Migrating {len(rows)} batter_splits...")
+    for r in rows:
+        d = dict(r)
+        d.pop('id', None)
+        d['team'] = 'ARI'
+        cols = list(d.keys())
+        ph = ','.join(['?'] * len(cols))
+        new.execute(
+            f"INSERT OR IGNORE INTO batter_splits ({','.join(cols)}) VALUES ({ph})",
+            [d[c] for c in cols]
+        )
+
+    # --- pitcher_splits ---
+    rows = old.execute("SELECT * FROM pitcher_splits").fetchall()
+    print(f"  Migrating {len(rows)} pitcher_splits...")
+    for r in rows:
+        d = dict(r)
+        d.pop('id', None)
+        d['team'] = 'ARI'
+        cols = list(d.keys())
+        ph = ','.join(['?'] * len(cols))
+        new.execute(
+            f"INSERT OR IGNORE INTO pitcher_splits ({','.join(cols)}) VALUES ({ph})",
+            [d[c] for c in cols]
+        )
+
+    # --- player_value ---
+    rows = old.execute("SELECT * FROM player_value").fetchall()
+    print(f"  Migrating {len(rows)} player_value rows...")
+    for r in rows:
+        d = dict(r)
+        new.execute(
+            "INSERT OR IGNORE INTO player_value (player_id, season, team, war, salary, dollars_per_war) "
+            "VALUES (?,?,?,?,?,?)",
+            (d['player_id'], d['season'], 'ARI', d.get('war'), d.get('salary'), d.get('dollars_per_war'))
+        )
+
+    # --- player_awards ---
+    rows = old.execute("SELECT * FROM player_awards").fetchall()
+    print(f"  Migrating {len(rows)} player_awards rows...")
+    for r in rows:
+        d = dict(r)
+        new.execute(
+            "INSERT OR IGNORE INTO player_awards (player_id, season, team, award_name) VALUES (?,?,?,?)",
+            (d['player_id'], d['season'], 'ARI', d.get('award_name'))
+        )
+
+    # --- player_defense ---
+    try:
+        rows = old.execute("SELECT * FROM player_defense").fetchall()
+        print(f"  Migrating {len(rows)} player_defense rows...")
+        for r in rows:
+            d = dict(r)
+            new.execute(
+                "INSERT OR IGNORE INTO player_defense "
+                "(player_id, season, team, position, games, innings, errors, fielding_pct, "
+                " drs, def_runs, oaa, sprint_speed, sprint_pct) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (d['player_id'], d['season'], 'ARI',
+                 d.get('position'), d.get('games'), d.get('innings'), d.get('errors'),
+                 d.get('fielding_pct'), d.get('drs'), d.get('def_runs'), d.get('oaa'),
+                 d.get('sprint_speed'), d.get('sprint_pct'))
+            )
+    except sqlite3.OperationalError:
+        print("  (No player_defense table in old DB — skipping)")
+
+    new.commit()
+    old.close()
+    new.close()
+    print(f"Migration complete. New DB: {DB_PATH}")
 
 
 # ---------------------------------------------------------------------------
@@ -471,24 +623,31 @@ def load_defense(season: int = 2025):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Build/load D-backs SQLite database")
-    parser.add_argument("--create", action="store_true", help="Create schema")
-    parser.add_argument("--load", action="store_true", help="Load CSV data")
-    parser.add_argument("--value", action="store_true", help="Load WAR/salary/awards CSVs")
+    parser = argparse.ArgumentParser(description="Build/load baseball SQLite database")
+    parser.add_argument("--create",  action="store_true", help="Create schema")
+    parser.add_argument("--load",    action="store_true", help="Load roster + statcast CSVs")
+    parser.add_argument("--value",   action="store_true", help="Load WAR/salary/awards CSVs")
     parser.add_argument("--defense", action="store_true", help="Load defensive metrics CSV")
-    parser.add_argument("--all", action="store_true", help="Create + load everything")
-    parser.add_argument("--season", type=int, default=2025)
+    parser.add_argument("--all",     action="store_true", help="Create + load everything")
+    parser.add_argument("--migrate", action="store_true", help="One-time: migrate dbacks.db → baseball.db")
+    parser.add_argument("--team",    type=str, default="ARI", help="Team code (e.g. ARI, LAD)")
+    parser.add_argument("--season",  type=int, default=2025)
     args = parser.parse_args()
 
-    if args.create or args.all:
-        create_db()
+    team = args.team.upper()
 
-    if args.load or args.all:
-        load_roster(args.season)
-        load_statcast(args.season)
+    if args.migrate:
+        migrate()
+    else:
+        if args.create or args.all:
+            create_db()
 
-    if args.value or args.all:
-        load_value(args.season)
+        if args.load or args.all:
+            load_roster(args.season, team)
+            load_statcast(args.season, team)
 
-    if args.defense or args.all:
-        load_defense(args.season)
+        if args.value or args.all:
+            load_value(args.season, team)
+
+        if args.defense or args.all:
+            load_defense(args.season, team)

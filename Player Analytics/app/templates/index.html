@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}D-backs Analytics — 2025{% endblock %}
+{% block title %}{{ team.full_name }} Analytics — {{ season }}{% endblock %}
 
 {% block content %}
 <!-- ── Hero ──────────────────────────────────────────────── -->
 <div class="home-hero">
-    <div class="hero-bg-letters">ARI</div>
+    <div class="hero-bg-letters">{{ team.code }}</div>
     <div class="hero-content">
-        <h1 class="hero-title">Arizona Diamondbacks</h1>
-        <p class="hero-sub">2025 Season Analytics</p>
+        <h1 class="hero-title">{{ team.full_name }}</h1>
+        <p class="hero-sub">{{ season }} Season Analytics</p>
         <div class="hero-stats">
             <span>{{ batters|length }} Position Players</span>
             <span class="hero-sep">·</span>
