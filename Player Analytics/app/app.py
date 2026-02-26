@@ -229,17 +229,21 @@ def _compute_split_groups(df, player_type: str, split_type: str) -> list:
 
 @app.route("/")
 def index():
+    def jersey_key(p):
+        try:
+            return int(p["jersey_number"] or 9999)
+        except (ValueError, TypeError):
+            return 9999
+
     batters = query(
-        "SELECT p.player_id, p.full_name, p.position, p.jersey_number "
+        "SELECT p.player_id, p.full_name, p.position, p.jersey_number, p.position_type "
         "FROM players p "
-        "WHERE p.position_type != 'Pitcher' AND p.season = 2025 "
-        "ORDER BY p.full_name"
+        "WHERE p.position_type != 'Pitcher' AND p.season = 2025"
     )
     pitchers = query(
-        "SELECT p.player_id, p.full_name, p.position, p.jersey_number "
+        "SELECT p.player_id, p.full_name, p.position, p.jersey_number, p.position_type "
         "FROM players p "
-        "WHERE p.position_type = 'Pitcher' AND p.season = 2025 "
-        "ORDER BY p.full_name"
+        "WHERE p.position_type = 'Pitcher' AND p.season = 2025"
     )
     # Classify pitchers as SP vs RP: starters pitched in inning 1 in 3+ games
     starter_rows = query(
@@ -251,7 +255,14 @@ def index():
     starter_ids = {r["pitcher"] for r in starter_rows}
     for p in pitchers:
         p["position"] = "SP" if p["player_id"] in starter_ids else "RP"
-    return render_template("index.html", batters=batters, pitchers=pitchers)
+
+    # Sort each group by jersey number
+    batters.sort(key=jersey_key)
+    pitchers.sort(key=jersey_key)
+    all_players = sorted(batters + pitchers, key=jersey_key)
+
+    return render_template("index.html", batters=batters, pitchers=pitchers,
+                           all_players=all_players)
 
 
 @app.route("/batter/<int:player_id>")

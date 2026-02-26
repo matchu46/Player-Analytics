@@ -30,7 +30,7 @@
 </div>
 
 <!-- ── Position Players ──────────────────────────────────── -->
-<div class="roster-section" id="section-batters">
+<div class="roster-section" id="section-batters" style="display:none">
     {% set pos_order = ['C','1B','2B','3B','SS','LF','CF','RF','DH','OF'] %}
     {% set batters_by_pos = {} %}
     {% for b in batters %}
@@ -128,9 +128,9 @@
 </div>
 
 <!-- ── All Players (search results) ──────────────────────── -->
-<div class="roster-section" id="section-all" style="display:none">
+<div class="roster-section" id="section-all">
     <div class="player-cards" id="all-cards">
-        {% for p in batters + pitchers %}
+        {% for p in all_players %}
         <a href="/{% if p.position_type == 'Pitcher' %}pitcher{% else %}batter{% endif %}/{{ p.player_id }}"
            class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
             <div class="card-photo-wrap">
@@ -162,9 +162,11 @@
 <script>
 // ── Roster tab switching ─────────────────────────────────
 const sections = { all:'section-all', batters:'section-batters', pitchers:'section-pitchers' };
-let currentTab = 'batters';
+const hashMap = { '#batters':'batters', '#pitchers':'pitchers' };
+let currentTab = hashMap[window.location.hash] || 'all';
 
 document.querySelectorAll('.roster-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.roster === currentTab);
     btn.addEventListener('click', () => {
         document.querySelectorAll('.roster-tab').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
@@ -207,6 +209,6 @@ document.getElementById('player-search').addEventListener('input', e => {
 });
 
 // Initial display
-showSection('batters', '');
+showSection(currentTab, '');
 </script>
 {% endblock %}

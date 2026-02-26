@@ -150,7 +150,7 @@
 <!-- ── TAB: Splits ────────────────────────────────────── -->
 <div class="tab-content active" id="tab-splits">
     <div class="panels-toolbar">
-        <span class="panels-hint">Up to 3 comparisons — filters apply to all panels</span>
+        <span class="panels-hint">Up to 2 comparisons — filters apply to all panels</span>
         <button class="btn-add-panel" id="add-panel-btn">+ Add Comparison</button>
     </div>
     <div id="split-panels"></div>
@@ -415,8 +415,17 @@ const SPLIT_SORT = {
     count:  v => { const [b,s]=v.split('-'); return parseInt(b)*10+parseInt(s); },
     outs:   v => parseInt(v),
 };
-const BAD_STATS = new Set(['strikeouts','whiff_pct','bb_pct','walks_allowed',
-    'home_runs_allowed','woba_against','avg_against','slg_against']);
+// Stats where LOWER is better (red = high, green = low)
+// Separate sets because 'strikeouts' is bad for batters but good for pitchers
+{% if player_type == 'pitcher' %}
+const BAD_STATS = new Set([
+    'era','whip','hits_allowed','runs_allowed','earned_runs',
+    'home_runs_allowed','walks_allowed','bb_pct','hbp',
+    'avg_against','obp_against','slg_against','woba_against',
+]);
+{% else %}
+const BAD_STATS = new Set(['strikeouts','whiff_pct']);
+{% endif %}
 
 let panelCount = 0;
 
@@ -459,7 +468,7 @@ function createPanel(splitType, statKey) {
 
 function updateAddBtn() {
     const n = document.querySelectorAll('.split-panel').length;
-    document.getElementById('add-panel-btn').style.display = n >= 3 ? 'none' : '';
+    document.getElementById('add-panel-btn').style.display = n >= 2 ? 'none' : '';
 }
 
 document.getElementById('add-panel-btn').addEventListener('click', () => {
