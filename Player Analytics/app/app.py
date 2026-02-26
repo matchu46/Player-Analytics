@@ -7,7 +7,7 @@ import os
 import sys
 import sqlite3
 
-from flask import Flask, jsonify, render_template, abort, request
+from flask import Flask, jsonify, render_template, abort, request, redirect
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
@@ -19,6 +19,13 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 sys.path.insert(0, os.path.join(BASE_DIR, "..", "src"))
 
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
+
+
+@app.before_request
+def force_https():
+    # Railway sets X-Forwarded-Proto header; redirect http -> https in production
+    if request.headers.get("X-Forwarded-Proto") == "http":
+        return redirect(request.url.replace("http://", "https://", 1), code=301)
 
 
 # ---------------------------------------------------------------------------
