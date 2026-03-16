@@ -627,6 +627,37 @@ def search_players():
 
 
 # ---------------------------------------------------------------------------
+# API — Global player search (searches our DB)
+# ---------------------------------------------------------------------------
+
+@app.route("/api/search")
+def api_search():
+    q = request.args.get("q", "").strip()
+    if len(q) < 2:
+        return jsonify([])
+    rows = query(
+        """SELECT player_id, full_name, team, position, position_type
+           FROM players
+           WHERE full_name LIKE ? AND season = ?
+           ORDER BY full_name
+           LIMIT 15""",
+        (f"%{q}%", SEASON)
+    )
+    results = []
+    for r in rows:
+        player_type = "pitcher" if r["position"] == "P" else "batter"
+        results.append({
+            "id":       r["player_id"],
+            "name":     r["full_name"],
+            "team":     r["team"],
+            "position": r["position"],
+            "type":     player_type,
+            "url":      f"/{player_type}/{r['player_id']}",
+        })
+    return jsonify(results)
+
+
+# ---------------------------------------------------------------------------
 # Static pages
 # ---------------------------------------------------------------------------
 

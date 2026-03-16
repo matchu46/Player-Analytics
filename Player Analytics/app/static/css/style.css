@@ -68,6 +68,54 @@ nav { display: flex; gap: 1.5rem; margin-left: auto; }
 nav a { font-size: 0.85rem; color: var(--text-muted); transition: color 0.15s; }
 nav a:hover { color: var(--team-secondary); }
 
+/* ── Global search ──────────────────────────────────────── */
+.global-search {
+    position: relative;
+    flex: 1;
+    max-width: 340px;
+}
+.global-search-input {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.38rem 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+}
+.global-search-input:focus { border-color: var(--team-primary, #555); }
+.global-search-input::placeholder { color: var(--text-muted); }
+.global-search-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.global-search-dropdown.open { display: block; }
+.gs-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.55rem 0.85rem;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+}
+.gs-item:last-child { border-bottom: none; }
+.gs-item:hover, .gs-item.active { background: var(--bg-hover); }
+.gs-name { font-weight: 500; }
+.gs-meta { font-size: 0.75rem; color: var(--text-muted); }
+
 /* ── Main ───────────────────────────────────────────────── */
 .main-content {
     max-width: 1300px;

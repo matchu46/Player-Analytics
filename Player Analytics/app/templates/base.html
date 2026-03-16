@@ -43,6 +43,13 @@
                 <span class="logo-text">Dugout Intel</span>
                 <span class="logo-year">2025</span>
             </a>
+
+            <div class="global-search" id="globalSearch">
+                <input type="text" class="global-search-input" id="globalSearchInput"
+                       placeholder="Search any player…" autocomplete="off">
+                <div class="global-search-dropdown" id="globalSearchDropdown"></div>
+            </div>
+
             <nav>
                 <a href="/">Home</a>
                 {% if team is defined and team %}
@@ -52,6 +59,55 @@
             </nav>
         </div>
     </header>
+
+    <script>
+    (function () {
+        const input    = document.getElementById('globalSearchInput');
+        const dropdown = document.getElementById('globalSearchDropdown');
+        let timer, active = -1, results = [];
+
+        function show(items) {
+            results = items;
+            active = -1;
+            if (!items.length) { dropdown.classList.remove('open'); return; }
+            dropdown.innerHTML = items.map((r, i) =>
+                `<a class="gs-item" href="${r.url}" data-i="${i}">
+                    <span class="gs-name">${r.name}</span>
+                    <span class="gs-meta">${r.team} · ${r.position}</span>
+                </a>`
+            ).join('');
+            dropdown.classList.add('open');
+        }
+
+        function setActive(i) {
+            const items = dropdown.querySelectorAll('.gs-item');
+            items.forEach(el => el.classList.remove('active'));
+            if (i >= 0 && i < items.length) { items[i].classList.add('active'); active = i; }
+        }
+
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+            const q = input.value.trim();
+            if (q.length < 2) { dropdown.classList.remove('open'); return; }
+            timer = setTimeout(async () => {
+                const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+                show(await res.json());
+            }, 220);
+        });
+
+        input.addEventListener('keydown', e => {
+            if (!dropdown.classList.contains('open')) return;
+            if (e.key === 'ArrowDown')  { e.preventDefault(); setActive(Math.min(active + 1, results.length - 1)); }
+            if (e.key === 'ArrowUp')    { e.preventDefault(); setActive(Math.max(active - 1, 0)); }
+            if (e.key === 'Enter' && active >= 0) { e.preventDefault(); window.location = results[active].url; }
+            if (e.key === 'Escape')     { dropdown.classList.remove('open'); input.blur(); }
+        });
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#globalSearch')) dropdown.classList.remove('open');
+        });
+    })();
+    </script>
 
     <main class="main-content">
         {% block content %}{% endblock %}
