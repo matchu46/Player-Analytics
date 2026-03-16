@@ -29,16 +29,30 @@ def _is_valid_sqlite(path: str) -> bool:
 
 
 def _ensure_db():
-    """Decompress baseball.db.gz → baseball.db if needed (cold-start on Railway)."""
-    if not _is_valid_sqlite(DB_PATH):
+    """Seed DB from .gz if missing, invalid, or DB_VERSION has been bumped."""
+    target_version  = os.environ.get("DB_VERSION", "1")
+    version_file    = DB_PATH + ".version"
+
+    current_version = ""
+    if os.path.exists(version_file):
+        with open(version_file) as f:
+            current_version = f.read().strip()
+
+    needs_seed = not _is_valid_sqlite(DB_PATH) or current_version != target_version
+
+    if needs_seed:
         if os.path.exists(DB_GZ):
-            print(f"[startup] decompressing {DB_GZ} …", flush=True)
+            print(f"[startup] seeding DB (version {target_version}) from {DB_GZ} …", flush=True)
             os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
             with gzip.open(DB_GZ, "rb") as f_in, open(DB_PATH, "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
+            with open(version_file, "w") as f:
+                f.write(target_version)
             print("[startup] database ready.", flush=True)
         else:
             print(f"[startup] WARNING: neither {DB_PATH} nor {DB_GZ} found.", flush=True)
+    else:
+        print(f"[startup] DB up to date (version {current_version}).", flush=True)
 
 _ensure_db()
 

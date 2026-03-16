@@ -16,7 +16,7 @@ import pandas as pd
 import statsapi
 import pybaseball
 
-from teams import get_team, SEASON
+from teams import get_team, SEASON, get_season_dates
 
 pybaseball.cache.enable()
 
@@ -73,8 +73,9 @@ def fetch_statcast_team(season: int, team_cfg: dict, start_override: str = None)
     Pass start_override to fetch only a recent window (e.g. for daily updates).
     """
     fg_code = team_cfg['fg_code']
-    start = start_override or team_cfg['season_start']
-    end = team_cfg['season_end']
+    dates = get_season_dates(season)
+    start = start_override or dates['season_start']
+    end = dates['season_end']
 
     roster_path = os.path.join(RAW_DIR, f"roster_{fg_code}_{season}.csv")
     if not os.path.exists(roster_path):

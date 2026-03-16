@@ -10,6 +10,22 @@ Usage:
 
 SEASON = 2025
 
+# Regular-season date ranges by year (start inclusive, end inclusive)
+SEASON_DATES: dict[int, dict] = {
+    2022: {'season_start': '2022-04-07', 'season_end': '2022-10-05'},
+    2023: {'season_start': '2023-03-30', 'season_end': '2023-10-01'},
+    2024: {'season_start': '2024-03-20', 'season_end': '2024-09-29'},
+    2025: {'season_start': '2025-03-27', 'season_end': '2025-10-01'},
+}
+
+
+def get_season_dates(season: int) -> dict:
+    """Return {'season_start': ..., 'season_end': ...} for the given year."""
+    if season not in SEASON_DATES:
+        raise ValueError(f"No season dates configured for {season}. Add to SEASON_DATES.")
+    return SEASON_DATES[season]
+
+
 # ---------------------------------------------------------------------------
 # All 30 MLB teams
 # Keys:
