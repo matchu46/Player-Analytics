@@ -13,7 +13,7 @@ from flask import Flask, jsonify, render_template, abort, request, redirect, Res
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
-DB_PATH  = os.path.join(DATA_DIR, "db", "baseball.db")
+DB_PATH  = os.environ.get("DB_PATH", os.path.join(DATA_DIR, "db", "baseball.db"))
 DB_GZ    = os.path.join(DATA_DIR, "db", "baseball.db.gz")
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 STATIC_DIR   = os.path.join(BASE_DIR, "static")
@@ -757,6 +757,35 @@ def sitemap():
 @app.errorhandler(404)
 def not_found(e):
     return render_template("404.html"), 404
+
+
+# ---------------------------------------------------------------------------
+# Scheduler — daily incremental update (enabled via SCHEDULER_ENABLED=1)
+# ---------------------------------------------------------------------------
+
+def _run_daily_update():
+    """Run update_all.py in a subprocess — fetches last 3 days for all teams."""
+    import subprocess
+    src_dir = os.path.join(BASE_DIR, "..", "src")
+    script  = os.path.join(src_dir, "update_all.py")
+    print("[scheduler] Starting daily update...", flush=True)
+    try:
+        subprocess.run(
+            [sys.executable, script, "--days", "3"],
+            check=True,
+            timeout=10_800,   # 3-hour hard cap
+        )
+        print("[scheduler] Daily update complete.", flush=True)
+    except Exception as e:
+        print(f"[scheduler] Daily update failed: {e}", flush=True)
+
+
+if os.environ.get("SCHEDULER_ENABLED") == "1":
+    from apscheduler.schedulers.background import BackgroundScheduler
+    _scheduler = BackgroundScheduler(timezone="America/New_York")
+    _scheduler.add_job(_run_daily_update, "cron", hour=6, minute=0)
+    _scheduler.start()
+    print("[scheduler] Daily update scheduled at 06:00 ET.", flush=True)
 
 
 if __name__ == "__main__":

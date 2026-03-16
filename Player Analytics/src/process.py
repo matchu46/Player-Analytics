@@ -31,7 +31,7 @@ STATCAST_TO_DIVISION = {cfg['statcast_code']: cfg.get('division', '') for cfg in
 STATCAST_TO_LEAGUE = {cfg['statcast_code']: cfg.get('league', '') for cfg in TEAMS.values()}
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-DB_PATH = os.path.join(DATA_DIR, "db", "baseball.db")
+DB_PATH = os.environ.get("DB_PATH", os.path.join(DATA_DIR, "db", "baseball.db"))
 
 # ---------------------------------------------------------------------------
 # Helpers — counting stats from a filtered DataFrame

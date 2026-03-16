@@ -25,7 +25,7 @@ from teams import get_team, SEASON
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
 RAW_DIR  = os.path.join(DATA_DIR, "raw")
-DB_PATH  = os.path.join(DATA_DIR, "db", "baseball.db")
+DB_PATH  = os.environ.get("DB_PATH", os.path.join(DATA_DIR, "db", "baseball.db"))
 
 
 # ---------------------------------------------------------------------------

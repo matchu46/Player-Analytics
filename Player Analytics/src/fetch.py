@@ -58,7 +58,7 @@ def fetch_roster(season: int, team_cfg: dict) -> pd.DataFrame:
 # Statcast (pitch-by-pitch)
 # ---------------------------------------------------------------------------
 
-def fetch_statcast_team(season: int, team_cfg: dict) -> pd.DataFrame:
+def fetch_statcast_team(season: int, team_cfg: dict, start_override: str = None) -> pd.DataFrame:
     """
     Pull all Statcast pitches involving a team's players:
 
@@ -70,9 +70,10 @@ def fetch_statcast_team(season: int, team_cfg: dict) -> pd.DataFrame:
       a pitch can only be thrown by one team per plate appearance.
 
     Both halves are combined and saved to statcast_{team}_{season}.csv.
+    Pass start_override to fetch only a recent window (e.g. for daily updates).
     """
     fg_code = team_cfg['fg_code']
-    start = team_cfg['season_start']
+    start = start_override or team_cfg['season_start']
     end = team_cfg['season_end']
 
     roster_path = os.path.join(RAW_DIR, f"roster_{fg_code}_{season}.csv")
@@ -146,6 +147,8 @@ if __name__ == "__main__":
                         default="roster", help="What to fetch")
     parser.add_argument("--team",   type=str, default="ARI", help="Team code (e.g. ARI, LAD)")
     parser.add_argument("--season", type=int, default=SEASON)
+    parser.add_argument("--start",  type=str, default=None,
+                        help="Override Statcast start date (YYYY-MM-DD). Useful for daily incremental updates.")
     args = parser.parse_args()
 
     team_cfg = get_team(args.team)
@@ -154,4 +157,4 @@ if __name__ == "__main__":
         fetch_roster(args.season, team_cfg)
 
     if args.type in ("all", "statcast"):
-        fetch_statcast_team(args.season, team_cfg)
+        fetch_statcast_team(args.season, team_cfg, start_override=args.start)

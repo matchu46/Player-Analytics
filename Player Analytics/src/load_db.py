@@ -19,7 +19,7 @@ import pandas as pd
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 RAW_DIR = os.path.join(DATA_DIR, "raw")
-DB_PATH = os.path.join(DATA_DIR, "db", "baseball.db")
+DB_PATH = os.environ.get("DB_PATH", os.path.join(DATA_DIR, "db", "baseball.db"))
 OLD_DB_PATH = os.path.join(DATA_DIR, "db", "dbacks.db")
 
 
