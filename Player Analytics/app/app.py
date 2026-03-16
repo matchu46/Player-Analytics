@@ -59,7 +59,7 @@ _ensure_db()
 # Allow importing from src/
 sys.path.insert(0, os.path.join(BASE_DIR, "..", "src"))
 
-from teams import TEAMS, SEASON
+from teams import TEAMS, SEASON, SEASON_DATES
 
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 
@@ -153,6 +153,12 @@ def build_pitch_filter(player_col: str, player_id: int) -> tuple[str, list]:
     if pitch_type:
         clauses.append("pitch_type = ?")
         params.append(pitch_type)
+
+    season = request.args.get("season", type=int)
+    if season and season in SEASON_DATES:
+        dates = SEASON_DATES[season]
+        clauses.append("game_date BETWEEN ? AND ?")
+        params.extend([dates["season_start"], dates["season_end"]])
 
     return " AND ".join(clauses), params
 
@@ -365,6 +371,13 @@ def roster(team_code: str):
 
     team = {**TEAMS[team_code], 'code': team_code}
 
+    available_seasons = [r["season"] for r in query(
+        "SELECT DISTINCT season FROM players WHERE team=? ORDER BY season DESC", (team_code,)
+    )]
+    season = request.args.get("season", SEASON, type=int)
+    if season not in available_seasons:
+        season = available_seasons[0] if available_seasons else SEASON
+
     def jersey_key(p):
         try:
             return int(float(p["jersey_number"] or 9999))
@@ -375,13 +388,13 @@ def roster(team_code: str):
         "SELECT p.player_id, p.full_name, p.position, p.jersey_number, p.position_type "
         "FROM players p "
         "WHERE p.position_type != 'Pitcher' AND p.season = ? AND p.team = ?",
-        (SEASON, team_code)
+        (season, team_code)
     )
     pitchers = query(
         "SELECT p.player_id, p.full_name, p.position, p.jersey_number, p.position_type "
         "FROM players p "
         "WHERE p.position_type = 'Pitcher' AND p.season = ? AND p.team = ?",
-        (SEASON, team_code)
+        (season, team_code)
     )
 
     # Two-way players (e.g. Ohtani) appear in batters; also add them to pitchers tab
@@ -412,13 +425,21 @@ def roster(team_code: str):
     all_players = sorted(batters + pure_pitchers, key=jersey_key)
 
     return render_template("index.html", batters=batters, pitchers=pitchers_for_tab,
-                           all_players=all_players, team=team, season=SEASON)
+                           all_players=all_players, team=team, season=season,
+                           available_seasons=available_seasons)
 
 
 @app.route("/batter/<int:player_id>")
 def batter_page(player_id: int):
+    available_seasons = [r["season"] for r in query(
+        "SELECT DISTINCT season FROM players WHERE player_id=? ORDER BY season DESC", (player_id,)
+    )]
+    season = request.args.get("season", SEASON, type=int)
+    if season not in available_seasons:
+        season = available_seasons[0] if available_seasons else SEASON
+
     player = query(
-        "SELECT * FROM players WHERE player_id=? AND season=?", (player_id, SEASON)
+        "SELECT * FROM players WHERE player_id=? AND season=?", (player_id, season)
     )
     if not player:
         abort(404)
@@ -431,26 +452,36 @@ def batter_page(player_id: int):
 
     overall = query(
         "SELECT * FROM batter_splits WHERE player_id=? AND season=? AND split_type='overall'",
-        (player_id, SEASON)
+        (player_id, season)
     )
     overall = overall[0] if overall else {}
     split_types = [r["split_type"] for r in query(
         "SELECT DISTINCT split_type FROM batter_splits "
-        "WHERE player_id=? AND season=? ORDER BY split_type", (player_id, SEASON)
+        "WHERE player_id=? AND season=? ORDER BY split_type", (player_id, season)
     )]
+    dates = SEASON_DATES.get(season, SEASON_DATES[SEASON])
     pitch_types = [r["pitch_type"] for r in query(
         "SELECT DISTINCT pitch_type FROM pitches WHERE batter=? AND pitch_type IS NOT NULL "
-        "ORDER BY pitch_type", (player_id,)
+        "AND game_date BETWEEN ? AND ? ORDER BY pitch_type",
+        (player_id, dates["season_start"], dates["season_end"])
     )]
     return render_template("player.html", player=player, overall=overall,
                            split_types=split_types, pitch_types=pitch_types,
-                           player_type="batter", team=team)
+                           player_type="batter", team=team,
+                           season=season, available_seasons=available_seasons)
 
 
 @app.route("/pitcher/<int:player_id>")
 def pitcher_page(player_id: int):
+    available_seasons = [r["season"] for r in query(
+        "SELECT DISTINCT season FROM players WHERE player_id=? ORDER BY season DESC", (player_id,)
+    )]
+    season = request.args.get("season", SEASON, type=int)
+    if season not in available_seasons:
+        season = available_seasons[0] if available_seasons else SEASON
+
     player = query(
-        "SELECT * FROM players WHERE player_id=? AND season=?", (player_id, SEASON)
+        "SELECT * FROM players WHERE player_id=? AND season=?", (player_id, season)
     )
     if not player:
         abort(404)
@@ -463,20 +494,23 @@ def pitcher_page(player_id: int):
 
     overall = query(
         "SELECT * FROM pitcher_splits WHERE player_id=? AND season=? AND split_type='overall'",
-        (player_id, SEASON)
+        (player_id, season)
     )
     overall = overall[0] if overall else {}
     split_types = [r["split_type"] for r in query(
         "SELECT DISTINCT split_type FROM pitcher_splits "
-        "WHERE player_id=? AND season=? ORDER BY split_type", (player_id, SEASON)
+        "WHERE player_id=? AND season=? ORDER BY split_type", (player_id, season)
     )]
+    dates = SEASON_DATES.get(season, SEASON_DATES[SEASON])
     pitch_types = [r["pitch_type"] for r in query(
         "SELECT DISTINCT pitch_type FROM pitches WHERE pitcher=? AND pitch_type IS NOT NULL "
-        "ORDER BY pitch_type", (player_id,)
+        "AND game_date BETWEEN ? AND ? ORDER BY pitch_type",
+        (player_id, dates["season_start"], dates["season_end"])
     )]
     return render_template("player.html", player=player, overall=overall,
                            split_types=split_types, pitch_types=pitch_types,
-                           player_type="pitcher", team=team)
+                           player_type="pitcher", team=team,
+                           season=season, available_seasons=available_seasons)
 
 
 # ---------------------------------------------------------------------------
@@ -494,20 +528,22 @@ def api_players():
 
 @app.route("/api/batter/<int:player_id>/<split_type>")
 def api_batter_split(player_id: int, split_type: str):
+    season = request.args.get("season", SEASON, type=int)
     rows = query(
-        f"SELECT * FROM batter_splits WHERE player_id=? AND season={SEASON} AND split_type=? "
+        "SELECT * FROM batter_splits WHERE player_id=? AND season=? AND split_type=? "
         "ORDER BY split_value",
-        (player_id, split_type)
+        (player_id, season, split_type)
     )
     return jsonify(rows)
 
 
 @app.route("/api/pitcher/<int:player_id>/<split_type>")
 def api_pitcher_split(player_id: int, split_type: str):
+    season = request.args.get("season", SEASON, type=int)
     rows = query(
-        f"SELECT * FROM pitcher_splits WHERE player_id=? AND season={SEASON} AND split_type=? "
+        "SELECT * FROM pitcher_splits WHERE player_id=? AND season=? AND split_type=? "
         "ORDER BY split_value",
-        (player_id, split_type)
+        (player_id, season, split_type)
     )
     for r in rows:
         if r.get("pitch_mix"):
@@ -585,25 +621,30 @@ def api_pitcher_pitches(player_id: int):
 
 @app.route("/api/pitcher/<int:player_id>/movement")
 def api_pitcher_movement(player_id: int):
+    season = request.args.get("season", SEASON, type=int)
+    dates  = SEASON_DATES.get(season, SEASON_DATES[SEASON])
     rows = query(
         "SELECT pitch_type, pfx_x, pfx_z, release_speed, release_spin_rate "
         "FROM pitches WHERE pitcher=? "
         "AND pfx_x IS NOT NULL AND pfx_z IS NOT NULL AND pitch_type IS NOT NULL "
-        "LIMIT 8000",
-        (player_id,)
+        "AND game_date BETWEEN ? AND ? LIMIT 8000",
+        (player_id, dates["season_start"], dates["season_end"])
     )
     return jsonify(rows)
 
 
 @app.route("/api/pitcher/<int:player_id>/velocity")
 def api_pitcher_velocity(player_id: int):
+    season = request.args.get("season", SEASON, type=int)
+    dates  = SEASON_DATES.get(season, SEASON_DATES[SEASON])
     rows = query(
         "SELECT pitch_type, COUNT(*) as pitches, "
         "AVG(release_speed) as avg_velo, MAX(release_speed) as max_velo, "
         "MIN(release_speed) as min_velo, AVG(release_spin_rate) as avg_spin "
         "FROM pitches WHERE pitcher=? AND pitch_type IS NOT NULL "
+        "AND game_date BETWEEN ? AND ? "
         "GROUP BY pitch_type ORDER BY pitches DESC",
-        (player_id,)
+        (player_id, dates["season_start"], dates["season_end"])
     )
     total = sum(r["pitches"] for r in rows)
     for r in rows:

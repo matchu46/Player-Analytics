@@ -21,6 +21,14 @@
             <span class="hero-sep">·</span>
             <span>{{ pitchers|length }} Pitchers</span>
         </div>
+        {% if available_seasons|length > 1 %}
+        <div class="season-selector">
+            {% for s in available_seasons %}
+            <a href="/{{ team.code|lower }}?season={{ s }}"
+               class="season-pill{% if s == season %} active{% endif %}">{{ s }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 </div>
 

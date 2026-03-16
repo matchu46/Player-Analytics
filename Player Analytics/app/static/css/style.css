@@ -68,6 +68,26 @@ nav { display: flex; gap: 1.5rem; margin-left: auto; }
 nav a { font-size: 0.85rem; color: var(--text-muted); transition: color 0.15s; }
 nav a:hover { color: var(--team-secondary); }
 
+/* ── Season selector ───────────────────────────────────── */
+.season-selector {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+}
+.season-pill {
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+}
+.season-pill:hover { border-color: var(--team-primary, #555); color: var(--text); }
+.season-pill.active { border-color: var(--team-primary, var(--red)); color: var(--text); background: var(--bg-hover); }
+
 /* ── Global search ──────────────────────────────────────── */
 .global-search {
     position: relative;

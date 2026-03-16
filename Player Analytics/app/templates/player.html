@@ -21,7 +21,15 @@
                 <span class="jersey-big">#{{ player.jersey_number|int if player.jersey_number else '—' }}</span>
                 <h1>{{ player.full_name }}</h1>
             </div>
-            <p class="position-label">{{ player.position }} · 2025 Season</p>
+            <p class="position-label">{{ player.position }} · {{ season }} Season</p>
+            {% if available_seasons|length > 1 %}
+            <div class="season-selector" style="margin-top:0.5rem;">
+                {% for s in available_seasons %}
+                <a href="/{{ player_type }}/{{ player.player_id }}?season={{ s }}"
+                   class="season-pill{% if s == season %} active{% endif %}">{{ s }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -321,8 +329,9 @@
 {% block scripts %}
 <script>
 // ── Constants ─────────────────────────────────────────────
-const PLAYER_ID   = {{ player.player_id }};
-const PLAYER_TYPE = "{{ player_type }}";
+const PLAYER_ID     = {{ player.player_id }};
+const PLAYER_TYPE   = "{{ player_type }}";
+const PLAYER_SEASON = {{ season }};
 const SPLIT_TYPES = {{ split_types | tojson }};
 
 const RED   = '#A71930';
@@ -494,7 +503,7 @@ let valueLoaded = false;
 function loadValue() {
     if (valueLoaded) return;
     valueLoaded = true;
-    fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/value`)
+    fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/value?season=${PLAYER_SEASON}`)
         .then(r => r.json())
         .then(d => renderValue(d))
         .catch(() => {
@@ -567,7 +576,7 @@ let defenseLoaded = false;
 function loadDefense() {
     if (defenseLoaded) return;
     defenseLoaded = true;
-    fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/defense`)
+    fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/defense?season=${PLAYER_SEASON}`)
         .then(r => r.json())
         .then(d => renderDefense(d))
         .catch(() => {
@@ -763,12 +772,12 @@ async function loadPanel(id) {
     let rows;
     if (hasActiveFilters()) {
         // Use live endpoint so filters are applied
-        const qs = buildQS({ split_type: splitType });
+        const qs = buildQS({ split_type: splitType, season: PLAYER_SEASON });
         const resp = await fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/splits_live${qs}`);
         if (!resp.ok) return;
         rows = await resp.json();
     } else {
-        const resp = await fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/${splitType}`);
+        const resp = await fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/${splitType}?season=${PLAYER_SEASON}`);
         if (!resp.ok) return;
         rows = await resp.json();
     }
@@ -899,7 +908,7 @@ function filterPitchesByMode(pitches, mode) {
 }
 
 async function loadHeatMap() {
-    const qs  = buildQS();
+    const qs  = buildQS({ season: PLAYER_SEASON });
     const url = `/api/${PLAYER_TYPE}/${PLAYER_ID}/pitches${qs}`;
     const resp = await fetch(url);
     if (!resp.ok) return;
@@ -1153,7 +1162,7 @@ function filterBIP(pitches, showMode) {
 }
 
 async function loadSpray() {
-    const qs   = buildQS();
+    const qs   = buildQS({ season: PLAYER_SEASON });
     const resp = await fetch(`/api/batter/${PLAYER_ID}/pitches${qs}`);
     if (!resp.ok) return;
     let pitches = await resp.json();
@@ -1251,7 +1260,7 @@ document.getElementById('spray-color').addEventListener('change', loadSpray);
 // ── PITCH MOVEMENT TAB (pitchers) ─────────────────────────
 {% if player_type == 'pitcher' %}
 async function loadMovement() {
-    const resp = await fetch(`/api/pitcher/${PLAYER_ID}/movement`);
+    const resp = await fetch(`/api/pitcher/${PLAYER_ID}/movement?season=${PLAYER_SEASON}`);
     if (!resp.ok) return;
     const pitches = await resp.json();
     const colorMode = document.getElementById('movement-color').value;
@@ -1291,7 +1300,7 @@ document.getElementById('movement-color').addEventListener('change', loadMovemen
 // ── BATTED BALL TAB (batters) ─────────────────────────────
 {% if player_type == 'batter' %}
 async function loadBattedBall() {
-    const qs   = buildQS();
+    const qs   = buildQS({ season: PLAYER_SEASON });
     const resp = await fetch(`/api/batter/${PLAYER_ID}/pitches${qs}`);
     if (!resp.ok) return;
     let pitches = await resp.json();
@@ -1354,7 +1363,7 @@ document.getElementById('bb-color').addEventListener('change', loadBattedBall);
 // ── VELOCITY TAB (pitchers) ───────────────────────────────
 {% if player_type == 'pitcher' %}
 async function loadVelocity() {
-    const resp = await fetch(`/api/pitcher/${PLAYER_ID}/velocity`);
+    const resp = await fetch(`/api/pitcher/${PLAYER_ID}/velocity?season=${PLAYER_SEASON}`);
     if (!resp.ok) return;
     const data = await resp.json();
 
