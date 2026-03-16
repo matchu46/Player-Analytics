@@ -818,69 +818,152 @@ nav a:hover { color: var(--team-secondary); }
     padding: 0.4rem 0.9rem;
 }
 
-/* ── Team picker ────────────────────────────────────────── */
+/* ── Home hero ──────────────────────────────────────────── */
+.home-wrap {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 1.5rem 3rem;
+}
+.home-hero {
+    text-align: center;
+    padding: 3rem 0 2.5rem;
+}
+.home-title {
+    font-size: 2.8rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+}
+.home-tagline {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    margin-bottom: 1.5rem;
+}
+.home-pills {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+.home-pill {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+}
+
+/* ── League columns ─────────────────────────────────────── */
+.leagues-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+.league-heading {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+/* ── Division sections ──────────────────────────────────── */
 .division-section {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 .division-heading {
-    font-size: 0.78rem;
+    font-size: 0.68rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--text-muted);
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.4rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.7;
 }
-.teams-grid {
+
+/* ── Team cards ─────────────────────────────────────────── */
+.teams-row {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
 }
-.teams-grid--dim { opacity: 0.45; }
 .team-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1.2rem 0.75rem 0.9rem;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 10px;
     text-decoration: none;
     color: var(--text);
-    transition: border-color 0.15s, background 0.15s;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
     cursor: pointer;
+    position: relative;
 }
-.team-card:hover { border-color: var(--card-primary, var(--team-primary)); background: var(--bg-hover); }
-.team-card--disabled { cursor: default; pointer-events: none; }
+.team-card-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--card-primary, #444);
+    flex-shrink: 0;
+}
+.team-card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.6rem 0.4rem 0.55rem;
+    width: 100%;
+}
+.team-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    border-color: var(--card-primary, var(--border));
+}
+.team-card--disabled { cursor: default; pointer-events: none; opacity: 0.45; }
+.team-card-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    margin-bottom: 0.35rem;
+}
 .team-card-abbr {
-    font-size: 1.7rem;
+    font-size: 0.78rem;
     font-weight: 800;
-    letter-spacing: 0.02em;
-    color: var(--card-primary, var(--team-primary));
+    letter-spacing: 0.04em;
+    color: var(--card-primary, var(--text));
     line-height: 1;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.2rem;
 }
 .team-card-name {
-    font-size: 0.78rem;
+    font-size: 0.62rem;
     color: var(--text-muted);
     text-align: center;
-    margin-bottom: 0.5rem;
     line-height: 1.3;
+    margin-bottom: 0.35rem;
 }
 .team-card-links {
-    font-size: 0.72rem;
-    color: var(--text-muted);
+    font-size: 0.62rem;
     display: flex;
-    gap: 0.25rem;
+    gap: 0.2rem;
     align-items: center;
 }
-.team-card-link { color: var(--accent); text-decoration: none; }
+.team-card-link { color: #5b9cf6; text-decoration: none; }
 .team-card-link:hover { text-decoration: underline; }
 .team-card-sep { color: var(--border); }
 
 /* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .leagues-wrap { grid-template-columns: 1fr; }
+    .home-title { font-size: 2rem; }
+}
+@media (max-width: 600px) {
+    .teams-row { grid-template-columns: repeat(3, 1fr); }
+}
 @media (max-width: 768px) {
     .stat-bar { gap: 0.3rem; }
     .stat-item { padding: 0.15rem 0.35rem; min-width: 44px; }

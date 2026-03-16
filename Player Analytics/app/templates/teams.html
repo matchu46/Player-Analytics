@@ -10,40 +10,113 @@
 {% block twitter_description %}Explore pitch splits, spray charts, and Statcast metrics for MLB players — free, in-depth analytics.{% endblock %}
 
 {% block content %}
-<div style="max-width:1100px; margin:2rem auto; padding:0 1.5rem;">
+{% set espn_overrides = {'CWS': 'chw', 'ATH': 'oak'} %}
+<div class="home-wrap">
 
-    <div style="text-align:center; margin-bottom:2.5rem;">
-        <h1 style="font-size:2rem; margin-bottom:0.4rem;">Dugout Intel</h1>
-        <p style="color:var(--text-muted); font-size:1rem;">{{ season }} MLB Season Analytics</p>
-    </div>
-
-    {% for div in division_order %}
-    {% set teams = divisions[div] %}
-    <div class="division-section">
-        <h2 class="division-heading">{{ div }}</h2>
-        <div class="teams-grid">
-            {% for team in teams %}
-            {% if team.has_data %}
-            <a href="/{{ team.code|lower }}" class="team-card" style="--card-primary: {{ team.primary_color }}; --card-secondary: {{ team.secondary_color }};">
-                <div class="team-card-abbr">{{ team.code }}</div>
-                <div class="team-card-name">{{ team.full_name }}</div>
-                <div class="team-card-links">
-                    <span class="team-card-link">Roster</span>
-                    <span class="team-card-sep">·</span>
-                    <span class="team-card-link" onclick="event.preventDefault(); event.stopPropagation(); window.location='/{{ team.code|lower }}/payroll';">Payroll</span>
-                </div>
-            </a>
-            {% else %}
-            <div class="team-card team-card--disabled">
-                <div class="team-card-abbr">{{ team.code }}</div>
-                <div class="team-card-name">{{ team.full_name }}</div>
-                <div class="team-card-links" style="color:var(--text-muted);">Coming Soon</div>
-            </div>
-            {% endif %}
-            {% endfor %}
+    <div class="home-hero">
+        <h1 class="home-title">Dugout Intel</h1>
+        <p class="home-tagline">Advanced Statcast analytics — all 30 MLB teams, free.</p>
+        <div class="home-pills">
+            <span class="home-pill">30 Teams</span>
+            <span class="home-pill">Pitch-Level Data</span>
+            <span class="home-pill">{{ season }} Season</span>
         </div>
     </div>
-    {% endfor %}
 
+    <div class="leagues-wrap">
+
+        <div class="league-col">
+            <div class="league-heading">National League</div>
+            {% for div in division_order[:3] %}
+            {% set teams = divisions[div] %}
+            <div class="division-section">
+                <div class="division-heading">{{ div }}</div>
+                <div class="teams-row">
+                    {% for team in teams %}
+                    {% set espn_code = espn_overrides.get(team.code, team.code|lower) %}
+                    {% if team.has_data %}
+                    <a href="/{{ team.code|lower }}" class="team-card" style="--card-primary:{{ team.primary_color }};">
+                        <div class="team-card-bar" style="background:{{ team.primary_color }};"></div>
+                        <div class="team-card-body">
+                            <img class="team-card-logo"
+                                 src="https://a.espncdn.com/i/teamlogos/mlb/500/{{ espn_code }}.png"
+                                 alt="{{ team.code }}"
+                                 onerror="this.style.display='none'">
+                            <div class="team-card-abbr" style="color:{{ team.primary_color }};">{{ team.code }}</div>
+                            <div class="team-card-name">{{ team.short_name }}</div>
+                            <div class="team-card-links">
+                                <span class="team-card-link">Roster</span>
+                                <span class="team-card-sep">·</span>
+                                <span class="team-card-link" onclick="event.preventDefault();event.stopPropagation();window.location='/{{ team.code|lower }}/payroll';">Payroll</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% else %}
+                    <div class="team-card team-card--disabled">
+                        <div class="team-card-bar"></div>
+                        <div class="team-card-body">
+                            <img class="team-card-logo"
+                                 src="https://a.espncdn.com/i/teamlogos/mlb/500/{{ espn_code }}.png"
+                                 alt="{{ team.code }}"
+                                 onerror="this.style.display='none'">
+                            <div class="team-card-abbr">{{ team.code }}</div>
+                            <div class="team-card-name">{{ team.short_name }}</div>
+                            <div class="team-card-links" style="color:var(--text-muted);">Soon</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="league-col">
+            <div class="league-heading">American League</div>
+            {% for div in division_order[3:] %}
+            {% set teams = divisions[div] %}
+            <div class="division-section">
+                <div class="division-heading">{{ div }}</div>
+                <div class="teams-row">
+                    {% for team in teams %}
+                    {% set espn_code = espn_overrides.get(team.code, team.code|lower) %}
+                    {% if team.has_data %}
+                    <a href="/{{ team.code|lower }}" class="team-card" style="--card-primary:{{ team.primary_color }};">
+                        <div class="team-card-bar" style="background:{{ team.primary_color }};"></div>
+                        <div class="team-card-body">
+                            <img class="team-card-logo"
+                                 src="https://a.espncdn.com/i/teamlogos/mlb/500/{{ espn_code }}.png"
+                                 alt="{{ team.code }}"
+                                 onerror="this.style.display='none'">
+                            <div class="team-card-abbr" style="color:{{ team.primary_color }};">{{ team.code }}</div>
+                            <div class="team-card-name">{{ team.short_name }}</div>
+                            <div class="team-card-links">
+                                <span class="team-card-link">Roster</span>
+                                <span class="team-card-sep">·</span>
+                                <span class="team-card-link" onclick="event.preventDefault();event.stopPropagation();window.location='/{{ team.code|lower }}/payroll';">Payroll</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% else %}
+                    <div class="team-card team-card--disabled">
+                        <div class="team-card-bar"></div>
+                        <div class="team-card-body">
+                            <img class="team-card-logo"
+                                 src="https://a.espncdn.com/i/teamlogos/mlb/500/{{ espn_code }}.png"
+                                 alt="{{ team.code }}"
+                                 onerror="this.style.display='none'">
+                            <div class="team-card-abbr">{{ team.code }}</div>
+                            <div class="team-card-name">{{ team.short_name }}</div>
+                            <div class="team-card-links" style="color:var(--text-muted);">Soon</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
 </div>
 {% endblock %}
