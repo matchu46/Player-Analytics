@@ -17,7 +17,7 @@ import sqlite3
 import pandas as pd
 import numpy as np
 
-from teams import get_team, SEASON, TEAMS
+from teams import get_team, SEASON, TEAMS, SEASON_DATES
 
 # ---------------------------------------------------------------------------
 # Opponent lookup tables (built from TEAMS config)
@@ -405,6 +405,10 @@ def process_batters(player_id: int = None, season: int = SEASON, team: str = 'AR
             conn, params=(season, team)
         )
 
+    dates = SEASON_DATES.get(season, SEASON_DATES[SEASON])
+    season_start = dates["season_start"]
+    season_end   = dates["season_end"]
+
     print(f"Processing {len(players)} {team} batter(s)...")
     for _, row in players.iterrows():
         pid = row["player_id"]
@@ -412,8 +416,8 @@ def process_batters(player_id: int = None, season: int = SEASON, team: str = 'AR
         print(f"  {name} ({pid})...")
 
         df = pd.read_sql(
-            "SELECT * FROM pitches WHERE batter=?",
-            conn, params=(pid,)
+            "SELECT * FROM pitches WHERE batter=? AND game_date BETWEEN ? AND ?",
+            conn, params=(pid, season_start, season_end)
         )
         if df.empty:
             print(f"    No pitch data found.")
@@ -458,6 +462,10 @@ def process_pitchers(player_id: int = None, season: int = SEASON, team: str = 'A
             conn, params=(season, team)
         )
 
+    dates = SEASON_DATES.get(season, SEASON_DATES[SEASON])
+    season_start = dates["season_start"]
+    season_end   = dates["season_end"]
+
     print(f"Processing {len(players)} {team} pitcher(s)...")
     for _, row in players.iterrows():
         pid = row["player_id"]
@@ -465,8 +473,8 @@ def process_pitchers(player_id: int = None, season: int = SEASON, team: str = 'A
         print(f"  {name} ({pid})...")
 
         df = pd.read_sql(
-            "SELECT * FROM pitches WHERE pitcher=?",
-            conn, params=(pid,)
+            "SELECT * FROM pitches WHERE pitcher=? AND game_date BETWEEN ? AND ?",
+            conn, params=(pid, season_start, season_end)
         )
         if df.empty:
             print(f"    No pitch data found.")
