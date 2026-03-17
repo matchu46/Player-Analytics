@@ -62,7 +62,7 @@
         <h3 class="pos-label">{{ pos_labels[pos] if pos in pos_labels else pos }}</h3>
         <div class="player-cards">
             {% for p in batters_by_pos[pos] %}
-            <a href="/batter/{{ p.player_id }}" class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
+            <a href="/batter/{{ p.player_id }}?season={{ season }}" class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
                 <div class="card-photo-wrap">
                     <img class="card-photo"
                          src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_180,q_auto:best/v1/people/{{ p.player_id }}/headshot/67/current"
@@ -100,7 +100,7 @@
         <h3 class="pos-label">Starting Pitchers</h3>
         <div class="player-cards">
             {% for p in starters %}
-            <a href="/pitcher/{{ p.player_id }}" class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
+            <a href="/pitcher/{{ p.player_id }}?season={{ season }}" class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
                 <div class="card-photo-wrap">
                     <img class="card-photo"
                          src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_180,q_auto:best/v1/people/{{ p.player_id }}/headshot/67/current"
@@ -124,7 +124,7 @@
         <h3 class="pos-label">Relief Pitchers</h3>
         <div class="player-cards">
             {% for p in relievers %}
-            <a href="/pitcher/{{ p.player_id }}" class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
+            <a href="/pitcher/{{ p.player_id }}?season={{ season }}" class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
                 <div class="card-photo-wrap">
                     <img class="card-photo"
                          src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_180,q_auto:best/v1/people/{{ p.player_id }}/headshot/67/current"
@@ -148,7 +148,7 @@
 <div class="roster-section" id="section-all">
     <div class="player-cards" id="all-cards">
         {% for p in all_players %}
-        <a href="/{% if p.position_type == 'Pitcher' %}pitcher{% else %}batter{% endif %}/{{ p.player_id }}"
+        <a href="/{% if p.position_type == 'Pitcher' %}pitcher{% else %}batter{% endif %}/{{ p.player_id }}?season={{ season }}"
            class="player-card-new" data-name="{{ p.full_name|lower }}" data-pos="{{ p.position }}">
             <div class="card-photo-wrap">
                 <img class="card-photo"
