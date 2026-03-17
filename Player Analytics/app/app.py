@@ -8,13 +8,15 @@ import os
 import shutil
 import sys
 import sqlite3
+import urllib.request
 
 from flask import Flask, jsonify, render_template, abort, request, redirect, Response
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
 DB_PATH  = os.environ.get("DB_PATH", os.path.join(DATA_DIR, "db", "baseball.db"))
-DB_GZ    = os.path.join(DATA_DIR, "db", "baseball.db.gz")
+DB_GZ     = os.path.join(DATA_DIR, "db", "baseball.db.gz")
+DB_GZ_URL = "https://github.com/matchu46/Player-Analytics/releases/download/v1.0-db/baseball.db.gz"
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 STATIC_DIR   = os.path.join(BASE_DIR, "static")
 
@@ -41,16 +43,17 @@ def _ensure_db():
     needs_seed = not _is_valid_sqlite(DB_PATH) or current_version != target_version
 
     if needs_seed:
-        if os.path.exists(DB_GZ):
-            print(f"[startup] seeding DB (version {target_version}) from {DB_GZ} …", flush=True)
-            os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-            with gzip.open(DB_GZ, "rb") as f_in, open(DB_PATH, "wb") as f_out:
-                shutil.copyfileobj(f_in, f_out)
-            with open(version_file, "w") as f:
-                f.write(target_version)
-            print("[startup] database ready.", flush=True)
-        else:
-            print(f"[startup] WARNING: neither {DB_PATH} nor {DB_GZ} found.", flush=True)
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+        if not os.path.exists(DB_GZ):
+            print(f"[startup] downloading DB from GitHub release…", flush=True)
+            urllib.request.urlretrieve(DB_GZ_URL, DB_GZ)
+            print(f"[startup] download complete.", flush=True)
+        print(f"[startup] seeding DB (version {target_version}) from {DB_GZ} …", flush=True)
+        with gzip.open(DB_GZ, "rb") as f_in, open(DB_PATH, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+        with open(version_file, "w") as f:
+            f.write(target_version)
+        print("[startup] database ready.", flush=True)
     else:
         print(f"[startup] DB up to date (version {current_version}).", flush=True)
 
