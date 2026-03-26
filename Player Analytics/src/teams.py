@@ -8,7 +8,7 @@ Usage:
     cfg = get_team('ARI')   # returns dict with team metadata
 """
 
-SEASON = 2025
+SEASON = 2026
 
 # Regular-season date ranges by year (start inclusive, end inclusive)
 SEASON_DATES: dict[int, dict] = {
@@ -16,6 +16,7 @@ SEASON_DATES: dict[int, dict] = {
     2023: {'season_start': '2023-03-30', 'season_end': '2023-10-01'},
     2024: {'season_start': '2024-03-20', 'season_end': '2024-09-29'},
     2025: {'season_start': '2025-03-27', 'season_end': '2025-10-01'},
+    2026: {'season_start': '2026-03-25', 'season_end': '2026-10-04'},
 }
 
 
@@ -47,8 +48,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'arizona-diamondbacks',
         'full_name':     'Arizona Diamondbacks',
         'short_name':    'D-backs',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#A71930',  # Sedona Red
         'secondary_color': '#E3D4AD',  # Sand
         'division': 'NL West', 'league': 'NL',
@@ -60,8 +61,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'atlanta-braves',
         'full_name':     'Atlanta Braves',
         'short_name':    'Braves',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#CE1141',  # Red
         'secondary_color': '#EAAA00',  # Gold
         'division': 'NL East', 'league': 'NL',
@@ -73,8 +74,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'baltimore-orioles',
         'full_name':     'Baltimore Orioles',
         'short_name':    'Orioles',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#DF4601',  # Orange
         'secondary_color': '#F5E03A',  # Yellow
         'division': 'AL East', 'league': 'AL',
@@ -86,8 +87,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'boston-red-sox',
         'full_name':     'Boston Red Sox',
         'short_name':    'Red Sox',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#BD3039',  # Red
         'secondary_color': '#C8DFF4',  # Light Blue
         'division': 'AL East', 'league': 'AL',
@@ -99,8 +100,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'chicago-cubs',
         'full_name':     'Chicago Cubs',
         'short_name':    'Cubs',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#0E3386',  # Blue
         'secondary_color': '#CC3433',  # Red
         'division': 'NL Central', 'league': 'NL',
@@ -112,8 +113,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'chicago-white-sox',
         'full_name':     'Chicago White Sox',
         'short_name':    'White Sox',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#C4CED4',  # Silver
         'secondary_color': '#FFFFFF',  # White
         'division': 'AL Central', 'league': 'AL',
@@ -125,8 +126,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'cincinnati-reds',
         'full_name':     'Cincinnati Reds',
         'short_name':    'Reds',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#C6011F',  # Red
         'secondary_color': '#F5E4C8',  # Cream
         'division': 'NL Central', 'league': 'NL',
@@ -138,8 +139,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'cleveland-guardians',
         'full_name':     'Cleveland Guardians',
         'short_name':    'Guardians',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#E31937',  # Red
         'secondary_color': '#D8C08C',  # Gold/Tan
         'division': 'AL Central', 'league': 'AL',
@@ -151,8 +152,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'colorado-rockies',
         'full_name':     'Colorado Rockies',
         'short_name':    'Rockies',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#7B2FBE',  # Purple (lightened for visibility)
         'secondary_color': '#C4CED4',  # Silver
         'division': 'NL West', 'league': 'NL',
@@ -164,8 +165,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'detroit-tigers',
         'full_name':     'Detroit Tigers',
         'short_name':    'Tigers',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#FA4616',  # Orange
         'secondary_color': '#D7D3C6',  # Light Gray
         'division': 'AL Central', 'league': 'AL',
@@ -177,8 +178,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'houston-astros',
         'full_name':     'Houston Astros',
         'short_name':    'Astros',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#EB6E1F',  # Orange
         'secondary_color': '#D8C08C',  # Gold/Tan
         'division': 'AL West', 'league': 'AL',
@@ -190,8 +191,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'kansas-city-royals',
         'full_name':     'Kansas City Royals',
         'short_name':    'Royals',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#004687',  # Blue
         'secondary_color': '#C09A5B',  # Gold
         'division': 'AL Central', 'league': 'AL',
@@ -203,8 +204,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'los-angeles-angels',
         'full_name':     'Los Angeles Angels',
         'short_name':    'Angels',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#BA0021',  # Red
         'secondary_color': '#C4CED4',  # Silver
         'division': 'AL West', 'league': 'AL',
@@ -216,8 +217,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'los-angeles-dodgers',
         'full_name':     'Los Angeles Dodgers',
         'short_name':    'Dodgers',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#005A9C',  # Dodger Blue
         'secondary_color': '#FFFFFF',  # White
         'division': 'NL West', 'league': 'NL',
@@ -229,8 +230,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'miami-marlins',
         'full_name':     'Miami Marlins',
         'short_name':    'Marlins',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#00A3E0',  # Blue
         'secondary_color': '#FF6600',  # Orange
         'division': 'NL East', 'league': 'NL',
@@ -242,8 +243,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'milwaukee-brewers',
         'full_name':     'Milwaukee Brewers',
         'short_name':    'Brewers',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#FFC52F',  # Gold
         'secondary_color': '#B0C4D4',  # Light Blue
         'division': 'NL Central', 'league': 'NL',
@@ -255,8 +256,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'minnesota-twins',
         'full_name':     'Minnesota Twins',
         'short_name':    'Twins',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#D31145',  # Red
         'secondary_color': '#B8CBE4',  # Light Blue
         'division': 'AL Central', 'league': 'AL',
@@ -268,8 +269,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'new-york-mets',
         'full_name':     'New York Mets',
         'short_name':    'Mets',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#0055A4',  # Blue
         'secondary_color': '#FF5910',  # Orange
         'division': 'NL East', 'league': 'NL',
@@ -281,8 +282,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'new-york-yankees',
         'full_name':     'New York Yankees',
         'short_name':    'Yankees',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#003087',  # Navy
         'secondary_color': '#C4CED4',  # Silver
         'division': 'AL East', 'league': 'AL',
@@ -294,8 +295,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'oakland-athletics',
         'full_name':     'Athletics',
         'short_name':    'Athletics',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#EFB21E',  # Gold
         'secondary_color': '#B5CFBB',  # Light Green
         'division': 'AL West', 'league': 'AL',
@@ -307,8 +308,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'philadelphia-phillies',
         'full_name':     'Philadelphia Phillies',
         'short_name':    'Phillies',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#E81828',  # Red
         'secondary_color': '#C8D8E8',  # Light Blue
         'division': 'NL East', 'league': 'NL',
@@ -320,8 +321,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'pittsburgh-pirates',
         'full_name':     'Pittsburgh Pirates',
         'short_name':    'Pirates',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#FDB827',  # Gold
         'secondary_color': '#E8E8E8',  # Silver/White
         'division': 'NL Central', 'league': 'NL',
@@ -333,8 +334,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'san-diego-padres',
         'full_name':     'San Diego Padres',
         'short_name':    'Padres',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#C4A882',  # Sand/Tan
         'secondary_color': '#FFC425',  # Gold
         'division': 'NL West', 'league': 'NL',
@@ -346,8 +347,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'san-francisco-giants',
         'full_name':     'San Francisco Giants',
         'short_name':    'Giants',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#FD5A1E',  # Giants Orange
         'secondary_color': '#E8E8E8',  # Light Gray
         'division': 'NL West', 'league': 'NL',
@@ -359,8 +360,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'seattle-mariners',
         'full_name':     'Seattle Mariners',
         'short_name':    'Mariners',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#005C5C',  # Teal
         'secondary_color': '#C4CED4',  # Silver
         'division': 'AL West', 'league': 'AL',
@@ -372,8 +373,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'st-louis-cardinals',
         'full_name':     'St. Louis Cardinals',
         'short_name':    'Cardinals',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#C41E3A',  # Red
         'secondary_color': '#FEDB00',  # Gold
         'division': 'NL Central', 'league': 'NL',
@@ -385,8 +386,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'tampa-bay-rays',
         'full_name':     'Tampa Bay Rays',
         'short_name':    'Rays',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#092C5C',  # Navy
         'secondary_color': '#8FBCE6',  # Light Blue
         'division': 'AL East', 'league': 'AL',
@@ -398,8 +399,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'texas-rangers',
         'full_name':     'Texas Rangers',
         'short_name':    'Rangers',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#003278',  # Navy
         'secondary_color': '#C8D8F5',  # Light Blue
         'division': 'AL West', 'league': 'AL',
@@ -411,8 +412,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'toronto-blue-jays',
         'full_name':     'Toronto Blue Jays',
         'short_name':    'Blue Jays',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#134A8E',  # Blue
         'secondary_color': '#E8291C',  # Red
         'division': 'AL East', 'league': 'AL',
@@ -424,8 +425,8 @@ TEAMS: dict[str, dict] = {
         'spotrac_slug':  'washington-nationals',
         'full_name':     'Washington Nationals',
         'short_name':    'Nationals',
-        'season_start':  '2025-03-27',
-        'season_end':    '2025-10-01',
+        'season_start':  '2026-03-25',
+        'season_end':    '2026-10-04',
         'primary_color': '#AB0003',  # Red
         'secondary_color': '#D4B483',  # Gold/Tan
         'division': 'NL East', 'league': 'NL',
