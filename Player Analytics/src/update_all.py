@@ -31,11 +31,14 @@ def run(cmd: list[str], env: dict = None) -> None:
     subprocess.run(cmd, check=True, cwd=ROOT, env=full_env)
 
 
-def update_team(team_code: str, start_date: str) -> None:
+def update_team(team_code: str, start_date: str, refresh_roster: bool = False) -> None:
     py = sys.executable
-    print(f"\n{'='*50}\nUpdating {team_code} (from {start_date})\n{'='*50}", flush=True)
+    print(f"\n{'='*50}\nUpdating {team_code} (from {start_date}){' +roster' if refresh_roster else ''}\n{'='*50}", flush=True)
 
-    steps = [
+    steps = []
+    if refresh_roster:
+        steps.append([py, f"{SRC}/fetch.py", "--team", team_code, "--type", "roster"])
+    steps += [
         # Incremental Statcast fetch — only recent games
         [py, f"{SRC}/fetch.py", "--team", team_code, "--type", "statcast", "--start", start_date],
         # Load new pitches + roster into DB (INSERT OR IGNORE = no duplicates)
@@ -57,13 +60,15 @@ def main() -> None:
 
     start_date = (date.today() - timedelta(days=args.days)).strftime("%Y-%m-%d")
     teams = [args.team.upper()] if args.team else list(TEAMS.keys())
+    # Refresh roster every Monday (weekday 0) to catch trades/signings
+    refresh_roster = date.today().weekday() == 0
 
-    print(f"[update_all] Starting update for {len(teams)} team(s), start_date={start_date}", flush=True)
+    print(f"[update_all] Starting update for {len(teams)} team(s), start_date={start_date}, roster_refresh={refresh_roster}", flush=True)
 
     failed = []
     for code in teams:
         try:
-            update_team(code, start_date)
+            update_team(code, start_date, refresh_roster=refresh_roster)
         except subprocess.CalledProcessError as e:
             print(f"[update_all] ERROR updating {code}: {e}", flush=True)
             failed.append(code)
