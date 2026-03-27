@@ -15,6 +15,7 @@ import argparse
 import os
 import subprocess
 import sys
+import time
 from datetime import date, timedelta
 
 # Resolve paths relative to this file so the script works from any cwd
@@ -67,11 +68,16 @@ def main() -> None:
 
     failed = []
     for code in teams:
-        try:
-            update_team(code, start_date, refresh_roster=refresh_roster)
-        except subprocess.CalledProcessError as e:
-            print(f"[update_all] ERROR updating {code}: {e}", flush=True)
-            failed.append(code)
+        for attempt in range(1, 4):  # up to 3 attempts
+            try:
+                update_team(code, start_date, refresh_roster=refresh_roster)
+                break
+            except subprocess.CalledProcessError as e:
+                print(f"[update_all] ERROR updating {code} (attempt {attempt}/3): {e}", flush=True)
+                if attempt < 3:
+                    time.sleep(30 * attempt)  # 30s, then 60s before retrying
+                else:
+                    failed.append(code)
 
     if failed:
         print(f"\n[update_all] Finished with errors: {failed}", flush=True)
