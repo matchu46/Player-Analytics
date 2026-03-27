@@ -68,6 +68,17 @@ nav { display: flex; gap: 1.5rem; margin-left: auto; }
 nav a { font-size: 0.85rem; color: var(--text-muted); transition: color 0.15s; }
 nav a:hover { color: var(--team-secondary); }
 
+/* ── Intro text ─────────────────────────────────────────── */
+.roster-intro, .player-intro {
+    max-width: 780px;
+    margin: 0.75rem auto 1.25rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    padding: 0 0.5rem;
+}
+.roster-intro a, .player-intro a { color: var(--red); }
+
 /* ── Season selector ───────────────────────────────────── */
 .season-selector {
     display: flex;

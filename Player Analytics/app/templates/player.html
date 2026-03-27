@@ -64,6 +64,15 @@
 </div>
 {% endif %}
 
+<!-- ── Player intro text ──────────────────────────────── -->
+<p class="player-intro">
+    {% if player_type == 'batter' %}
+    Explore {{ season }} Statcast analytics for <strong>{{ player.full_name }}</strong> — situational splits by count, pitch type, handedness, home/away, and inning; spray chart; batted ball scatter; and pitch heatmap. All stats are computed from pitch-level data. <a href="/glossary">Learn what each stat means.</a>
+    {% else %}
+    Explore {{ season }} Statcast analytics for <strong>{{ player.full_name }}</strong> — situational splits by count, pitch type, handedness, home/away, and inning; pitch movement chart; and velocity trends. All stats are computed from pitch-level data. <a href="/glossary">Learn what each stat means.</a>
+    {% endif %}
+</p>
+
 <!-- ── Persistent filter bar ──────────────────────────── -->
 <div class="filter-bar" id="filter-bar">
     <span class="filter-label">Filters:</span>

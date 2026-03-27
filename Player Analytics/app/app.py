@@ -724,6 +724,16 @@ def privacy():
     return render_template("privacy.html")
 
 
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+
+@app.route("/glossary")
+def glossary():
+    return render_template("glossary.html")
+
+
 # ---------------------------------------------------------------------------
 # Value — WAR, salary, awards
 # ---------------------------------------------------------------------------
@@ -823,7 +833,7 @@ def sitemap():
         f"SELECT player_id, position_type FROM players WHERE season = {SEASON}"
     )
     available_teams = query("SELECT DISTINCT team FROM players")
-    urls = [base + "/", base + "/privacy"]
+    urls = [base + "/", base + "/about", base + "/glossary", base + "/privacy"]
     for r in available_teams:
         code = r['team'].lower()
         urls.append(f"{base}/{code}")

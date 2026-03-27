@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}About Dugout Intel — Free MLB Statcast Analytics{% endblock %}
+{% block meta_description %}Dugout Intel is a free MLB analytics platform powered by Statcast pitch-level data. Learn how we build situational splits, spray charts, and advanced metrics for every player on all 30 teams.{% endblock %}
+
+{% block content %}
+<div style="max-width:800px; margin:2rem auto; padding:0 1.5rem; color:var(--text-primary); line-height:1.8;">
+
+    <h1 style="margin-bottom:0.25rem;">About Dugout Intel</h1>
+    <p style="color:var(--text-muted); margin-top:0;">Free advanced baseball analytics, powered by Statcast</p>
+
+    <h2>What is Dugout Intel?</h2>
+    <p>
+        Dugout Intel is a free MLB analytics platform that brings pitch-level Statcast data to every fan.
+        We cover all 30 MLB teams across multiple seasons, giving you deep situational breakdowns
+        for every batter and pitcher on every roster — the kind of analysis that used to require
+        expensive subscriptions or advanced data science skills.
+    </p>
+
+    <h2>What data do we use?</h2>
+    <p>
+        Every stat on Dugout Intel is derived from <strong>Statcast</strong> — MLB's pitch-tracking
+        system installed in all 30 ballparks. Statcast records the speed, spin, movement, and
+        location of every pitch, along with exit velocity, launch angle, and spray direction on
+        every batted ball. We pull this data from Baseball Savant and process it into the splits
+        and charts you see on each player page.
+    </p>
+    <p>
+        Roster data comes from the <strong>MLB Stats API</strong>. Salary information is sourced
+        from Spotrac, and Wins Above Replacement (WAR) comes from FanGraphs.
+    </p>
+
+    <h2>What can I explore?</h2>
+    <p>For every batter, we compute:</p>
+    <ul>
+        <li><strong>Situational splits</strong> — how they hit by count, pitch type, handedness, home/away, inning, and opponent</li>
+        <li><strong>Spray chart</strong> — where they make contact across the field</li>
+        <li><strong>Batted ball scatter</strong> — exit velocity vs. launch angle for every ball in play</li>
+        <li><strong>Pitch heatmap</strong> — where pitchers attack them in the strike zone</li>
+        <li><strong>Value tab</strong> — WAR, salary, and $/WAR efficiency</li>
+    </ul>
+    <p>For every pitcher, we compute:</p>
+    <ul>
+        <li><strong>Situational splits</strong> — ERA and results by count, pitch type, handedness, home/away, and inning</li>
+        <li><strong>Pitch movement chart</strong> — horizontal and vertical break for each pitch type</li>
+        <li><strong>Velocity trends</strong> — how pitch speed has changed over the season</li>
+        <li><strong>Value tab</strong> — WAR, salary, and $/WAR efficiency</li>
+    </ul>
+
+    <h2>How often is data updated?</h2>
+    <p>
+        During the season, Dugout Intel automatically fetches new Statcast data each morning at
+        6 AM ET, covering the previous day's games. Rosters are refreshed weekly to reflect
+        trades and roster moves. Historical data is available going back to the 2022 season.
+    </p>
+
+    <h2>Is it really free?</h2>
+    <p>
+        Yes — completely free, no account required. The site is supported by Google AdSense ads.
+        If you find Dugout Intel useful, the best way to support it is simply to visit and explore.
+    </p>
+
+    <h2>Who built this?</h2>
+    <p>
+        Dugout Intel was built by a baseball fan and software developer who wanted a faster,
+        more intuitive way to explore Statcast data without paying for a premium subscription.
+        The entire pipeline — from fetching raw pitch data to computing splits and rendering
+        charts — is custom-built in Python and Flask.
+    </p>
+    <p>
+        Questions or feedback? Reach out at
+        <a href="mailto:matthewedelson46@gmail.com" style="color:var(--red);">matthewedelson46@gmail.com</a>.
+    </p>
+
+    <p style="margin-top:2rem;">
+        <a href="/" style="color:var(--red);">← Browse all teams</a>
+        &nbsp;·&nbsp;
+        <a href="/glossary" style="color:var(--red);">Stat glossary</a>
+        &nbsp;·&nbsp;
+        <a href="/privacy" style="color:var(--red);">Privacy policy</a>
+    </p>
+
+</div>
+{% endblock %}
