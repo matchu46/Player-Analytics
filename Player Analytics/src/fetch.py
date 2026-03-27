@@ -73,9 +73,13 @@ def fetch_statcast_team(season: int, team_cfg: dict, start_override: str = None)
     Pass start_override to fetch only a recent window (e.g. for daily updates).
     """
     fg_code = team_cfg['fg_code']
+    from datetime import date as _date
     dates = get_season_dates(season)
     start = start_override or dates['season_start']
-    end = dates['season_end']
+    # Cap end to today for incremental fetches — querying future dates returns malformed data
+    season_end = dates['season_end']
+    today = _date.today().strftime("%Y-%m-%d")
+    end = min(season_end, today) if start_override else season_end
 
     roster_path = os.path.join(RAW_DIR, f"roster_{fg_code}_{season}.csv")
     if not os.path.exists(roster_path):
