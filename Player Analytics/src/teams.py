@@ -12,6 +12,12 @@ SEASON = 2026
 
 # Regular-season date ranges by year (start inclusive, end inclusive)
 SEASON_DATES: dict[int, dict] = {
+    2016: {'season_start': '2016-04-03', 'season_end': '2016-10-02'},
+    2017: {'season_start': '2017-04-02', 'season_end': '2017-10-01'},
+    2018: {'season_start': '2018-03-29', 'season_end': '2018-10-01'},
+    2019: {'season_start': '2019-03-20', 'season_end': '2019-09-29'},
+    2020: {'season_start': '2020-07-23', 'season_end': '2020-09-27'},
+    2021: {'season_start': '2021-04-01', 'season_end': '2021-10-03'},
     2022: {'season_start': '2022-04-07', 'season_end': '2022-10-05'},
     2023: {'season_start': '2023-03-30', 'season_end': '2023-10-01'},
     2024: {'season_start': '2024-03-20', 'season_end': '2024-09-29'},
