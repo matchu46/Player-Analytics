@@ -45,8 +45,8 @@ CHECKPOINT_PATH = os.path.join(DATA_DIR, "historical_checkpoint.json")
 sys.path.insert(0, SRC_DIR)
 from teams import TEAMS, SEASON_DATES
 
-# Historical seasons (excludes current/live seasons handled by update_all.py)
-HISTORICAL_SEASONS = sorted(s for s in SEASON_DATES if s <= 2024)
+# Historical seasons not yet in DB (2022-2026 already fetched)
+HISTORICAL_SEASONS = sorted(s for s in SEASON_DATES if s <= 2021)
 
 ALL_TEAMS = sorted(TEAMS.keys())
 PY = sys.executable
@@ -249,7 +249,7 @@ def main():
     all_total = len(HISTORICAL_SEASONS) * len(ALL_TEAMS)
     print(f"\nOverall progress: {all_done}/{all_total} historical jobs done")
 
-    if all_done == all_total:
+    if all_done >= all_total:
         print("\nAll historical data fetched! Next steps:")
         print("  1. Compress DB:")
         print("     python -c \"import gzip, shutil; shutil.copyfileobj(open('data/db/baseball.db','rb'), gzip.open('data/db/baseball.db.gz','wb',compresslevel=6))\"")
