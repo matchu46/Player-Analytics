@@ -38,14 +38,14 @@ def update_team(team_code: str, start_date: str, refresh_roster: bool = False) -
 
     steps = []
     if refresh_roster:
-        steps.append([py, f"{SRC}/fetch.py", "--team", team_code, "--type", "roster"])
+        steps.append([py, f"{SRC}/fetch.py", "--team", team_code, "--type", "roster", "--season", str(SEASON)])
     steps += [
         # Incremental Statcast fetch — only recent games
-        [py, f"{SRC}/fetch.py", "--team", team_code, "--type", "statcast", "--start", start_date],
+        [py, f"{SRC}/fetch.py", "--team", team_code, "--type", "statcast", "--start", start_date, "--season", str(SEASON)],
         # Load new pitches + roster into DB (INSERT OR IGNORE = no duplicates)
-        [py, f"{SRC}/load_db.py", "--team", team_code, "--load"],
+        [py, f"{SRC}/load_db.py", "--team", team_code, "--load", "--season", str(SEASON)],
         # Re-compute splits so charts reflect new games
-        [py, f"{SRC}/process.py", "--team", team_code, "--all"],
+        [py, f"{SRC}/process.py", "--team", team_code, "--all", "--season", str(SEASON)],
     ]
     for cmd in steps:
         run(cmd)
