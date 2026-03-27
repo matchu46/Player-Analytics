@@ -737,7 +737,7 @@ def glossary():
 @app.route("/leaderboards")
 def leaderboards():
     season = request.args.get("season", SEASON, type=int)
-    min_pa = request.args.get("min_pa", 10, type=int)
+    min_pa = request.args.get("min_pa", 25, type=int)
     min_ip = request.args.get("min_ip", 5, type=float)
 
     batters = query(
@@ -771,6 +771,28 @@ def leaderboards():
         (season, min_ip)
     )
 
+    # Classify SP vs RP: started in inning 1 in 3+ games = SP
+    pitcher_ids = tuple(p["player_id"] for p in pitchers)
+    if pitcher_ids:
+        placeholders = ",".join("?" * len(pitcher_ids))
+        season_dates = SEASON_DATES.get(season, {})
+        date_clause = ""
+        date_params = []
+        if season_dates:
+            date_clause = "AND game_date BETWEEN ? AND ?"
+            date_params = [season_dates["season_start"], season_dates["season_end"]]
+        starter_rows = query(
+            f"SELECT pitcher FROM pitches WHERE pitcher IN ({placeholders}) "
+            f"AND inning = 1 {date_clause} GROUP BY pitcher HAVING COUNT(DISTINCT game_pk) >= 3",
+            list(pitcher_ids) + date_params
+        )
+        starter_ids = {r["pitcher"] for r in starter_rows}
+    else:
+        starter_ids = set()
+
+    starters  = [dict(p) for p in pitchers if p["player_id"] in starter_ids]
+    relievers = [dict(p) for p in pitchers if p["player_id"] not in starter_ids]
+
     available_seasons = [r["season"] for r in query(
         "SELECT DISTINCT season FROM batter_splits ORDER BY season DESC"
     )]
@@ -778,7 +800,8 @@ def leaderboards():
     return render_template(
         "leaderboards.html",
         batters=batters,
-        pitchers=pitchers,
+        starters=starters,
+        relievers=relievers,
         season=season,
         available_seasons=available_seasons,
         min_pa=min_pa,
