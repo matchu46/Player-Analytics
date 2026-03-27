@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Diamond background -->
+  <polygon points="100,8 192,100 100,192 8,100"
+           fill="#1a1a1a" stroke="#C41E3A" stroke-width="6"/>
+
+  <!-- D letter -->
+  <text x="50" y="122"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="80"
+        font-weight="700"
+        fill="#FFFFFF"
+        letter-spacing="-4">D</text>
+
+  <!-- I letter -->
+  <text x="116" y="122"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="80"
+        font-weight="700"
+        fill="#C41E3A"
+        letter-spacing="-4">I</text>
+</svg>

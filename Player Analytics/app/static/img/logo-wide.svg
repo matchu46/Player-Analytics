@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 80" width="420" height="80">
+  <!-- Diamond icon -->
+  <polygon points="40,4 72,40 40,76 8,40"
+           fill="#1a1a1a" stroke="#C41E3A" stroke-width="4"/>
+  <text x="22" y="54"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="42"
+        font-weight="700"
+        fill="#FFFFFF">D</text>
+  <text x="47" y="54"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="42"
+        font-weight="700"
+        fill="#C41E3A">I</text>
+
+  <!-- Wordmark -->
+  <text x="90" y="34"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="28"
+        font-weight="700"
+        fill="#FFFFFF"
+        letter-spacing="1">DUGOUT</text>
+  <text x="90" y="64"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="28"
+        font-weight="700"
+        fill="#C41E3A"
+        letter-spacing="4">INTEL</text>
+</svg>
