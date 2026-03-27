@@ -734,6 +734,58 @@ def glossary():
     return render_template("glossary.html")
 
 
+@app.route("/leaderboards")
+def leaderboards():
+    season = request.args.get("season", SEASON, type=int)
+    min_pa = request.args.get("min_pa", 10, type=int)
+    min_ip = request.args.get("min_ip", 5, type=float)
+
+    batters = query(
+        """
+        SELECT b.player_id, p.full_name, p.team, p.position,
+               b.pa, b.avg, b.obp, b.slg, b.ops, b.woba,
+               b.home_runs, b.strikeouts, b.walks,
+               b.avg_exit_velo, b.hard_hit_pct, b.barrel_pct,
+               CASE WHEN b.pa > 0 THEN CAST(b.strikeouts AS REAL)/b.pa ELSE NULL END AS k_pct,
+               CASE WHEN b.pa > 0 THEN CAST(b.walks AS REAL)/b.pa ELSE NULL END AS bb_pct
+        FROM batter_splits b
+        JOIN players p ON b.player_id = p.player_id AND b.season = p.season
+        WHERE b.season = ? AND b.split_type = 'overall' AND b.pa >= ?
+        ORDER BY b.woba DESC
+        """,
+        (season, min_pa)
+    )
+
+    pitchers = query(
+        """
+        SELECT b.player_id, p.full_name, p.team, p.position,
+               b.era, b.whip, b.innings_pitched, b.batters_faced,
+               b.k_pct, b.bb_pct, b.avg_against, b.woba_against,
+               b.home_runs_allowed, b.avg_velo
+        FROM pitcher_splits b
+        JOIN players p ON b.player_id = p.player_id AND b.season = p.season
+        WHERE b.season = ? AND b.split_type = 'overall'
+              AND b.innings_pitched >= ?
+        ORDER BY b.era ASC
+        """,
+        (season, min_ip)
+    )
+
+    available_seasons = [r["season"] for r in query(
+        "SELECT DISTINCT season FROM batter_splits ORDER BY season DESC"
+    )]
+
+    return render_template(
+        "leaderboards.html",
+        batters=batters,
+        pitchers=pitchers,
+        season=season,
+        available_seasons=available_seasons,
+        min_pa=min_pa,
+        min_ip=min_ip,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Value — WAR, salary, awards
 # ---------------------------------------------------------------------------
@@ -833,7 +885,7 @@ def sitemap():
         f"SELECT player_id, position_type FROM players WHERE season = {SEASON}"
     )
     available_teams = query("SELECT DISTINCT team FROM players")
-    urls = [base + "/", base + "/about", base + "/glossary", base + "/privacy"]
+    urls = [base + "/", base + "/leaderboards", base + "/about", base + "/glossary", base + "/privacy"]
     for r in available_teams:
         code = r['team'].lower()
         urls.append(f"{base}/{code}")

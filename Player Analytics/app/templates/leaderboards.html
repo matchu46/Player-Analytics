@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}{{ season }} MLB Leaderboards — Statcast Stats | Dugout Intel{% endblock %}
+{% block meta_description %}{{ season }} MLB batting and pitching leaderboards — wOBA, barrel rate, exit velocity, ERA, WHIP, K% and more Statcast stats ranked for every player across all 30 teams.{% endblock %}
+
+{% block content %}
+<div class="home-hero" style="padding:1.5rem 1rem;">
+    <div class="hero-content">
+        <h1 class="hero-title">{{ season }} MLB Leaderboards</h1>
+        <p class="hero-sub">Statcast stats ranked across all 30 teams</p>
+        {% if available_seasons|length > 1 %}
+        <div class="season-selector" style="justify-content:center;margin-top:0.5rem;">
+            {% for s in available_seasons %}
+            <a href="/leaderboards?season={{ s }}&min_pa={{ min_pa }}&min_ip={{ min_ip }}"
+               class="season-pill{% if s == season %} active{% endif %}">{{ s }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Tabs ─────────────────────────────────────────────── -->
+<div class="roster-tabs" style="margin-top:1rem;">
+    <button class="roster-tab active" data-tab="batters">Batters</button>
+    <button class="roster-tab" data-tab="pitchers">Pitchers</button>
+</div>
+
+<!-- ── Min PA / IP filters ──────────────────────────────── -->
+<div class="lb-filters">
+    <div id="filter-batters" class="lb-filter-group">
+        <label>Min PA:</label>
+        {% for v in [5, 10, 20, 50] %}
+        <a href="/leaderboards?season={{ season }}&min_pa={{ v }}&min_ip={{ min_ip }}"
+           class="lb-filter-pill{% if min_pa == v %} active{% endif %}">{{ v }}</a>
+        {% endfor %}
+    </div>
+    <div id="filter-pitchers" class="lb-filter-group" style="display:none;">
+        <label>Min IP:</label>
+        {% for v in [1, 3, 5, 10] %}
+        <a href="/leaderboards?season={{ season }}&min_pa={{ min_pa }}&min_ip={{ v }}"
+           class="lb-filter-pill{% if min_ip == v %} active{% endif %}">{{ v }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ── Batters table ─────────────────────────────────────── -->
+<div id="tab-batters" class="lb-tab">
+<div class="lb-table-wrap">
+<table class="lb-table" id="batter-table">
+    <thead>
+        <tr>
+            <th class="rank-col">#</th>
+            <th class="name-col sortable" data-col="name">Player</th>
+            <th class="sortable" data-col="team">Team</th>
+            <th class="sortable num" data-col="pa">PA</th>
+            <th class="sortable num" data-col="avg">AVG</th>
+            <th class="sortable num" data-col="obp">OBP</th>
+            <th class="sortable num" data-col="slg">SLG</th>
+            <th class="sortable num active-sort" data-col="woba">wOBA</th>
+            <th class="sortable num" data-col="hr">HR</th>
+            <th class="sortable num" data-col="k_pct">K%</th>
+            <th class="sortable num" data-col="bb_pct">BB%</th>
+            <th class="sortable num" data-col="ev">EV</th>
+            <th class="sortable num" data-col="hard_hit">Hard%</th>
+            <th class="sortable num" data-col="barrel">Barrel%</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in batters %}
+        <tr data-name="{{ p.full_name|lower }}"
+            data-pa="{{ p.pa or 0 }}"
+            data-avg="{{ p.avg or 0 }}"
+            data-obp="{{ p.obp or 0 }}"
+            data-slg="{{ p.slg or 0 }}"
+            data-woba="{{ p.woba or 0 }}"
+            data-hr="{{ p.home_runs or 0 }}"
+            data-k_pct="{{ (p.k_pct or 0) }}"
+            data-bb_pct="{{ (p.bb_pct or 0) }}"
+            data-ev="{{ p.avg_exit_velo or 0 }}"
+            data-hard_hit="{{ (p.hard_hit_pct or 0) * 100 }}"
+            data-barrel="{{ (p.barrel_pct or 0) * 100 }}"
+            data-team="{{ p.team }}">
+            <td class="rank-col rank-num"></td>
+            <td class="name-col"><a href="/batter/{{ p.player_id }}?season={{ season }}">{{ p.full_name }}</a></td>
+            <td><a href="/{{ p.team|lower }}?season={{ season }}">{{ p.team }}</a></td>
+            <td class="num">{{ p.pa or 0 }}</td>
+            <td class="num">{{ "%.3f"|format(p.avg or 0) }}</td>
+            <td class="num">{{ "%.3f"|format(p.obp or 0) }}</td>
+            <td class="num">{{ "%.3f"|format(p.slg or 0) }}</td>
+            <td class="num bold">{{ "%.3f"|format(p.woba or 0) }}</td>
+            <td class="num">{{ p.home_runs or 0 }}</td>
+            <td class="num">{{ "%.1f"|format((p.k_pct or 0) * 100) }}%</td>
+            <td class="num">{{ "%.1f"|format((p.bb_pct or 0) * 100) }}%</td>
+            <td class="num">{{ p.avg_exit_velo or '—' }}</td>
+            <td class="num">{% if p.hard_hit_pct %}{{ "%.1f"|format(p.hard_hit_pct * 100) }}%{% else %}—{% endif %}</td>
+            <td class="num">{% if p.barrel_pct %}{{ "%.1f"|format(p.barrel_pct * 100) }}%{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+</div>
+
+<!-- ── Pitchers table ────────────────────────────────────── -->
+<div id="tab-pitchers" class="lb-tab" style="display:none;">
+<div class="lb-table-wrap">
+<table class="lb-table" id="pitcher-table">
+    <thead>
+        <tr>
+            <th class="rank-col">#</th>
+            <th class="name-col sortable" data-col="name">Player</th>
+            <th class="sortable" data-col="team">Team</th>
+            <th class="sortable num" data-col="ip">IP</th>
+            <th class="sortable num active-sort" data-col="era">ERA</th>
+            <th class="sortable num" data-col="whip">WHIP</th>
+            <th class="sortable num" data-col="k_pct">K%</th>
+            <th class="sortable num" data-col="bb_pct">BB%</th>
+            <th class="sortable num" data-col="avg_against">AVG vs</th>
+            <th class="sortable num" data-col="woba_against">wOBA vs</th>
+            <th class="sortable num" data-col="hr">HR</th>
+            <th class="sortable num" data-col="velo">Velo</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in pitchers %}
+        <tr data-name="{{ p.full_name|lower }}"
+            data-ip="{{ p.innings_pitched or 0 }}"
+            data-era="{{ p.era if p.era is not none else 99 }}"
+            data-whip="{{ p.whip if p.whip is not none else 99 }}"
+            data-k_pct="{{ (p.k_pct or 0) }}"
+            data-bb_pct="{{ (p.bb_pct or 0) }}"
+            data-avg_against="{{ p.avg_against or 0 }}"
+            data-woba_against="{{ p.woba_against or 0 }}"
+            data-hr="{{ p.home_runs_allowed or 0 }}"
+            data-velo="{{ p.avg_velo or 0 }}"
+            data-team="{{ p.team }}">
+            <td class="rank-col rank-num"></td>
+            <td class="name-col"><a href="/pitcher/{{ p.player_id }}?season={{ season }}">{{ p.full_name }}</a></td>
+            <td><a href="/{{ p.team|lower }}?season={{ season }}">{{ p.team }}</a></td>
+            <td class="num">{{ p.innings_pitched or '—' }}</td>
+            <td class="num bold">{{ "%.2f"|format(p.era) if p.era is not none else '—' }}</td>
+            <td class="num">{{ "%.2f"|format(p.whip) if p.whip is not none else '—' }}</td>
+            <td class="num">{{ "%.1f"|format((p.k_pct or 0) * 100) }}%</td>
+            <td class="num">{{ "%.1f"|format((p.bb_pct or 0) * 100) }}%</td>
+            <td class="num">{{ "%.3f"|format(p.avg_against or 0) }}</td>
+            <td class="num">{{ "%.3f"|format(p.woba_against or 0) }}</td>
+            <td class="num">{{ p.home_runs_allowed or 0 }}</td>
+            <td class="num">{{ p.avg_velo or '—' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Tab switching ────────────────────────────────────────
+const tabs = { batters: 'tab-batters', pitchers: 'tab-pitchers' };
+const filterGroups = { batters: 'filter-batters', pitchers: 'filter-pitchers' };
+let currentTab = 'batters';
+
+document.querySelectorAll('.roster-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.roster-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTab = btn.dataset.tab;
+        Object.entries(tabs).forEach(([k, id]) => {
+            document.getElementById(id).style.display = k === currentTab ? '' : 'none';
+        });
+        Object.entries(filterGroups).forEach(([k, id]) => {
+            document.getElementById(id).style.display = k === currentTab ? '' : 'none';
+        });
+        rankRows(currentTab === 'batters' ? 'batter-table' : 'pitcher-table');
+    });
+});
+
+// ── Sorting ──────────────────────────────────────────────
+// Cols where lower = better (for pitchers)
+const lowerBetter = new Set(['era','whip','bb_pct','avg_against','woba_against','hr']);
+let sortState = { 'batter-table': { col: 'woba', asc: false }, 'pitcher-table': { col: 'era', asc: true } };
+
+function rankRows(tableId) {
+    const tbody = document.querySelector(`#${tableId} tbody`);
+    [...tbody.querySelectorAll('tr')].forEach((tr, i) => {
+        tr.querySelector('.rank-num').textContent = i + 1;
+    });
+}
+
+function sortTable(tableId, col, asc) {
+    const tbody = document.querySelector(`#${tableId} tbody`);
+    const rows = [...tbody.querySelectorAll('tr')];
+    rows.sort((a, b) => {
+        let va = col === 'name' ? a.dataset.name : parseFloat(a.dataset[col] || 0);
+        let vb = col === 'name' ? b.dataset.name : parseFloat(b.dataset[col] || 0);
+        if (col === 'name') return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+        return asc ? va - vb : vb - va;
+    });
+    rows.forEach(r => tbody.appendChild(r));
+    rankRows(tableId);
+}
+
+document.querySelectorAll('.lb-table thead th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+        const tableId = th.closest('table').id;
+        const col = th.dataset.col;
+        const state = sortState[tableId];
+        const asc = state.col === col ? !state.asc : lowerBetter.has(col);
+        sortState[tableId] = { col, asc };
+        th.closest('thead').querySelectorAll('th').forEach(h => h.classList.remove('active-sort', 'sort-asc', 'sort-desc'));
+        th.classList.add('active-sort', asc ? 'sort-asc' : 'sort-desc');
+        sortTable(tableId, col, asc);
+    });
+});
+
+// Initial rank
+rankRows('batter-table');
+rankRows('pitcher-table');
+</script>
+{% endblock %}

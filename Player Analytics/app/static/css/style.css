@@ -68,6 +68,32 @@ nav { display: flex; gap: 1.5rem; margin-left: auto; }
 nav a { font-size: 0.85rem; color: var(--text-muted); transition: color 0.15s; }
 nav a:hover { color: var(--team-secondary); }
 
+/* ── Leaderboards ───────────────────────────────────────── */
+.lb-filters { display:flex; gap:0.75rem; align-items:center; padding:0.6rem 1rem; flex-wrap:wrap; }
+.lb-filter-group { display:flex; align-items:center; gap:0.35rem; font-size:0.8rem; color:var(--text-muted); }
+.lb-filter-pill { padding:0.15rem 0.55rem; border-radius:999px; border:1px solid var(--border); color:var(--text-muted); font-size:0.75rem; font-weight:600; text-decoration:none; transition:border-color 0.15s,color 0.15s; }
+.lb-filter-pill:hover { border-color:var(--red); color:var(--text); }
+.lb-filter-pill.active { border-color:var(--red); color:var(--text); background:var(--bg-hover); }
+.lb-table-wrap { overflow-x:auto; padding:0 0.5rem 2rem; }
+.lb-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+.lb-table thead th { padding:0.5rem 0.6rem; text-align:left; color:var(--text-muted); font-size:0.72rem; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--border); white-space:nowrap; }
+.lb-table thead th.num { text-align:right; }
+.lb-table thead th.sortable { cursor:pointer; user-select:none; }
+.lb-table thead th.sortable:hover { color:var(--text); }
+.lb-table thead th.active-sort { color:var(--red); }
+.lb-table thead th.sort-asc::after { content:' ↑'; }
+.lb-table thead th.sort-desc::after { content:' ↓'; }
+.lb-table tbody tr { border-bottom:1px solid var(--border); transition:background 0.1s; }
+.lb-table tbody tr:hover { background:var(--bg-hover); }
+.lb-table tbody td { padding:0.45rem 0.6rem; white-space:nowrap; }
+.lb-table tbody td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.lb-table tbody td.bold { font-weight:700; color:var(--text); }
+.lb-table tbody td.rank-col { color:var(--text-muted); font-size:0.75rem; width:2rem; }
+.lb-table a { color:var(--text); text-decoration:none; }
+.lb-table a:hover { color:var(--red); }
+.lb-tab { }
+@media (max-width:600px) { .lb-table { font-size:0.75rem; } }
+
 /* ── Intro text ─────────────────────────────────────────── */
 .roster-intro, .player-intro {
     max-width: 780px;
