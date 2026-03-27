@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Baseball Stats Glossary — Dugout Intel{% endblock %}
-{% block meta_description %}Plain-English definitions for every stat on Dugout Intel — wOBA, xBA, barrel rate, WHIP, K%, BB%, exit velocity, launch angle, spin rate, and more Statcast metrics explained.{% endblock %}
+{% block title %}Baseball Stats Glossary: Dugout Intel{% endblock %}
+{% block meta_description %}Plain-English definitions for every stat on Dugout Intel: wOBA, xBA, barrel rate, WHIP, K%, BB%, exit velocity, launch angle, spin rate, and more Statcast metrics explained.{% endblock %}
 
 {% block content %}
 <div style="max-width:800px; margin:2rem auto; padding:0 1.5rem; color:var(--text-primary); line-height:1.8;">
@@ -11,94 +11,94 @@
     <!-- BATTING -->
     <h2 style="margin-top:2rem; border-bottom:1px solid var(--border); padding-bottom:0.4rem;">Batting Stats</h2>
 
-    <h3>AVG — Batting Average</h3>
+    <h3>AVG: Batting Average</h3>
     <p>Hits divided by at-bats. The most traditional hitting stat. Does not account for walks or extra-base power, so it's often used alongside OBP and SLG for a fuller picture.</p>
 
-    <h3>OBP — On-Base Percentage</h3>
-    <p>How often a batter reaches base, including hits, walks, and hit-by-pitches. A better measure of a hitter's value than AVG alone because getting on base — any way — prevents outs.</p>
+    <h3>OBP: On-Base Percentage</h3>
+    <p>How often a batter reaches base, including hits, walks, and hit-by-pitches. A better measure of a hitter's value than AVG alone because getting on base, any way, prevents outs.</p>
 
-    <h3>SLG — Slugging Percentage</h3>
+    <h3>SLG: Slugging Percentage</h3>
     <p>Total bases divided by at-bats. Singles count as 1, doubles as 2, triples as 3, home runs as 4. Measures raw power production.</p>
 
-    <h3>OPS — On-Base Plus Slugging</h3>
+    <h3>OPS: On-Base Plus Slugging</h3>
     <p>OBP + SLG combined into one number. A quick proxy for overall offensive value. League average is typically around .720–.740.</p>
 
-    <h3>wOBA — Weighted On-Base Average</h3>
+    <h3>wOBA: Weighted On-Base Average</h3>
     <p>A more accurate version of OPS that weights each outcome (single, double, walk, HR) by its actual run value. League average is typically around .320. One of the best single-number offensive metrics.</p>
 
-    <h3>xBA — Expected Batting Average</h3>
+    <h3>xBA: Expected Batting Average</h3>
     <p>The batting average a hitter <em>should</em> have based on exit velocity and launch angle alone, ignoring luck and defense. A large gap between AVG and xBA can signal a player who is over- or under-performing.</p>
 
-    <h3>xwOBA — Expected Weighted On-Base Average</h3>
+    <h3>xwOBA: Expected Weighted On-Base Average</h3>
     <p>Like xBA but applied across all outcomes. Uses Statcast quality-of-contact data to estimate what a player's wOBA <em>should</em> be. A better predictor of future performance than actual wOBA.</p>
 
-    <h3>EV — Exit Velocity</h3>
+    <h3>EV: Exit Velocity</h3>
     <p>How hard (in mph) a batter hits the ball off the bat. Higher exit velocity correlates strongly with offensive success. MLB average is around 88–89 mph; elite hitters often average above 92 mph.</p>
 
-    <h3>LA — Launch Angle</h3>
+    <h3>LA: Launch Angle</h3>
     <p>The vertical angle at which the ball leaves the bat. Around 10–25° produces line drives and fly balls most likely to fall for hits or leave the park. Very low (groundballs) or very high (pop-ups) angles are less productive.</p>
 
     <h3>Barrel %</h3>
-    <p>Percentage of batted balls that are "barreled" — hit with an exit velocity and launch angle combination that historically produces a .500 AVG and 1.500 SLG. The best measure of elite contact quality.</p>
+    <p>Percentage of batted balls that are "barreled", meaning hit with an exit velocity and launch angle combination that historically produces a .500 AVG and 1.500 SLG. The best measure of elite contact quality.</p>
 
-    <h3>Hard Hit % — Hard-Hit Rate</h3>
+    <h3>Hard Hit %: Hard-Hit Rate</h3>
     <p>Percentage of batted balls hit 95 mph or harder. A simpler proxy for contact quality than barrel rate.</p>
 
-    <h3>K% — Strikeout Rate</h3>
+    <h3>K%: Strikeout Rate</h3>
     <p>Percentage of plate appearances ending in a strikeout. Lower is better for batters. MLB average is around 22–23%.</p>
 
-    <h3>BB% — Walk Rate</h3>
+    <h3>BB%: Walk Rate</h3>
     <p>Percentage of plate appearances ending in a walk. Higher is better for batters. MLB average is around 8–9%.</p>
 
-    <h3>Whiff % — Whiff Rate</h3>
-    <p>Percentage of swings that miss. High whiff rate for a batter indicates vulnerability to strikeouts. For pitchers, high whiff rate is a positive — it means they're generating misses.</p>
+    <h3>Whiff %: Whiff Rate</h3>
+    <p>Percentage of swings that miss. High whiff rate for a batter indicates vulnerability to strikeouts. For pitchers, high whiff rate is a positive, meaning they're generating misses.</p>
 
     <!-- PITCHING -->
     <h2 style="margin-top:2rem; border-bottom:1px solid var(--border); padding-bottom:0.4rem;">Pitching Stats</h2>
 
-    <h3>ERA — Earned Run Average</h3>
+    <h3>ERA: Earned Run Average</h3>
     <p>Earned runs allowed per 9 innings. The most traditional pitching stat. MLB average ERA is typically 4.00–4.50. Lower is better.</p>
 
-    <h3>WHIP — Walks + Hits per Inning Pitched</h3>
+    <h3>WHIP: Walks + Hits per Inning Pitched</h3>
     <p>How many baserunners a pitcher allows per inning. A WHIP below 1.00 is elite; above 1.40 is below average. Measures a pitcher's ability to prevent traffic on the bases.</p>
 
-    <h3>K% — Strikeout Rate</h3>
+    <h3>K%: Strikeout Rate</h3>
     <p>Percentage of batters faced who strike out. Higher is better for pitchers. Elite starters often post 28%+.</p>
 
-    <h3>BB% — Walk Rate</h3>
+    <h3>BB%: Walk Rate</h3>
     <p>Percentage of batters faced who walk. Lower is better. Above 10% is a concern; below 6% is excellent command.</p>
 
-    <h3>K-BB% — Strikeout Minus Walk Rate</h3>
-    <p>K% minus BB%. One of the best single indicators of a pitcher's true skill — it captures both the ability to miss bats and avoid free passes. Above 15% is very good.</p>
+    <h3>K-BB%: Strikeout Minus Walk Rate</h3>
+    <p>K% minus BB%. One of the best single indicators of a pitcher's true skill, capturing both the ability to miss bats and avoid free passes. Above 15% is very good.</p>
 
-    <h3>AVG vs — Opponent Batting Average</h3>
+    <h3>AVG vs: Opponent Batting Average</h3>
     <p>The batting average opposing hitters post against this pitcher. Lower is better.</p>
 
-    <h3>wOBA vs — Opponent wOBA</h3>
+    <h3>wOBA vs: Opponent wOBA</h3>
     <p>The weighted on-base average opposing hitters post against this pitcher. Lower is better. More accurate than AVG vs at measuring true damage allowed.</p>
 
     <!-- PITCH METRICS -->
     <h2 style="margin-top:2rem; border-bottom:1px solid var(--border); padding-bottom:0.4rem;">Pitch Metrics (Statcast)</h2>
 
-    <h3>Velo — Pitch Velocity</h3>
+    <h3>Velo: Pitch Velocity</h3>
     <p>Speed of the pitch in mph as it leaves the pitcher's hand. Fastball velocity is one of the most watched metrics in scouting.</p>
 
     <h3>Spin Rate</h3>
     <p>Revolutions per minute (RPM) of the ball in flight. High spin on a four-seam fastball creates "rise" effect; high spin on a curveball creates sharper downward break. Generally, more spin = more movement.</p>
 
-    <h3>HB — Horizontal Break</h3>
-    <p>How much a pitch moves left or right (in inches) compared to a theoretical no-spin pitch. Shown on the movement chart — wider spread means more horizontal variety in a pitcher's arsenal.</p>
+    <h3>HB: Horizontal Break</h3>
+    <p>How much a pitch moves left or right (in inches) compared to a theoretical no-spin pitch. Shown on the movement chart; wider spread means more horizontal variety in a pitcher's arsenal.</p>
 
-    <h3>VB — Vertical Break (Induced)</h3>
+    <h3>VB: Vertical Break (Induced)</h3>
     <p>How much a pitch "rises" or "drops" due to spin, compared to a theoretical no-spin pitch. Four-seamers with high induced vertical break appear to "ride" through the zone.</p>
 
     <!-- VALUE -->
     <h2 style="margin-top:2rem; border-bottom:1px solid var(--border); padding-bottom:0.4rem;">Value Stats</h2>
 
-    <h3>WAR — Wins Above Replacement</h3>
+    <h3>WAR: Wins Above Replacement</h3>
     <p>The number of additional wins a player provides compared to a freely available "replacement-level" player. A WAR of 0–1 is below average, 2–3 is average, 4–5 is All-Star caliber, 6+ is MVP territory. FanGraphs version (fWAR) is used on this site.</p>
 
-    <h3>$/WAR — Dollars per Win Above Replacement</h3>
+    <h3>$/WAR: Dollars per Win Above Replacement</h3>
     <p>How much a team is paying for each win of production. Below $5M/WAR is excellent value; $5–10M is fair market; above $10M means the player is being paid more than their production justifies. Color-coded on player pages: green / yellow / red.</p>
 
     <p style="margin-top:2rem;">
