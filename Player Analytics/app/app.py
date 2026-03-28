@@ -588,22 +588,106 @@ def api_players():
 @app.route("/api/batter/<int:player_id>/<split_type>")
 def api_batter_split(player_id: int, split_type: str):
     season = request.args.get("season", SEASON, type=int)
-    rows = query(
-        "SELECT * FROM batter_splits WHERE player_id=? AND season=? AND split_type=? "
-        "ORDER BY split_value",
-        (player_id, season, split_type)
-    )
+    # GROUP BY split_value so traded players (two team rows) collapse into one combined row.
+    # Counting stats are summed; rate stats are re-derived from sums or PA-weighted.
+    rows = query("""
+        SELECT player_id, season, split_type, split_value,
+            SUM(pa) as pa, SUM(ab) as ab, SUM(hits) as hits,
+            SUM(singles) as singles, SUM(doubles) as doubles,
+            SUM(triples) as triples, SUM(home_runs) as home_runs,
+            SUM(rbi) as rbi, SUM(walks) as walks,
+            SUM(strikeouts) as strikeouts, SUM(hbp) as hbp,
+            CASE WHEN SUM(ab)>0 THEN ROUND(CAST(SUM(hits) AS REAL)/SUM(ab),3) END as avg,
+            CASE WHEN SUM(pa)>0 THEN ROUND(CAST(SUM(hits)+SUM(walks)+SUM(hbp) AS REAL)/SUM(pa),3) END as obp,
+            CASE WHEN SUM(ab)>0 THEN ROUND(CAST(SUM(singles)+2*SUM(doubles)+3*SUM(triples)+4*SUM(home_runs) AS REAL)/SUM(ab),3) END as slg,
+            CASE WHEN SUM(pa)>0 AND SUM(ab)>0 THEN ROUND(
+                CAST(SUM(hits)+SUM(walks)+SUM(hbp) AS REAL)/SUM(pa) +
+                CAST(SUM(singles)+2*SUM(doubles)+3*SUM(triples)+4*SUM(home_runs) AS REAL)/SUM(ab),3) END as ops,
+            CASE WHEN SUM(CASE WHEN woba IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN woba IS NOT NULL THEN woba*pa ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN woba IS NOT NULL THEN pa ELSE 0 END),3) END as woba,
+            CASE WHEN SUM(CASE WHEN avg_exit_velo IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN avg_exit_velo IS NOT NULL THEN avg_exit_velo*pa ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN avg_exit_velo IS NOT NULL THEN pa ELSE 0 END),1) END as avg_exit_velo,
+            CASE WHEN SUM(CASE WHEN avg_launch_angle IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN avg_launch_angle IS NOT NULL THEN avg_launch_angle*pa ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN avg_launch_angle IS NOT NULL THEN pa ELSE 0 END),1) END as avg_launch_angle,
+            CASE WHEN SUM(CASE WHEN hard_hit_pct IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN hard_hit_pct IS NOT NULL THEN hard_hit_pct*pa ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN hard_hit_pct IS NOT NULL THEN pa ELSE 0 END),3) END as hard_hit_pct,
+            CASE WHEN SUM(CASE WHEN barrel_pct IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN barrel_pct IS NOT NULL THEN barrel_pct*pa ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN barrel_pct IS NOT NULL THEN pa ELSE 0 END),3) END as barrel_pct,
+            CASE WHEN SUM(CASE WHEN swing_pct IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN swing_pct IS NOT NULL THEN swing_pct*pa ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN swing_pct IS NOT NULL THEN pa ELSE 0 END),3) END as swing_pct,
+            CASE WHEN SUM(CASE WHEN whiff_pct IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN whiff_pct IS NOT NULL THEN whiff_pct*pa ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN whiff_pct IS NOT NULL THEN pa ELSE 0 END),3) END as whiff_pct,
+            CASE WHEN SUM(CASE WHEN contact_pct IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN contact_pct IS NOT NULL THEN contact_pct*pa ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN contact_pct IS NOT NULL THEN pa ELSE 0 END),3) END as contact_pct,
+            CASE WHEN SUM(ab)-SUM(strikeouts)-SUM(home_runs)>0
+                THEN ROUND(CAST(SUM(hits)-SUM(home_runs) AS REAL)/(SUM(ab)-SUM(strikeouts)-SUM(home_runs)),3) END as babip,
+            CASE WHEN SUM(CASE WHEN ops_plus IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN ops_plus IS NOT NULL THEN ops_plus*pa ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN ops_plus IS NOT NULL THEN pa ELSE 0 END)) END as ops_plus,
+            CASE WHEN SUM(CASE WHEN wrc_plus IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN wrc_plus IS NOT NULL THEN wrc_plus*pa ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN wrc_plus IS NOT NULL THEN pa ELSE 0 END)) END as wrc_plus
+        FROM batter_splits
+        WHERE player_id=? AND season=? AND split_type=?
+        GROUP BY split_value ORDER BY split_value
+    """, (player_id, season, split_type))
     return jsonify(rows)
 
 
 @app.route("/api/pitcher/<int:player_id>/<split_type>")
 def api_pitcher_split(player_id: int, split_type: str):
     season = request.args.get("season", SEASON, type=int)
-    rows = query(
-        "SELECT * FROM pitcher_splits WHERE player_id=? AND season=? AND split_type=? "
-        "ORDER BY split_value",
-        (player_id, season, split_type)
-    )
+    # GROUP BY split_value to collapse traded players into one combined row.
+    # IP is in baseball convention (6.2 = 6⅔); convert to decimal for summing.
+    _ip = ("CAST(innings_pitched AS INTEGER)"
+           " + (innings_pitched - CAST(innings_pitched AS INTEGER)) * 10.0 / 3.0")
+    rows = query(f"""
+        SELECT player_id, season, split_type, split_value,
+            SUM(batters_faced) as batters_faced,
+            SUM(hits_allowed) as hits_allowed, SUM(runs_allowed) as runs_allowed,
+            SUM(earned_runs) as earned_runs, SUM(home_runs_allowed) as home_runs_allowed,
+            SUM(walks_allowed) as walks_allowed, SUM(strikeouts) as strikeouts, SUM(hbp) as hbp,
+            ROUND(SUM({_ip}), 1) as innings_pitched,
+            CASE WHEN SUM({_ip})>0 THEN ROUND(SUM(earned_runs)*9.0/SUM({_ip}),2) END as era,
+            CASE WHEN SUM({_ip})>0 THEN ROUND(CAST(SUM(hits_allowed)+SUM(walks_allowed) AS REAL)/SUM({_ip}),2) END as whip,
+            CASE WHEN SUM(batters_faced)>0 THEN ROUND(CAST(SUM(strikeouts) AS REAL)/SUM(batters_faced),3) END as k_pct,
+            CASE WHEN SUM(batters_faced)>0 THEN ROUND(CAST(SUM(walks_allowed) AS REAL)/SUM(batters_faced),3) END as bb_pct,
+            CASE WHEN SUM(batters_faced)>0 THEN ROUND(CAST(SUM(strikeouts)-SUM(walks_allowed) AS REAL)/SUM(batters_faced),3) END as k_bb,
+            CASE WHEN SUM(batters_faced)-SUM(walks_allowed)-SUM(hbp)>0
+                THEN ROUND(CAST(SUM(hits_allowed) AS REAL)/(SUM(batters_faced)-SUM(walks_allowed)-SUM(hbp)),3) END as avg_against,
+            CASE WHEN SUM(batters_faced)>0
+                THEN ROUND(CAST(SUM(hits_allowed)+SUM(walks_allowed)+SUM(hbp) AS REAL)/SUM(batters_faced),3) END as obp_against,
+            CASE WHEN SUM(CASE WHEN slg_against IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN slg_against IS NOT NULL THEN slg_against*batters_faced ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN slg_against IS NOT NULL THEN batters_faced ELSE 0 END),3) END as slg_against,
+            CASE WHEN SUM(CASE WHEN woba_against IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN woba_against IS NOT NULL THEN woba_against*batters_faced ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN woba_against IS NOT NULL THEN batters_faced ELSE 0 END),3) END as woba_against,
+            CASE WHEN SUM(CASE WHEN avg_velo IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN avg_velo IS NOT NULL THEN avg_velo*batters_faced ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN avg_velo IS NOT NULL THEN batters_faced ELSE 0 END),1) END as avg_velo,
+            CASE WHEN SUM(CASE WHEN avg_spin_rate IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN avg_spin_rate IS NOT NULL THEN avg_spin_rate*batters_faced ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN avg_spin_rate IS NOT NULL THEN batters_faced ELSE 0 END)) END as avg_spin_rate,
+            CASE WHEN SUM(CASE WHEN fip IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN fip IS NOT NULL THEN fip*batters_faced ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN fip IS NOT NULL THEN batters_faced ELSE 0 END),2) END as fip,
+            CASE WHEN SUM(CASE WHEN era_plus IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(CAST(SUM(CASE WHEN era_plus IS NOT NULL THEN era_plus*batters_faced ELSE 0 END) AS REAL)
+                    /SUM(CASE WHEN era_plus IS NOT NULL THEN batters_faced ELSE 0 END)) END as era_plus,
+            NULL as pitch_mix
+        FROM pitcher_splits
+        WHERE player_id=? AND season=? AND split_type=?
+        GROUP BY split_value ORDER BY split_value
+    """, (player_id, season, split_type))
     for r in rows:
         if r.get("pitch_mix"):
             try:
