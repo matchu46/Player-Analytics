@@ -379,66 +379,77 @@
 
 <!-- ── TAB: Trends ────────────────────────────────────── -->
 <div class="tab-content" id="tab-trends">
-    <div class="chart-toolbar" style="flex-wrap:wrap;gap:0.5rem;">
-        <div class="filter-group">
-            <label>Stat</label>
-            {% if player_type == 'batter' %}
-            <select id="trends-stat" class="filter-select">
-                <option value="wrc_plus">wRC+</option>
-                <option value="ops_plus">OPS+</option>
-                <option value="avg">AVG</option>
-                <option value="obp">OBP</option>
-                <option value="slg">SLG</option>
-                <option value="ops">OPS</option>
-                <option value="woba">wOBA</option>
-                <option value="babip">BABIP</option>
-                <option value="k_pct">K%</option>
-                <option value="bb_pct">BB%</option>
-                <option value="home_runs">HR</option>
-                <option value="avg_exit_velo">Exit Velo</option>
-                <option value="hard_hit_pct">Hard%</option>
-                <option value="barrel_pct">Barrel%</option>
-            </select>
-            {% else %}
-            <select id="trends-stat" class="filter-select">
-                <optgroup label="Overall">
-                    <option value="era">ERA</option>
-                    <option value="fip">FIP</option>
-                    <option value="era_plus">ERA+</option>
-                    <option value="whip">WHIP</option>
+    <div class="panels-toolbar">
+        <span class="panels-hint">Compare up to 2 stats across seasons</span>
+        <button class="btn-add-panel" id="trends-add-btn">+ Add Comparison</button>
+    </div>
+    {% for panel_n in [1, 2] %}
+    <div class="trend-panel" id="trend-panel-{{ panel_n }}"{% if panel_n == 2 %} style="display:none;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);"{% endif %}>
+        <div class="chart-toolbar" style="flex-wrap:wrap;gap:0.5rem;">
+            <div class="filter-group">
+                <label>Stat</label>
+                {% if player_type == 'batter' %}
+                <select id="trends-stat-{{ panel_n }}" class="filter-select">
+                    <option value="wrc_plus"{% if panel_n==2 %} selected{% endif %}>wRC+</option>
+                    <option value="ops_plus"{% if panel_n==1 %} selected{% endif %}>OPS+</option>
+                    <option value="avg">AVG</option>
+                    <option value="obp">OBP</option>
+                    <option value="slg">SLG</option>
+                    <option value="ops">OPS</option>
+                    <option value="woba">wOBA</option>
+                    <option value="babip">BABIP</option>
                     <option value="k_pct">K%</option>
                     <option value="bb_pct">BB%</option>
-                    <option value="avg_velo">Avg Velo</option>
-                    <option value="avg_spin_rate">Avg Spin Rate</option>
-                    <option value="avg_against">AVG Against</option>
-                    <option value="woba_against">wOBA Against</option>
-                </optgroup>
-                <optgroup label="By Pitch Type">
-                    <option value="pt_velo">Velo by Pitch Type</option>
-                    <option value="pt_spin">Spin by Pitch Type</option>
-                    <option value="pt_usage">Usage% by Pitch Type</option>
-                </optgroup>
-            </select>
+                    <option value="home_runs">HR</option>
+                    <option value="avg_exit_velo">Exit Velo</option>
+                    <option value="hard_hit_pct">Hard%</option>
+                    <option value="barrel_pct">Barrel%</option>
+                </select>
+                {% else %}
+                <select id="trends-stat-{{ panel_n }}" class="filter-select">
+                    <optgroup label="Overall">
+                        <option value="era">ERA</option>
+                        <option value="fip">FIP</option>
+                        <option value="era_plus">ERA+</option>
+                        <option value="whip">WHIP</option>
+                        <option value="k_pct"{% if panel_n==2 %} selected{% endif %}>K%</option>
+                        <option value="bb_pct">BB%</option>
+                        <option value="avg_velo"{% if panel_n==1 %} selected{% endif %}>Avg Velo</option>
+                        <option value="avg_spin_rate">Avg Spin Rate</option>
+                        <option value="avg_against">AVG Against</option>
+                        <option value="woba_against">wOBA Against</option>
+                    </optgroup>
+                    <optgroup label="By Pitch Type">
+                        <option value="pt_velo">Velo by Pitch Type</option>
+                        <option value="pt_spin">Spin by Pitch Type</option>
+                        <option value="pt_usage">Usage% by Pitch Type</option>
+                    </optgroup>
+                </select>
+                {% endif %}
+            </div>
+            <div class="filter-group">
+                <label>From</label>
+                <select id="trends-from-{{ panel_n }}" class="filter-select">
+                    {% for s in available_seasons %}
+                    <option value="{{ s }}"{% if loop.last %} selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>To</label>
+                <select id="trends-to-{{ panel_n }}" class="filter-select">
+                    {% for s in available_seasons %}
+                    <option value="{{ s }}"{% if loop.first %} selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if panel_n == 2 %}
+            <button class="btn-remove-panel" id="trends-remove-btn" title="Remove" style="margin-left:auto;">✕</button>
             {% endif %}
         </div>
-        <div class="filter-group">
-            <label>From</label>
-            <select id="trends-from" class="filter-select">
-                {% for s in available_seasons %}
-                <option value="{{ s }}"{% if loop.last %} selected{% endif %}>{{ s }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="filter-group">
-            <label>To</label>
-            <select id="trends-to" class="filter-select">
-                {% for s in available_seasons %}
-                <option value="{{ s }}"{% if loop.first %} selected{% endif %}>{{ s }}</option>
-                {% endfor %}
-            </select>
-        </div>
+        <div id="trends-chart-{{ panel_n }}" style="height:380px;margin-top:0.5rem;"></div>
     </div>
-    <div id="trends-chart" style="height:420px;margin-top:0.5rem;"></div>
+    {% endfor %}
 </div>
 
 {% endblock %}
@@ -1508,25 +1519,37 @@ window.addEventListener('DOMContentLoaded', () => {
 let trendsData = null;
 
 async function loadTrends() {
-    if (trendsData) { renderTrends(); return; }
+    if (trendsData) { renderTrendsPanel(1); return; }
     const url = PLAYER_TYPE === 'batter'
         ? `/api/batter/${PLAYER_ID}/trends`
         : `/api/pitcher/${PLAYER_ID}/trends`;
     const res = await fetch(url);
     trendsData = await res.json();
-    document.getElementById('trends-stat').addEventListener('change', renderTrends);
-    document.getElementById('trends-from').addEventListener('change', renderTrends);
-    document.getElementById('trends-to').addEventListener('change', renderTrends);
-    renderTrends();
+    [1, 2].forEach(n => {
+        ['trends-stat','trends-from','trends-to'].forEach(id => {
+            document.getElementById(`${id}-${n}`).addEventListener('change', () => renderTrendsPanel(n));
+        });
+    });
+    document.getElementById('trends-add-btn').addEventListener('click', () => {
+        document.getElementById('trend-panel-2').style.display = '';
+        document.getElementById('trends-add-btn').style.display = 'none';
+        renderTrendsPanel(2);
+    });
+    document.getElementById('trends-remove-btn').addEventListener('click', () => {
+        document.getElementById('trend-panel-2').style.display = 'none';
+        document.getElementById('trends-add-btn').style.display = '';
+        Plotly.purge('trends-chart-2');
+    });
+    renderTrendsPanel(1);
 }
 
-function renderTrends() {
-    const stat  = document.getElementById('trends-stat').value;
-    const fromY = parseInt(document.getElementById('trends-from').value);
-    const toY   = parseInt(document.getElementById('trends-to').value);
+function renderTrendsPanel(n) {
+    const stat  = document.getElementById(`trends-stat-${n}`).value;
+    const fromY = parseInt(document.getElementById(`trends-from-${n}`).value);
+    const toY   = parseInt(document.getElementById(`trends-to-${n}`).value);
     if (fromY > toY) return;
-    PLAYER_TYPE === 'batter' ? renderBatterTrends(stat, fromY, toY)
-                              : renderPitcherTrends(stat, fromY, toY);
+    PLAYER_TYPE === 'batter' ? renderBatterTrends(stat, fromY, toY, `trends-chart-${n}`)
+                              : renderPitcherTrends(stat, fromY, toY, `trends-chart-${n}`);
 }
 
 const TREND_LABELS = {
@@ -1552,17 +1575,17 @@ const TRENDS_LAYOUT_BASE = {
     height: 400,
 };
 
-function renderBatterTrends(stat, fromY, toY) {
+function renderBatterTrends(stat, fromY, toY, chartId) {
     const rows = trendsData.filter(r => r.season >= fromY && r.season <= toY);
     if (!rows.length) {
-        document.getElementById('trends-chart').innerHTML =
+        document.getElementById(chartId).innerHTML =
             '<p class="empty" style="padding:3rem;text-align:center;">No data for selected range.</p>';
         return;
     }
     const xs = rows.map(r => String(r.season));
     const ys = rows.map(r => fmtTrendY(stat, r[stat]));
     const label = TREND_LABELS[stat] || stat;
-    Plotly.react('trends-chart', [{
+    Plotly.react(chartId, [{
         x: xs, y: ys, type: 'scatter', mode: 'lines+markers',
         line: { color: RED, width: 2.5 }, marker: { color: RED, size: 9 },
         name: label, connectgaps: false,
@@ -1574,11 +1597,11 @@ function renderBatterTrends(stat, fromY, toY) {
     }, { responsive: true, scrollZoom: false, displayModeBar: false });
 }
 
-function renderPitcherTrends(stat, fromY, toY) {
-    if (stat.startsWith('pt_')) { renderByPitchTrends(stat, fromY, toY); return; }
+function renderPitcherTrends(stat, fromY, toY, chartId) {
+    if (stat.startsWith('pt_')) { renderByPitchTrends(stat, fromY, toY, chartId); return; }
     const rows = (trendsData.overall || []).filter(r => r.season >= fromY && r.season <= toY);
     if (!rows.length) {
-        document.getElementById('trends-chart').innerHTML =
+        document.getElementById(chartId).innerHTML =
             '<p class="empty" style="padding:3rem;text-align:center;">No data for selected range.</p>';
         return;
     }
@@ -1586,7 +1609,7 @@ function renderPitcherTrends(stat, fromY, toY) {
     const ys = rows.map(r => fmtTrendY(stat, r[stat]));
     const label = TREND_LABELS[stat] || stat;
     const invertY = ['era','fip','whip','avg_against','woba_against'].includes(stat);
-    Plotly.react('trends-chart', [{
+    Plotly.react(chartId, [{
         x: xs, y: ys, type: 'scatter', mode: 'lines+markers',
         line: { color: RED, width: 2.5 }, marker: { color: RED, size: 9 },
         name: label, connectgaps: false,
@@ -1598,11 +1621,11 @@ function renderPitcherTrends(stat, fromY, toY) {
     }, { responsive: true, scrollZoom: false, displayModeBar: false });
 }
 
-function renderByPitchTrends(stat, fromY, toY) {
+function renderByPitchTrends(stat, fromY, toY, chartId) {
     const byPitch  = (trendsData.by_pitch  || []).filter(r => r.season >= fromY && r.season <= toY);
     const overall  = (trendsData.overall   || []).filter(r => r.season >= fromY && r.season <= toY);
     if (!byPitch.length) {
-        document.getElementById('trends-chart').innerHTML =
+        document.getElementById(chartId).innerHTML =
             '<p class="empty" style="padding:3rem;text-align:center;">No pitch-type data for selected range.</p>';
         return;
     }
@@ -1633,7 +1656,7 @@ function renderByPitchTrends(stat, fromY, toY) {
         };
     });
 
-    Plotly.react('trends-chart', traces, {
+    Plotly.react(chartId, traces, {
         ...TRENDS_LAYOUT_BASE,
         xaxis: { title: 'Season', type: 'category', gridcolor: '#333', zeroline: false },
         yaxis: { title: label, gridcolor: '#333', zeroline: false },
