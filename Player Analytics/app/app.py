@@ -656,8 +656,12 @@ def api_pitcher_split(player_id: int, split_type: str):
             SUM(earned_runs) as earned_runs, SUM(home_runs_allowed) as home_runs_allowed,
             SUM(walks_allowed) as walks_allowed, SUM(strikeouts) as strikeouts, SUM(hbp) as hbp,
             ROUND(SUM({_ip}), 1) as innings_pitched,
-            CASE WHEN SUM({_ip})>0 THEN ROUND(SUM(earned_runs)*9.0/SUM({_ip}),2) END as era,
-            CASE WHEN SUM({_ip})>0 THEN ROUND(CAST(SUM(hits_allowed)+SUM(walks_allowed) AS REAL)/SUM({_ip}),2) END as whip,
+            CASE WHEN SUM(CASE WHEN era IS NOT NULL THEN ({_ip}) ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN era IS NOT NULL THEN era*({_ip}) ELSE 0 END)
+                    /SUM(CASE WHEN era IS NOT NULL THEN ({_ip}) ELSE 0 END),2) END as era,
+            CASE WHEN SUM(CASE WHEN whip IS NOT NULL THEN ({_ip}) ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN whip IS NOT NULL THEN whip*({_ip}) ELSE 0 END)
+                    /SUM(CASE WHEN whip IS NOT NULL THEN ({_ip}) ELSE 0 END),2) END as whip,
             CASE WHEN SUM(batters_faced)>0 THEN ROUND(CAST(SUM(strikeouts) AS REAL)/SUM(batters_faced),3) END as k_pct,
             CASE WHEN SUM(batters_faced)>0 THEN ROUND(CAST(SUM(walks_allowed) AS REAL)/SUM(batters_faced),3) END as bb_pct,
             CASE WHEN SUM(batters_faced)>0 THEN ROUND(CAST(SUM(strikeouts)-SUM(walks_allowed) AS REAL)/SUM(batters_faced),3) END as k_bb,
