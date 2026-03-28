@@ -20,6 +20,10 @@
     <meta name="twitter:description" content="{% block twitter_description %}Free MLB player analytics powered by Statcast — pitch splits, spray charts, situational stats, and advanced metrics.{% endblock %}">
     <!-- Canonical URL -->
     <link rel="canonical" href="https://dugoutintel.com{% block canonical_url %}{% endblock %}">
+    <!-- Preconnect to CDN origins for faster resource loading -->
+    <link rel="preconnect" href="https://cdn.plot.ly">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% if team is defined and team %}
     <style>:root {
@@ -30,8 +34,6 @@
         --team-secondary-dim: color-mix(in srgb, {{ team.secondary_color }} 70%, black);
     }</style>
     {% endif %}
-    <!-- Plotly for charts -->
-    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-RP0DRM3Z56"></script>
     <script>

@@ -11,6 +11,7 @@ import sqlite3
 import urllib.request
 
 from flask import Flask, jsonify, render_template, abort, request, redirect, Response
+from flask_caching import Cache
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
@@ -82,6 +83,9 @@ sys.path.insert(0, os.path.join(BASE_DIR, "..", "src"))
 from teams import TEAMS, SEASON, SEASON_DATES
 
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
+app.config["CACHE_TYPE"] = "SimpleCache"
+app.config["CACHE_DEFAULT_TIMEOUT"] = 300  # 5 minutes
+cache = Cache(app)
 
 
 @app.before_request
@@ -383,6 +387,7 @@ _DIVISION_ORDER = [
 ]
 
 @app.route("/")
+@cache.cached(timeout=300)
 def home():
     """Team picker — show all teams grouped by division."""
     available = query("SELECT DISTINCT team FROM players")
@@ -405,6 +410,7 @@ def home():
 
 
 @app.route("/<team_code>")
+@cache.cached(timeout=300, query_string=True)
 def roster(team_code: str):
     """Team roster page."""
     team_code = team_code.upper()
@@ -731,6 +737,7 @@ def search_players():
 # ---------------------------------------------------------------------------
 
 @app.route("/api/search")
+@cache.cached(timeout=600, query_string=True)
 def api_search():
     q = request.args.get("q", "").strip()
     if len(q) < 2:
@@ -785,6 +792,7 @@ def glossary():
 
 
 @app.route("/leaderboards")
+@cache.cached(timeout=300, query_string=True)
 def leaderboards():
     season = request.args.get("season", SEASON, type=int)
     min_pa = request.args.get("min_pa", 25, type=int)
