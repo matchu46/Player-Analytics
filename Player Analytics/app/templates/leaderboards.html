@@ -29,14 +29,14 @@
     <div id="filter-batters" class="lb-filter-group">
         <label>Min PA:</label>
         {% for v in [0, 25, 50, 150, 300, 450] %}
-        <a href="/leaderboards?season={{ season }}&min_pa={{ v }}&min_ip={{ min_ip }}"
+        <a href="/leaderboards?season={{ season }}&min_pa={{ v }}&min_ip={{ min_ip }}&tab=batters"
            class="lb-filter-pill{% if min_pa == v %} active{% endif %}">{{ v }}</a>
         {% endfor %}
     </div>
     <div id="filter-pitchers" class="lb-filter-group" style="display:none;">
         <label>Min IP:</label>
         {% for v in [0, 5, 25, 50, 100, 150] %}
-        <a href="/leaderboards?season={{ season }}&min_pa={{ min_pa }}&min_ip={{ v }}"
+        <a href="/leaderboards?season={{ season }}&min_pa={{ min_pa }}&min_ip={{ v }}&tab=pitchers"
            class="lb-filter-pill{% if min_ip == v %} active{% endif %}">{{ v }}</a>
         {% endfor %}
     </div>
@@ -229,21 +229,26 @@
 // ── Tab switching ────────────────────────────────────────
 const tabs = { batters:'tab-batters', pitchers:'tab-pitchers' };
 const filterGroups = { batters:'filter-batters', pitchers:'filter-pitchers' };
-let currentTab = 'batters';
+let currentTab = new URLSearchParams(location.search).get('tab') === 'pitchers' ? 'pitchers' : 'batters';
+
+function applyTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.roster-tab').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    Object.entries(tabs).forEach(([k, id]) => {
+        document.getElementById(id).style.display = k === tab ? '' : 'none';
+    });
+    Object.entries(filterGroups).forEach(([k, id]) => {
+        document.getElementById(id).style.display = k === tab ? '' : 'none';
+    });
+    rankRows(tab === 'batters' ? 'batter-table' : 'pitcher-table');
+}
+
+applyTab(currentTab);
 
 document.querySelectorAll('.roster-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.roster-tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentTab = btn.dataset.tab;
-        Object.entries(tabs).forEach(([k, id]) => {
-            document.getElementById(id).style.display = k === currentTab ? '' : 'none';
-        });
-        Object.entries(filterGroups).forEach(([k, id]) => {
-            document.getElementById(id).style.display = k === currentTab ? '' : 'none';
-        });
-        rankRows(currentTab === 'batters' ? 'batter-table' : 'pitcher-table');
-    });
+    btn.addEventListener('click', () => applyTab(btn.dataset.tab));
 });
 
 // ── Sorting ──────────────────────────────────────────────
