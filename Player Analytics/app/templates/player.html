@@ -47,6 +47,9 @@
     <div class="stat-item"><span class="stat-label">HR</span><span class="stat-value">{{ overall.home_runs or 0 }}</span></div>
     <div class="stat-item"><span class="stat-label">K%</span><span class="stat-value">{{ "%.1f"|format((overall.strikeouts / overall.pa * 100) if overall.pa else 0) }}%</span></div>
     <div class="stat-item"><span class="stat-label">BB%</span><span class="stat-value">{{ "%.1f"|format((overall.walks / overall.pa * 100) if overall.pa else 0) }}%</span></div>
+    <div class="stat-item"><span class="stat-label">BABIP</span><span class="stat-value">{% if overall.babip %}{{ "%.3f"|format(overall.babip) }}{% else %}—{% endif %}</span></div>
+    <div class="stat-item"><span class="stat-label">wRC+</span><span class="stat-value">{% if overall.wrc_plus is not none %}{{ overall.wrc_plus | int }}{% else %}—{% endif %}</span></div>
+    <div class="stat-item"><span class="stat-label">OPS+</span><span class="stat-value">{% if overall.ops_plus is not none %}{{ overall.ops_plus | int }}{% else %}—{% endif %}</span></div>
     <div class="stat-item"><span class="stat-label">EV</span><span class="stat-value">{{ overall.avg_exit_velo or '—' }}</span></div>
     <div class="stat-item"><span class="stat-label">Hard%</span><span class="stat-value">{% if overall.hard_hit_pct %}{{ "%.1f"|format(overall.hard_hit_pct * 100) }}%{% else %}—{% endif %}</span></div>
     {% else %}
@@ -55,6 +58,8 @@
     <div class="stat-item"><span class="stat-label">BF</span><span class="stat-value">{{ overall.batters_faced or 0 }}</span></div>
     <div class="stat-item"><span class="stat-label">K%</span><span class="stat-value">{{ "%.1f"|format((overall.k_pct or 0) * 100) }}%</span></div>
     <div class="stat-item"><span class="stat-label">BB%</span><span class="stat-value">{{ "%.1f"|format((overall.bb_pct or 0) * 100) }}%</span></div>
+    <div class="stat-item"><span class="stat-label">FIP</span><span class="stat-value">{% if overall.fip is not none %}{{ "%.2f"|format(overall.fip) }}{% else %}—{% endif %}</span></div>
+    <div class="stat-item"><span class="stat-label">ERA+</span><span class="stat-value">{% if overall.era_plus is not none %}{{ overall.era_plus | int }}{% else %}—{% endif %}</span></div>
     <div class="stat-item"><span class="stat-label">WHIP</span><span class="stat-value">{{ "%.2f"|format(overall.whip) if overall.whip is not none else '—' }}</span></div>
     <div class="stat-item"><span class="stat-label">AVG vs</span><span class="stat-value">{{ "%.3f"|format(overall.avg_against or 0) }}</span></div>
     <div class="stat-item"><span class="stat-label">wOBA vs</span><span class="stat-value">{{ "%.3f"|format(overall.woba_against or 0) }}</span></div>
@@ -619,12 +624,14 @@ const BATTER_STATS = [
     {v:'avg',label:'AVG'},{v:'obp',label:'OBP'},{v:'slg',label:'SLG'},
     {v:'ops',label:'OPS'},{v:'woba',label:'wOBA'},{v:'home_runs',label:'HR'},
     {v:'strikeouts',label:'K'},{v:'walks',label:'BB'},{v:'pa',label:'PA'},
+    {v:'babip',label:'BABIP'},{v:'wrc_plus',label:'wRC+'},{v:'ops_plus',label:'OPS+'},
     {v:'avg_exit_velo',label:'Avg EV'},{v:'hard_hit_pct',label:'Hard Hit%'},
     {v:'barrel_pct',label:'Barrel%'},{v:'whiff_pct',label:'Whiff%'},{v:'swing_pct',label:'Swing%'},
 ];
 const PITCHER_STATS = [
     {v:'era',label:'ERA'},{v:'whip',label:'WHIP'},{v:'innings_pitched',label:'IP'},
     {v:'k_pct',label:'K%'},{v:'bb_pct',label:'BB%'},{v:'k_bb',label:'K-BB'},
+    {v:'fip',label:'FIP'},{v:'era_plus',label:'ERA+'},
     {v:'woba_against',label:'wOBA vs'},{v:'avg_against',label:'AVG vs'},
     {v:'slg_against',label:'SLG vs'},{v:'avg_velo',label:'Avg Velo'},
     {v:'batters_faced',label:'BF'},{v:'strikeouts',label:'K'},
@@ -644,7 +651,7 @@ const SPLIT_SORT = {
 // Separate sets because 'strikeouts' is bad for batters but good for pitchers
 {% if player_type == 'pitcher' %}
 const BAD_STATS = new Set([
-    'era','whip','hits_allowed','runs_allowed','earned_runs',
+    'era','fip','whip','hits_allowed','runs_allowed','earned_runs',
     'home_runs_allowed','walks_allowed','bb_pct','hbp',
     'avg_against','obp_against','slg_against','woba_against',
 ]);

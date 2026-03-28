@@ -20,6 +20,24 @@ import numpy as np
 from teams import get_team, SEASON, TEAMS, SEASON_DATES
 
 # ---------------------------------------------------------------------------
+# League-average constants for plus-stat computation (park-neutral)
+# Sources: FanGraphs Guts page. wOBA_scale ≈ 1.157 (stable across seasons).
+# ---------------------------------------------------------------------------
+LEAGUE_CONSTANTS = {
+    2016: {'lg_obp': .321, 'lg_slg': .417, 'lg_woba': .318, 'lg_era': 4.20, 'fip_c': 3.15},
+    2017: {'lg_obp': .325, 'lg_slg': .426, 'lg_woba': .321, 'lg_era': 4.36, 'fip_c': 3.13},
+    2018: {'lg_obp': .318, 'lg_slg': .409, 'lg_woba': .315, 'lg_era': 4.15, 'fip_c': 3.16},
+    2019: {'lg_obp': .323, 'lg_slg': .435, 'lg_woba': .320, 'lg_era': 4.49, 'fip_c': 3.22},
+    2020: {'lg_obp': .322, 'lg_slg': .428, 'lg_woba': .320, 'lg_era': 4.44, 'fip_c': 3.20},
+    2021: {'lg_obp': .317, 'lg_slg': .411, 'lg_woba': .318, 'lg_era': 4.26, 'fip_c': 3.15},
+    2022: {'lg_obp': .310, 'lg_slg': .392, 'lg_woba': .308, 'lg_era': 3.97, 'fip_c': 3.11},
+    2023: {'lg_obp': .320, 'lg_slg': .414, 'lg_woba': .318, 'lg_era': 4.33, 'fip_c': 3.16},
+    2024: {'lg_obp': .316, 'lg_slg': .409, 'lg_woba': .313, 'lg_era': 4.29, 'fip_c': 3.18},
+    2025: {'lg_obp': .315, 'lg_slg': .405, 'lg_woba': .310, 'lg_era': 4.20, 'fip_c': 3.15},
+    2026: {'lg_obp': .315, 'lg_slg': .405, 'lg_woba': .310, 'lg_era': 4.20, 'fip_c': 3.15},
+}
+
+# ---------------------------------------------------------------------------
 # Opponent lookup tables (built from TEAMS config)
 # ---------------------------------------------------------------------------
 
@@ -95,6 +113,11 @@ def compute_batter_stats(df: pd.DataFrame) -> dict:
     barrel_mask = (bip["launch_speed"] >= 98) & bip["launch_angle"].between(26, 30)
     barrel_pct = barrel_mask.sum() / len(bip) if len(bip) > 0 else None
 
+    # BABIP = (H - HR) / (AB - K - HR)
+    # Note: our AB already excludes sac_fly, so this matches standard BABIP closely
+    babip_denom = ab - strikeouts - home_runs
+    babip = (hits - home_runs) / babip_denom if babip_denom > 0 else None
+
     # Swing / contact
     swings = df["description"].isin([
         "swinging_strike", "swinging_strike_blocked", "foul", "foul_tip",
@@ -127,6 +150,7 @@ def compute_batter_stats(df: pd.DataFrame) -> dict:
         "swing_pct": round(swing_pct, 3) if swing_pct is not None else None,
         "whiff_pct": round(whiff_pct, 3) if whiff_pct is not None else None,
         "contact_pct": round(contact_pct, 3) if contact_pct is not None else None,
+        "babip": round(babip, 3) if babip is not None else None,
     }
 
 
@@ -388,6 +412,58 @@ def get_splits(df: pd.DataFrame, player_col: str, team_statcast_code: str = "AZ"
 # Main processing loop
 # ---------------------------------------------------------------------------
 
+def _apply_batter_plus_stats(conn: sqlite3.Connection, season: int, team: str):
+    """
+    After all batter splits are written, compute OPS+ and wRC+ using
+    hardcoded league-average constants. No park adjustment applied.
+    OPS+ = 100 * (OBP/lgOBP + SLG/lgSLG - 1)
+    wRC+ ≈ 100 * wOBA / lgwOBA  (simplified, no park factor)
+    """
+    lc = LEAGUE_CONSTANTS.get(season, LEAGUE_CONSTANTS[2024])
+    conn.execute("""
+        UPDATE batter_splits SET
+            ops_plus = CASE
+                WHEN obp IS NOT NULL AND slg IS NOT NULL
+                THEN ROUND(100.0 * (obp / ? + slg / ? - 1))
+                ELSE NULL END,
+            wrc_plus = CASE
+                WHEN woba IS NOT NULL AND ? > 0
+                THEN ROUND(100.0 * woba / ?)
+                ELSE NULL END
+        WHERE season = ? AND team = ?
+    """, (lc['lg_obp'], lc['lg_slg'], lc['lg_woba'], lc['lg_woba'], season, team))
+    conn.commit()
+    print(f"    Applied OPS+/wRC+ for {team} {season} (lgOBP={lc['lg_obp']}, lgwOBA={lc['lg_woba']})")
+
+
+def _apply_pitcher_plus_stats(conn: sqlite3.Connection, season: int, team: str):
+    """
+    After all pitcher splits are written, compute FIP and ERA+.
+    FIP = (13*HR + 3*(BB+HBP) - 2*K) / IP + cFIP
+    ERA+ = 100 * lgERA / ERA  (no park adjustment)
+    IP is stored in baseball convention (6.2 = 6⅔); converted to decimal for FIP.
+    """
+    lc = LEAGUE_CONSTANTS.get(season, LEAGUE_CONSTANTS[2024])
+    conn.execute("""
+        UPDATE pitcher_splits SET
+            fip = CASE
+                WHEN innings_pitched IS NOT NULL AND innings_pitched > 0
+                THEN ROUND(
+                    (13.0 * home_runs_allowed + 3.0 * (walks_allowed + hbp) - 2.0 * strikeouts)
+                    / (CAST(innings_pitched AS INTEGER)
+                       + (innings_pitched - CAST(innings_pitched AS INTEGER)) * 10.0 / 3.0)
+                    + ?, 2)
+                ELSE NULL END,
+            era_plus = CASE
+                WHEN era IS NOT NULL AND era > 0  THEN ROUND(100.0 * ? / era)
+                WHEN era IS NOT NULL AND era = 0  THEN 999
+                ELSE NULL END
+        WHERE season = ? AND team = ?
+    """, (lc['fip_c'], lc['lg_era'], season, team))
+    conn.commit()
+    print(f"    Applied FIP/ERA+ for {team} {season} (lgERA={lc['lg_era']}, cFIP={lc['fip_c']})")
+
+
 def process_batters(player_id: int = None, season: int = SEASON, team: str = 'ARI'):
     team_cfg = get_team(team)
     conn = sqlite3.connect(DB_PATH)
@@ -443,6 +519,7 @@ def process_batters(player_id: int = None, season: int = SEASON, team: str = 'AR
         conn.commit()
         print(f"    Wrote {len(splits_df)} split rows.")
 
+    _apply_batter_plus_stats(conn, season, team)
     conn.close()
 
 
@@ -493,6 +570,7 @@ def process_pitchers(player_id: int = None, season: int = SEASON, team: str = 'A
         conn.commit()
         print(f"    Wrote {len(splits_df)} split rows.")
 
+    _apply_pitcher_plus_stats(conn, season, team)
     conn.close()
 
 
@@ -500,7 +578,23 @@ def process_pitchers(player_id: int = None, season: int = SEASON, team: str = 'A
 # Entry point
 # ---------------------------------------------------------------------------
 
+def _migrate_columns():
+    """Add new columns to existing DB if missing (safe to run multiple times)."""
+    conn = sqlite3.connect(DB_PATH)
+    b_cols = {r[1] for r in conn.execute("PRAGMA table_info(batter_splits)").fetchall()}
+    p_cols = {r[1] for r in conn.execute("PRAGMA table_info(pitcher_splits)").fetchall()}
+    for col in ['babip', 'ops_plus', 'wrc_plus']:
+        if col not in b_cols:
+            conn.execute(f"ALTER TABLE batter_splits ADD COLUMN {col} REAL")
+    for col in ['fip', 'era_plus']:
+        if col not in p_cols:
+            conn.execute(f"ALTER TABLE pitcher_splits ADD COLUMN {col} REAL")
+    conn.commit()
+    conn.close()
+
+
 if __name__ == "__main__":
+    _migrate_columns()
     parser = argparse.ArgumentParser(description="Compute situational splits")
     parser.add_argument("--batters",  action="store_true")
     parser.add_argument("--pitchers", action="store_true")

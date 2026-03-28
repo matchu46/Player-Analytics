@@ -153,6 +153,11 @@ CREATE TABLE IF NOT EXISTS batter_splits (
     whiff_pct       REAL,
     contact_pct     REAL,
 
+    -- Advanced (computed post-process using league constants)
+    babip           REAL,
+    ops_plus        REAL,
+    wrc_plus        REAL,
+
     UNIQUE (team, player_id, season, split_type, split_value)
 );
 
@@ -192,6 +197,10 @@ CREATE TABLE IF NOT EXISTS pitcher_splits (
     -- Pitch metrics
     avg_velo        REAL,
     avg_spin_rate   REAL,
+
+    -- Advanced (computed post-process using league constants)
+    fip             REAL,
+    era_plus        REAL,
 
     UNIQUE (team, player_id, season, split_type, split_value)
 );

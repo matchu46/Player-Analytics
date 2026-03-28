@@ -59,6 +59,23 @@ def _ensure_db():
 
 _ensure_db()
 
+
+def _migrate_columns():
+    """Non-destructively add new columns to existing DB on startup."""
+    conn = sqlite3.connect(DB_PATH)
+    b_cols = {r[1] for r in conn.execute("PRAGMA table_info(batter_splits)").fetchall()}
+    p_cols = {r[1] for r in conn.execute("PRAGMA table_info(pitcher_splits)").fetchall()}
+    for col in ['babip', 'ops_plus', 'wrc_plus']:
+        if col not in b_cols:
+            conn.execute(f"ALTER TABLE batter_splits ADD COLUMN {col} REAL")
+    for col in ['fip', 'era_plus']:
+        if col not in p_cols:
+            conn.execute(f"ALTER TABLE pitcher_splits ADD COLUMN {col} REAL")
+    conn.commit()
+    conn.close()
+
+_migrate_columns()
+
 # Allow importing from src/
 sys.path.insert(0, os.path.join(BASE_DIR, "..", "src"))
 
@@ -782,6 +799,7 @@ def leaderboards():
                b.avg_exit_velo, b.avg_launch_angle,
                b.hard_hit_pct, b.barrel_pct,
                b.swing_pct, b.whiff_pct, b.contact_pct,
+               b.babip, b.ops_plus, b.wrc_plus,
                CASE WHEN b.pa > 0 THEN CAST(b.strikeouts AS REAL)/b.pa ELSE NULL END AS k_pct,
                CASE WHEN b.pa > 0 THEN CAST(b.walks AS REAL)/b.pa ELSE NULL END AS bb_pct
         FROM batter_splits b
@@ -800,7 +818,8 @@ def leaderboards():
                b.home_runs_allowed,
                b.k_pct, b.bb_pct, b.k_bb,
                b.avg_against, b.obp_against, b.slg_against, b.woba_against,
-               b.avg_velo, b.avg_spin_rate
+               b.avg_velo, b.avg_spin_rate,
+               b.fip, b.era_plus
         FROM pitcher_splits b
         JOIN players p ON b.player_id = p.player_id AND b.season = p.season
         WHERE b.season = ? AND b.split_type = 'overall'
