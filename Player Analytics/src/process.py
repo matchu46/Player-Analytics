@@ -414,36 +414,41 @@ def get_splits(df: pd.DataFrame, player_col: str, team_statcast_code: str = "AZ"
 
 def _apply_batter_plus_stats(conn: sqlite3.Connection, season: int, team: str):
     """
-    After all batter splits are written, compute OPS+ and wRC+ using
-    hardcoded league-average constants. No park adjustment applied.
-    OPS+ = 100 * (OBP/lgOBP + SLG/lgSLG - 1)
-    wRC+ ≈ 100 * wOBA / lgwOBA  (simplified, no park factor)
+    After all batter splits are written, compute OPS+ and wRC+ with park adjustment.
+    OPS+ = 100 * (OBP/lgOBP + SLG/lgSLG - 1) / park_factor
+    wRC+ ≈ 100 * (wOBA/lgwOBA) / park_factor
+    park_factor > 1.0 = hitter-friendly; dividing deflates stats earned in easy parks.
     """
     lc = LEAGUE_CONSTANTS.get(season, LEAGUE_CONSTANTS[2024])
+    pf = get_team(team).get('park_factor', 1.00)
     conn.execute("""
         UPDATE batter_splits SET
             ops_plus = CASE
-                WHEN obp IS NOT NULL AND slg IS NOT NULL
-                THEN ROUND(100.0 * (obp / ? + slg / ? - 1))
+                WHEN obp IS NOT NULL AND slg IS NOT NULL AND ? > 0
+                THEN ROUND(100.0 * (obp / ? + slg / ? - 1) / ?)
                 ELSE NULL END,
             wrc_plus = CASE
-                WHEN woba IS NOT NULL AND ? > 0
-                THEN ROUND(100.0 * woba / ?)
+                WHEN woba IS NOT NULL AND ? > 0 AND ? > 0
+                THEN ROUND(100.0 * woba / ? / ?)
                 ELSE NULL END
         WHERE season = ? AND team = ?
-    """, (lc['lg_obp'], lc['lg_slg'], lc['lg_woba'], lc['lg_woba'], season, team))
+    """, (pf, lc['lg_obp'], lc['lg_slg'], pf,
+          lc['lg_woba'], pf, lc['lg_woba'], pf,
+          season, team))
     conn.commit()
-    print(f"    Applied OPS+/wRC+ for {team} {season} (lgOBP={lc['lg_obp']}, lgwOBA={lc['lg_woba']})")
+    print(f"    Applied OPS+/wRC+ for {team} {season} (lgOBP={lc['lg_obp']}, lgwOBA={lc['lg_woba']}, pf={pf})")
 
 
 def _apply_pitcher_plus_stats(conn: sqlite3.Connection, season: int, team: str):
     """
-    After all pitcher splits are written, compute FIP and ERA+.
-    FIP = (13*HR + 3*(BB+HBP) - 2*K) / IP + cFIP
-    ERA+ = 100 * lgERA / ERA  (no park adjustment)
+    After all pitcher splits are written, compute FIP and ERA+ with park adjustment.
+    FIP = (13*HR + 3*(BB+HBP) - 2*K) / IP + cFIP  (no park factor — FIP is park-neutral by design)
+    ERA+ = 100 * (lgERA * park_factor) / ERA
+      park_factor > 1.0 = hitter-friendly; multiplying lgERA gives credit to pitchers in tough parks.
     IP is stored in baseball convention (6.2 = 6⅔); converted to decimal for FIP.
     """
     lc = LEAGUE_CONSTANTS.get(season, LEAGUE_CONSTANTS[2024])
+    pf = get_team(team).get('park_factor', 1.00)
     conn.execute("""
         UPDATE pitcher_splits SET
             fip = CASE
@@ -455,13 +460,13 @@ def _apply_pitcher_plus_stats(conn: sqlite3.Connection, season: int, team: str):
                     + ?, 2)
                 ELSE NULL END,
             era_plus = CASE
-                WHEN era IS NOT NULL AND era > 0  THEN ROUND(100.0 * ? / era)
+                WHEN era IS NOT NULL AND era > 0  THEN ROUND(100.0 * ? * ? / era)
                 WHEN era IS NOT NULL AND era = 0  THEN 999
                 ELSE NULL END
         WHERE season = ? AND team = ?
-    """, (lc['fip_c'], lc['lg_era'], season, team))
+    """, (lc['fip_c'], lc['lg_era'], pf, season, team))
     conn.commit()
-    print(f"    Applied FIP/ERA+ for {team} {season} (lgERA={lc['lg_era']}, cFIP={lc['fip_c']})")
+    print(f"    Applied FIP/ERA+ for {team} {season} (lgERA={lc['lg_era']}, cFIP={lc['fip_c']}, pf={pf})")
 
 
 def process_batters(player_id: int = None, season: int = SEASON, team: str = 'ARI'):

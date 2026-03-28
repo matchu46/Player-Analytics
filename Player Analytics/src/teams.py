@@ -59,6 +59,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#A71930',  # Sedona Red
         'secondary_color': '#E3D4AD',  # Sand
         'division': 'NL West', 'league': 'NL',
+        'park_factor': 1.00,  # Chase Field — roughly neutral
     },
     'ATL': {
         'mlb_team_id':   144,
@@ -72,6 +73,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#CE1141',  # Red
         'secondary_color': '#EAAA00',  # Gold
         'division': 'NL East', 'league': 'NL',
+        'park_factor': 0.97,  # Truist Park — slight pitcher's park
     },
     'BAL': {
         'mlb_team_id':   110,
@@ -85,6 +87,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#DF4601',  # Orange
         'secondary_color': '#F5E03A',  # Yellow
         'division': 'AL East', 'league': 'AL',
+        'park_factor': 1.01,  # Camden Yards — slight hitter
     },
     'BOS': {
         'mlb_team_id':   111,
@@ -98,6 +101,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#BD3039',  # Red
         'secondary_color': '#C8DFF4',  # Light Blue
         'division': 'AL East', 'league': 'AL',
+        'park_factor': 1.05,  # Fenway Park — hitter-friendly (Green Monster)
     },
     'CHC': {
         'mlb_team_id':   112,
@@ -111,6 +115,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#0E3386',  # Blue
         'secondary_color': '#CC3433',  # Red
         'division': 'NL Central', 'league': 'NL',
+        'park_factor': 1.01,  # Wrigley Field — slight hitter (wind-dependent)
     },
     'CWS': {
         'mlb_team_id':   145,
@@ -124,6 +129,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#C4CED4',  # Silver
         'secondary_color': '#FFFFFF',  # White
         'division': 'AL Central', 'league': 'AL',
+        'park_factor': 1.00,  # Guaranteed Rate Field — neutral
     },
     'CIN': {
         'mlb_team_id':   113,
@@ -137,6 +143,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#C6011F',  # Red
         'secondary_color': '#F5E4C8',  # Cream
         'division': 'NL Central', 'league': 'NL',
+        'park_factor': 1.01,  # Great American Ball Park — slight hitter
     },
     'CLE': {
         'mlb_team_id':   114,
@@ -150,6 +157,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#E31937',  # Red
         'secondary_color': '#D8C08C',  # Gold/Tan
         'division': 'AL Central', 'league': 'AL',
+        'park_factor': 0.97,  # Progressive Field — slight pitcher's park
     },
     'COL': {
         'mlb_team_id':   115,
@@ -163,6 +171,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#7B2FBE',  # Purple (lightened for visibility)
         'secondary_color': '#C4CED4',  # Silver
         'division': 'NL West', 'league': 'NL',
+        'park_factor': 1.20,  # Coors Field — extreme hitter (altitude)
     },
     'DET': {
         'mlb_team_id':   116,
@@ -176,6 +185,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#FA4616',  # Orange
         'secondary_color': '#D7D3C6',  # Light Gray
         'division': 'AL Central', 'league': 'AL',
+        'park_factor': 0.96,  # Comerica Park — pitcher-friendly (large OF)
     },
     'HOU': {
         'mlb_team_id':   117,
@@ -189,6 +199,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#EB6E1F',  # Orange
         'secondary_color': '#D8C08C',  # Gold/Tan
         'division': 'AL West', 'league': 'AL',
+        'park_factor': 1.01,  # Minute Maid Park — slight hitter
     },
     'KC': {
         'mlb_team_id':   118,
@@ -202,6 +213,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#004687',  # Blue
         'secondary_color': '#C09A5B',  # Gold
         'division': 'AL Central', 'league': 'AL',
+        'park_factor': 1.01,  # Kauffman Stadium — slight hitter
     },
     'LAA': {
         'mlb_team_id':   108,
@@ -215,6 +227,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#BA0021',  # Red
         'secondary_color': '#C4CED4',  # Silver
         'division': 'AL West', 'league': 'AL',
+        'park_factor': 0.97,  # Angel Stadium — slight pitcher's park
     },
     'LAD': {
         'mlb_team_id':   119,
@@ -228,6 +241,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#005A9C',  # Dodger Blue
         'secondary_color': '#FFFFFF',  # White
         'division': 'NL West', 'league': 'NL',
+        'park_factor': 0.96,  # Dodger Stadium — pitcher-friendly
     },
     'MIA': {
         'mlb_team_id':   146,
@@ -241,6 +255,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#00A3E0',  # Blue
         'secondary_color': '#FF6600',  # Orange
         'division': 'NL East', 'league': 'NL',
+        'park_factor': 0.94,  # loanDepot Park — pitcher-friendly
     },
     'MIL': {
         'mlb_team_id':   158,
@@ -254,6 +269,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#FFC52F',  # Gold
         'secondary_color': '#B0C4D4',  # Light Blue
         'division': 'NL Central', 'league': 'NL',
+        'park_factor': 0.97,  # American Family Field — pitcher-friendly
     },
     'MIN': {
         'mlb_team_id':   142,
@@ -267,6 +283,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#D31145',  # Red
         'secondary_color': '#B8CBE4',  # Light Blue
         'division': 'AL Central', 'league': 'AL',
+        'park_factor': 1.00,  # Target Field — neutral
     },
     'NYM': {
         'mlb_team_id':   121,
@@ -280,6 +297,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#0055A4',  # Blue
         'secondary_color': '#FF5910',  # Orange
         'division': 'NL East', 'league': 'NL',
+        'park_factor': 0.99,  # Citi Field — neutral/slight pitcher
     },
     'NYY': {
         'mlb_team_id':   147,
@@ -293,6 +311,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#003087',  # Navy
         'secondary_color': '#C4CED4',  # Silver
         'division': 'AL East', 'league': 'AL',
+        'park_factor': 1.04,  # Yankee Stadium — hitter-friendly (short RF porch)
     },
     'ATH': {
         'mlb_team_id':   133,
@@ -306,6 +325,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#EFB21E',  # Gold
         'secondary_color': '#B5CFBB',  # Light Green
         'division': 'AL West', 'league': 'AL',
+        'park_factor': 0.96,  # Sutter Health Park — pitcher-friendly
     },
     'PHI': {
         'mlb_team_id':   143,
@@ -319,6 +339,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#E81828',  # Red
         'secondary_color': '#C8D8E8',  # Light Blue
         'division': 'NL East', 'league': 'NL',
+        'park_factor': 1.02,  # Citizens Bank Park — slight hitter
     },
     'PIT': {
         'mlb_team_id':   134,
@@ -332,6 +353,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#FDB827',  # Gold
         'secondary_color': '#E8E8E8',  # Silver/White
         'division': 'NL Central', 'league': 'NL',
+        'park_factor': 0.98,  # PNC Park — neutral/slight pitcher
     },
     'SD': {
         'mlb_team_id':   135,
@@ -345,6 +367,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#C4A882',  # Sand/Tan
         'secondary_color': '#FFC425',  # Gold
         'division': 'NL West', 'league': 'NL',
+        'park_factor': 0.95,  # Petco Park — pitcher-friendly
     },
     'SF': {
         'mlb_team_id':   137,
@@ -358,6 +381,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#FD5A1E',  # Giants Orange
         'secondary_color': '#E8E8E8',  # Light Gray
         'division': 'NL West', 'league': 'NL',
+        'park_factor': 0.94,  # Oracle Park — pitcher-friendly (marine layer)
     },
     'SEA': {
         'mlb_team_id':   136,
@@ -371,6 +395,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#005C5C',  # Teal
         'secondary_color': '#C4CED4',  # Silver
         'division': 'AL West', 'league': 'AL',
+        'park_factor': 0.96,  # T-Mobile Park — pitcher-friendly
     },
     'STL': {
         'mlb_team_id':   138,
@@ -384,6 +409,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#C41E3A',  # Red
         'secondary_color': '#FEDB00',  # Gold
         'division': 'NL Central', 'league': 'NL',
+        'park_factor': 0.97,  # Busch Stadium — slight pitcher's park
     },
     'TB': {
         'mlb_team_id':   139,
@@ -397,6 +423,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#092C5C',  # Navy
         'secondary_color': '#8FBCE6',  # Light Blue
         'division': 'AL East', 'league': 'AL',
+        'park_factor': 0.99,  # Tropicana Field — slight pitcher
     },
     'TEX': {
         'mlb_team_id':   140,
@@ -410,6 +437,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#003278',  # Navy
         'secondary_color': '#C8D8F5',  # Light Blue
         'division': 'AL West', 'league': 'AL',
+        'park_factor': 1.04,  # Globe Life Field — hitter-friendly (Texas heat)
     },
     'TOR': {
         'mlb_team_id':   141,
@@ -423,6 +451,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#134A8E',  # Blue
         'secondary_color': '#E8291C',  # Red
         'division': 'AL East', 'league': 'AL',
+        'park_factor': 1.01,  # Rogers Centre — slight hitter (turf)
     },
     'WSH': {
         'mlb_team_id':   120,
@@ -436,6 +465,7 @@ TEAMS: dict[str, dict] = {
         'primary_color': '#AB0003',  # Red
         'secondary_color': '#D4B483',  # Gold/Tan
         'division': 'NL East', 'league': 'NL',
+        'park_factor': 1.00,  # Nationals Park — neutral
     },
 }
 
