@@ -52,14 +52,24 @@
             <th class="name-col sortable" data-col="name">Player</th>
             <th class="sortable" data-col="team">Team</th>
             <th class="sortable num" data-col="pa">PA</th>
+            <th class="sortable num" data-col="ab">AB</th>
+            <th class="sortable num" data-col="h">H</th>
+            <th class="sortable num" data-col="2b">2B</th>
+            <th class="sortable num" data-col="3b">3B</th>
+            <th class="sortable num" data-col="hr">HR</th>
+            <th class="sortable num" data-col="rbi">RBI</th>
             <th class="sortable num" data-col="avg">AVG</th>
             <th class="sortable num" data-col="obp">OBP</th>
             <th class="sortable num" data-col="slg">SLG</th>
+            <th class="sortable num" data-col="ops">OPS</th>
             <th class="sortable num active-sort" data-col="woba">wOBA</th>
-            <th class="sortable num" data-col="hr">HR</th>
             <th class="sortable num" data-col="k_pct">K%</th>
             <th class="sortable num" data-col="bb_pct">BB%</th>
+            <th class="sortable num" data-col="swing_pct">Swing%</th>
+            <th class="sortable num" data-col="whiff_pct">Whiff%</th>
+            <th class="sortable num" data-col="contact_pct">Contact%</th>
             <th class="sortable num" data-col="ev">EV</th>
+            <th class="sortable num" data-col="la">LA</th>
             <th class="sortable num" data-col="hard_hit">Hard%</th>
             <th class="sortable num" data-col="barrel">Barrel%</th>
         </tr>
@@ -68,14 +78,24 @@
         {% for p in batters %}
         <tr data-name="{{ p.full_name|lower }}"
             data-pa="{{ p.pa or 0 }}"
+            data-ab="{{ p.ab or 0 }}"
+            data-h="{{ p.hits or 0 }}"
+            data-2b="{{ p.doubles or 0 }}"
+            data-3b="{{ p.triples or 0 }}"
+            data-hr="{{ p.home_runs or 0 }}"
+            data-rbi="{{ p.rbi or 0 }}"
             data-avg="{{ p.avg or 0 }}"
             data-obp="{{ p.obp or 0 }}"
             data-slg="{{ p.slg or 0 }}"
+            data-ops="{{ p.ops or 0 }}"
             data-woba="{{ p.woba or 0 }}"
-            data-hr="{{ p.home_runs or 0 }}"
-            data-k_pct="{{ (p.k_pct or 0) }}"
-            data-bb_pct="{{ (p.bb_pct or 0) }}"
+            data-k_pct="{{ p.k_pct or 0 }}"
+            data-bb_pct="{{ p.bb_pct or 0 }}"
+            data-swing_pct="{{ (p.swing_pct or 0) * 100 }}"
+            data-whiff_pct="{{ (p.whiff_pct or 0) * 100 }}"
+            data-contact_pct="{{ (p.contact_pct or 0) * 100 }}"
             data-ev="{{ p.avg_exit_velo or 0 }}"
+            data-la="{{ p.avg_launch_angle or 0 }}"
             data-hard_hit="{{ (p.hard_hit_pct or 0) * 100 }}"
             data-barrel="{{ (p.barrel_pct or 0) * 100 }}"
             data-team="{{ p.team }}">
@@ -83,14 +103,24 @@
             <td class="name-col"><a href="/batter/{{ p.player_id }}?season={{ season }}">{{ p.full_name }}</a></td>
             <td><a href="/{{ p.team|lower }}?season={{ season }}">{{ p.team }}</a></td>
             <td class="num">{{ p.pa or 0 }}</td>
+            <td class="num">{{ p.ab or 0 }}</td>
+            <td class="num">{{ p.hits or 0 }}</td>
+            <td class="num">{{ p.doubles or 0 }}</td>
+            <td class="num">{{ p.triples or 0 }}</td>
+            <td class="num">{{ p.home_runs or 0 }}</td>
+            <td class="num">{{ p.rbi or 0 }}</td>
             <td class="num">{{ "%.3f"|format(p.avg or 0) }}</td>
             <td class="num">{{ "%.3f"|format(p.obp or 0) }}</td>
             <td class="num">{{ "%.3f"|format(p.slg or 0) }}</td>
+            <td class="num">{{ "%.3f"|format(p.ops or 0) }}</td>
             <td class="num bold">{{ "%.3f"|format(p.woba or 0) }}</td>
-            <td class="num">{{ p.home_runs or 0 }}</td>
             <td class="num">{{ "%.1f"|format((p.k_pct or 0) * 100) }}%</td>
             <td class="num">{{ "%.1f"|format((p.bb_pct or 0) * 100) }}%</td>
+            <td class="num">{% if p.swing_pct %}{{ "%.1f"|format(p.swing_pct * 100) }}%{% else %}—{% endif %}</td>
+            <td class="num">{% if p.whiff_pct %}{{ "%.1f"|format(p.whiff_pct * 100) }}%{% else %}—{% endif %}</td>
+            <td class="num">{% if p.contact_pct %}{{ "%.1f"|format(p.contact_pct * 100) }}%{% else %}—{% endif %}</td>
             <td class="num">{{ p.avg_exit_velo or '—' }}</td>
+            <td class="num">{% if p.avg_launch_angle is not none %}{{ "%.1f"|format(p.avg_launch_angle) }}°{% else %}—{% endif %}</td>
             <td class="num">{% if p.hard_hit_pct %}{{ "%.1f"|format(p.hard_hit_pct * 100) }}%{% else %}—{% endif %}</td>
             <td class="num">{% if p.barrel_pct %}{{ "%.1f"|format(p.barrel_pct * 100) }}%{% else %}—{% endif %}</td>
         </tr>
@@ -110,41 +140,65 @@
             <th class="name-col sortable" data-col="name">Player</th>
             <th class="sortable" data-col="team">Team</th>
             <th class="sortable num" data-col="ip">IP</th>
+            <th class="sortable num" data-col="bf">BF</th>
             <th class="sortable num active-sort" data-col="era">ERA</th>
             <th class="sortable num" data-col="whip">WHIP</th>
             <th class="sortable num" data-col="k_pct">K%</th>
             <th class="sortable num" data-col="bb_pct">BB%</th>
+            <th class="sortable num" data-col="k_bb">K-BB%</th>
             <th class="sortable num" data-col="avg_against">AVG vs</th>
+            <th class="sortable num" data-col="obp_against">OBP vs</th>
+            <th class="sortable num" data-col="slg_against">SLG vs</th>
             <th class="sortable num" data-col="woba_against">wOBA vs</th>
+            <th class="sortable num" data-col="k">K</th>
+            <th class="sortable num" data-col="bb">BB</th>
+            <th class="sortable num" data-col="h">H</th>
             <th class="sortable num" data-col="hr">HR</th>
             <th class="sortable num" data-col="velo">Velo</th>
+            <th class="sortable num" data-col="spin">Spin</th>
         </tr>
     </thead>
     <tbody>
         {% for p in pitchers %}
         <tr data-name="{{ p.full_name|lower }}"
             data-ip="{{ p.innings_pitched or 0 }}"
+            data-bf="{{ p.batters_faced or 0 }}"
             data-era="{{ p.era if p.era is not none else 99 }}"
             data-whip="{{ p.whip if p.whip is not none else 99 }}"
-            data-k_pct="{{ (p.k_pct or 0) }}"
-            data-bb_pct="{{ (p.bb_pct or 0) }}"
+            data-k_pct="{{ p.k_pct or 0 }}"
+            data-bb_pct="{{ p.bb_pct or 0 }}"
+            data-k_bb="{{ p.k_bb or 0 }}"
             data-avg_against="{{ p.avg_against or 0 }}"
+            data-obp_against="{{ p.obp_against or 0 }}"
+            data-slg_against="{{ p.slg_against or 0 }}"
             data-woba_against="{{ p.woba_against or 0 }}"
+            data-k="{{ p.strikeouts or 0 }}"
+            data-bb="{{ p.walks_allowed or 0 }}"
+            data-h="{{ p.hits_allowed or 0 }}"
             data-hr="{{ p.home_runs_allowed or 0 }}"
             data-velo="{{ p.avg_velo or 0 }}"
+            data-spin="{{ p.avg_spin_rate or 0 }}"
             data-team="{{ p.team }}">
             <td class="rank-col rank-num"></td>
             <td class="name-col"><a href="/pitcher/{{ p.player_id }}?season={{ season }}">{{ p.full_name }}</a></td>
             <td><a href="/{{ p.team|lower }}?season={{ season }}">{{ p.team }}</a></td>
             <td class="num">{{ p.innings_pitched or '—' }}</td>
+            <td class="num">{{ p.batters_faced or 0 }}</td>
             <td class="num bold">{{ "%.2f"|format(p.era) if p.era is not none else '—' }}</td>
             <td class="num">{{ "%.2f"|format(p.whip) if p.whip is not none else '—' }}</td>
             <td class="num">{{ "%.1f"|format((p.k_pct or 0) * 100) }}%</td>
             <td class="num">{{ "%.1f"|format((p.bb_pct or 0) * 100) }}%</td>
+            <td class="num">{{ "%.1f"|format((p.k_bb or 0) * 100) }}%</td>
             <td class="num">{{ "%.3f"|format(p.avg_against or 0) }}</td>
+            <td class="num">{{ "%.3f"|format(p.obp_against or 0) }}</td>
+            <td class="num">{{ "%.3f"|format(p.slg_against or 0) }}</td>
             <td class="num">{{ "%.3f"|format(p.woba_against or 0) }}</td>
+            <td class="num">{{ p.strikeouts or 0 }}</td>
+            <td class="num">{{ p.walks_allowed or 0 }}</td>
+            <td class="num">{{ p.hits_allowed or 0 }}</td>
             <td class="num">{{ p.home_runs_allowed or 0 }}</td>
             <td class="num">{{ p.avg_velo or '—' }}</td>
+            <td class="num">{% if p.avg_spin_rate %}{{ p.avg_spin_rate | int }}{% else %}—{% endif %}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -177,7 +231,8 @@ document.querySelectorAll('.roster-tab').forEach(btn => {
 });
 
 // ── Sorting ──────────────────────────────────────────────
-const lowerBetter = new Set(['era','whip','bb_pct','avg_against','woba_against','hr']);
+const lowerBetter = new Set(['era','whip','bb_pct','k_bb','avg_against','obp_against',
+    'slg_against','woba_against','hr','bb','h','whiff_pct']);
 let sortState = {
     'batter-table':  { col: 'woba', asc: false },
     'pitcher-table': { col: 'era',  asc: true  },

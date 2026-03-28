@@ -98,11 +98,22 @@ def build_pitch_filter(player_col: str, player_id: int) -> tuple[str, list]:
 
     inning = request.args.get("inning")
     if inning:
-        if inning == "9+":
+        innings = [i.strip() for i in inning.split(",") if i.strip()]
+        has_9plus = "9+" in innings
+        numeric = [int(i) for i in innings if i != "9+"]
+        if has_9plus and numeric:
+            placeholders = ",".join("?" * len(numeric))
+            clauses.append(f"(inning >= 9 OR inning IN ({placeholders}))")
+            params.extend(numeric)
+        elif has_9plus:
             clauses.append("inning >= 9")
-        else:
+        elif len(numeric) == 1:
             clauses.append("inning = ?")
-            params.append(int(inning))
+            params.append(numeric[0])
+        elif numeric:
+            placeholders = ",".join("?" * len(numeric))
+            clauses.append(f"inning IN ({placeholders})")
+            params.extend(numeric)
 
     balls = request.args.get("balls")
     strikes = request.args.get("strikes")
@@ -154,8 +165,19 @@ def build_pitch_filter(player_col: str, player_id: int) -> tuple[str, list]:
 
     pitch_type = request.args.get("pitch_type")
     if pitch_type:
-        clauses.append("pitch_type = ?")
-        params.append(pitch_type)
+        types = [t.strip() for t in pitch_type.split(",") if t.strip()]
+        if len(types) == 1:
+            clauses.append("pitch_type = ?")
+            params.append(types[0])
+        elif len(types) > 1:
+            placeholders = ",".join("?" * len(types))
+            clauses.append(f"pitch_type IN ({placeholders})")
+            params.extend(types)
+
+    stadium = request.args.get("stadium")
+    if stadium:
+        clauses.append("home_team = ?")
+        params.append(stadium)
 
     season = request.args.get("season", type=int)
     if season and season in SEASON_DATES:
@@ -468,10 +490,12 @@ def batter_page(player_id: int):
         "AND game_date BETWEEN ? AND ? ORDER BY pitch_type",
         (player_id, dates["season_start"], dates["season_end"])
     )]
+    statcast_code = TEAMS.get(team_code, TEAMS['ARI'])['statcast_code']
     return render_template("player.html", player=player, overall=overall,
                            split_types=split_types, pitch_types=pitch_types,
                            player_type="batter", team=team,
-                           season=season, available_seasons=available_seasons)
+                           season=season, available_seasons=available_seasons,
+                           home_park=statcast_code)
 
 
 @app.route("/pitcher/<int:player_id>")
@@ -513,7 +537,8 @@ def pitcher_page(player_id: int):
     return render_template("player.html", player=player, overall=overall,
                            split_types=split_types, pitch_types=pitch_types,
                            player_type="pitcher", team=team,
-                           season=season, available_seasons=available_seasons)
+                           season=season, available_seasons=available_seasons,
+                           home_park='AZ')
 
 
 # ---------------------------------------------------------------------------
@@ -743,9 +768,12 @@ def leaderboards():
     batters = query(
         """
         SELECT b.player_id, p.full_name, p.team, p.position,
-               b.pa, b.avg, b.obp, b.slg, b.ops, b.woba,
-               b.home_runs, b.strikeouts, b.walks,
-               b.avg_exit_velo, b.hard_hit_pct, b.barrel_pct,
+               b.pa, b.ab, b.hits, b.singles, b.doubles, b.triples,
+               b.home_runs, b.rbi, b.walks, b.strikeouts, b.hbp,
+               b.avg, b.obp, b.slg, b.ops, b.woba,
+               b.avg_exit_velo, b.avg_launch_angle,
+               b.hard_hit_pct, b.barrel_pct,
+               b.swing_pct, b.whiff_pct, b.contact_pct,
                CASE WHEN b.pa > 0 THEN CAST(b.strikeouts AS REAL)/b.pa ELSE NULL END AS k_pct,
                CASE WHEN b.pa > 0 THEN CAST(b.walks AS REAL)/b.pa ELSE NULL END AS bb_pct
         FROM batter_splits b
@@ -760,8 +788,11 @@ def leaderboards():
         """
         SELECT b.player_id, p.full_name, p.team, p.position,
                b.era, b.whip, b.innings_pitched, b.batters_faced,
-               b.k_pct, b.bb_pct, b.avg_against, b.woba_against,
-               b.home_runs_allowed, b.avg_velo
+               b.strikeouts, b.walks_allowed, b.hits_allowed, b.hbp,
+               b.home_runs_allowed,
+               b.k_pct, b.bb_pct, b.k_bb,
+               b.avg_against, b.obp_against, b.slg_against, b.woba_against,
+               b.avg_velo, b.avg_spin_rate
         FROM pitcher_splits b
         JOIN players p ON b.player_id = p.player_id AND b.season = p.season
         WHERE b.season = ? AND b.split_type = 'overall'
@@ -786,91 +817,6 @@ def leaderboards():
     )
 
 
-# ---------------------------------------------------------------------------
-# Value — WAR, salary, awards
-# ---------------------------------------------------------------------------
-
-def _get_value_data(player_id: int):
-    value = query(
-        f"SELECT war, salary, dollars_per_war FROM player_value "
-        f"WHERE player_id=? AND season={SEASON}", (player_id,)
-    )
-    awards = query(
-        f"SELECT award_name FROM player_awards WHERE player_id=? AND season={SEASON}",
-        (player_id,)
-    )
-    v = value[0] if value else {}
-    return {
-        "war": v.get("war"),
-        "salary": v.get("salary"),
-        "dollars_per_war": v.get("dollars_per_war"),
-        "awards": [a["award_name"] for a in awards],
-    }
-
-
-@app.route("/api/batter/<int:player_id>/value")
-def batter_value(player_id: int):
-    return jsonify(_get_value_data(player_id))
-
-
-@app.route("/api/pitcher/<int:player_id>/value")
-def pitcher_value(player_id: int):
-    return jsonify(_get_value_data(player_id))
-
-
-# ---------------------------------------------------------------------------
-# Defense — fielding stats + sprint speed
-# ---------------------------------------------------------------------------
-
-def _get_defense_data(player_id: int):
-    row = query(
-        "SELECT position, games, innings, errors, fielding_pct, drs, def_runs, oaa, "
-        f"sprint_speed, sprint_pct FROM player_defense WHERE player_id=? AND season={SEASON}",
-        (player_id,)
-    )
-    return dict(row[0]) if row else {}
-
-
-@app.route("/api/batter/<int:player_id>/defense")
-def batter_defense(player_id: int):
-    return jsonify(_get_defense_data(player_id))
-
-
-@app.route("/api/pitcher/<int:player_id>/defense")
-def pitcher_defense(player_id: int):
-    return jsonify(_get_defense_data(player_id))
-
-
-# ---------------------------------------------------------------------------
-# Team payroll pages
-# ---------------------------------------------------------------------------
-
-@app.route("/<team_code>/payroll")
-def payroll(team_code: str):
-    team_code = team_code.upper()
-    if team_code not in TEAMS:
-        abort(404)
-    team = {**TEAMS[team_code], 'code': team_code}
-
-    players = query(f"""
-        SELECT p.player_id, p.full_name, p.position, p.position_type,
-               p.jersey_number,
-               v.war, v.salary, v.dollars_per_war
-        FROM players p
-        LEFT JOIN player_value v ON p.player_id = v.player_id
-                                 AND v.season = {SEASON}
-                                 AND v.team = p.team
-        WHERE p.season = {SEASON} AND p.team = ?
-        ORDER BY v.salary DESC
-    """, (team_code,))
-    total_salary = sum(p["salary"] for p in players if p["salary"])
-    return render_template("payroll.html", players=players, total_salary=total_salary, team=team)
-
-
-# Old /payroll URL → 301 redirect to /ari/payroll
-@app.route("/payroll")
-def payroll_redirect():
-    return redirect("/ari/payroll", code=301)
 
 
 # ---------------------------------------------------------------------------
@@ -889,7 +835,6 @@ def sitemap():
     for r in available_teams:
         code = r['team'].lower()
         urls.append(f"{base}/{code}")
-        urls.append(f"{base}/{code}/payroll")
     for p in players:
         route = "pitcher" if p["position_type"] == "Pitcher" else "batter"
         urls.append(f"{base}/{route}/{p['player_id']}")

@@ -306,6 +306,31 @@ nav a:hover { color: var(--team-secondary); }
 }
 .filter-select:focus { outline: none; border-color: var(--team-primary); }
 .filter-select:hover { border-color: #555; }
+
+/* Multi-select widget */
+.multi-select { position:relative; display:inline-block; min-width:80px; }
+.ms-trigger {
+    background: var(--bg-input); color: var(--text); border: 1px solid var(--border);
+    border-radius: 4px; padding: 0.3rem 0.6rem; font-size: 0.82rem; cursor: pointer;
+    white-space: nowrap; user-select: none; transition: border-color 0.15s;
+}
+.multi-select.open .ms-trigger,
+.ms-trigger:hover { border-color: #555; }
+.ms-arrow { font-size: 0.65rem; margin-left: 0.25rem; opacity: 0.6; }
+.ms-dropdown {
+    display: none; position: absolute; top: calc(100% + 3px); left: 0;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.4rem 0; min-width: 120px; z-index: 200;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.ms-dropdown.open { display: block; }
+.ms-item {
+    display: flex; align-items: center; gap: 0.45rem;
+    padding: 0.3rem 0.75rem; font-size: 0.82rem; cursor: pointer;
+    color: var(--text); white-space: nowrap;
+}
+.ms-item:hover { background: var(--bg-hover); }
+.ms-item input[type=checkbox] { accent-color: var(--red); cursor: pointer; }
 .btn-apply {
     background: var(--team-primary);
     color: #fff;
@@ -416,6 +441,18 @@ nav a:hover { color: var(--team-secondary); }
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
+
+/* ── Spray sub-tabs ────────────────────────────────────── */
+.spray-subtabs {
+    display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;
+}
+.spray-subtab {
+    background: none; border: 1px solid var(--border); border-radius: 999px;
+    color: var(--text-muted); font-size: 0.82rem; padding: 0.25rem 0.85rem;
+    cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.spray-subtab:hover { border-color: var(--red); color: var(--text); }
+.spray-subtab.active { border-color: var(--red); color: var(--text); background: var(--bg-hover); }
 
 /* ── Chart toolbar (inside tabs) ───────────────────────── */
 .chart-toolbar {

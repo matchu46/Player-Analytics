@@ -99,14 +99,21 @@
 
     <div class="filter-group">
         <label>Inning</label>
-        <select id="f-inning" class="filter-select">
-            <option value="">All</option>
-            <option value="1">1st</option><option value="2">2nd</option>
-            <option value="3">3rd</option><option value="4">4th</option>
-            <option value="5">5th</option><option value="6">6th</option>
-            <option value="7">7th</option><option value="8">8th</option>
-            <option value="9+">9th+</option>
-        </select>
+        <div class="multi-select" id="ms-inning">
+            <div class="ms-trigger" tabindex="0">All <span class="ms-arrow">▾</span></div>
+            <div class="ms-dropdown">
+                <label class="ms-item"><input type="checkbox" value="" class="ms-all" checked> All</label>
+                <label class="ms-item"><input type="checkbox" value="1"> 1st</label>
+                <label class="ms-item"><input type="checkbox" value="2"> 2nd</label>
+                <label class="ms-item"><input type="checkbox" value="3"> 3rd</label>
+                <label class="ms-item"><input type="checkbox" value="4"> 4th</label>
+                <label class="ms-item"><input type="checkbox" value="5"> 5th</label>
+                <label class="ms-item"><input type="checkbox" value="6"> 6th</label>
+                <label class="ms-item"><input type="checkbox" value="7"> 7th</label>
+                <label class="ms-item"><input type="checkbox" value="8"> 8th</label>
+                <label class="ms-item"><input type="checkbox" value="9+"> 9th+</label>
+            </div>
+        </div>
     </div>
 
     <div class="filter-group">
@@ -152,10 +159,15 @@
     {% if pitch_types %}
     <div class="filter-group">
         <label>Pitch Type</label>
-        <select id="f-pitch_type" class="filter-select">
-            <option value="">All</option>
-            {% for pt in pitch_types %}<option value="{{ pt }}">{{ pt }}</option>{% endfor %}
-        </select>
+        <div class="multi-select" id="ms-pitch_type">
+            <div class="ms-trigger" tabindex="0">All <span class="ms-arrow">▾</span></div>
+            <div class="ms-dropdown">
+                <label class="ms-item"><input type="checkbox" value="" class="ms-all" checked> All</label>
+                {% for pt in pitch_types %}
+                <label class="ms-item"><input type="checkbox" value="{{ pt }}"> {{ pt }}</label>
+                {% endfor %}
+            </div>
+        </div>
     </div>
     {% endif %}
 
@@ -181,8 +193,6 @@
     <button class="tab-btn" data-tab="heatmap">Strike Zone</button>
     <button class="tab-btn" data-tab="spray">{% if player_type == 'batter' %}Spray Chart{% else %}Pitch Movement{% endif %}</button>
     <button class="tab-btn" data-tab="advanced">{% if player_type == 'batter' %}Batted Ball{% else %}Velocity{% endif %}</button>
-    <button class="tab-btn" data-tab="value">Value</button>
-    <button class="tab-btn" data-tab="defense">Defense</button>
 </div>
 
 <!-- ── TAB: Splits ────────────────────────────────────── -->
@@ -242,6 +252,12 @@
 <!-- ── TAB: Spray / Movement ──────────────────────────── -->
 <div class="tab-content" id="tab-spray">
     {% if player_type == 'batter' %}
+    <!-- Spray sub-tabs -->
+    <div class="spray-subtabs">
+        <button class="spray-subtab active" data-stab="all">All Games</button>
+        <button class="spray-subtab" data-stab="compare">Stadium Overlay</button>
+        <button class="spray-subtab" data-stab="at-park">At This Stadium</button>
+    </div>
     <div class="chart-toolbar">
         <div class="filter-group">
             <label>Show</label>
@@ -263,6 +279,41 @@
                 <option value="exit_velo">Exit Velocity</option>
                 <option value="launch_angle">Launch Angle</option>
                 <option value="bb_type">Batted Ball Type</option>
+            </select>
+        </div>
+        <div class="filter-group" id="park-selector-group">
+            <label>Stadium</label>
+            <select id="spray-park" class="filter-select">
+                <option value="AZ"{% if home_park == 'AZ' %} selected{% endif %}>Chase Field (ARI)</option>
+                <option value="ATL"{% if home_park == 'ATL' %} selected{% endif %}>Truist Park (ATL)</option>
+                <option value="BAL"{% if home_park == 'BAL' %} selected{% endif %}>Camden Yards (BAL)</option>
+                <option value="BOS"{% if home_park == 'BOS' %} selected{% endif %}>Fenway Park (BOS)</option>
+                <option value="CHC"{% if home_park == 'CHC' %} selected{% endif %}>Wrigley Field (CHC)</option>
+                <option value="CWS"{% if home_park == 'CWS' %} selected{% endif %}>Guaranteed Rate Field (CWS)</option>
+                <option value="CIN"{% if home_park == 'CIN' %} selected{% endif %}>Great American Ball Park (CIN)</option>
+                <option value="CLE"{% if home_park == 'CLE' %} selected{% endif %}>Progressive Field (CLE)</option>
+                <option value="COL"{% if home_park == 'COL' %} selected{% endif %}>Coors Field (COL)</option>
+                <option value="DET"{% if home_park == 'DET' %} selected{% endif %}>Comerica Park (DET)</option>
+                <option value="HOU"{% if home_park == 'HOU' %} selected{% endif %}>Minute Maid Park (HOU)</option>
+                <option value="KC"{% if home_park == 'KC' %} selected{% endif %}>Kauffman Stadium (KC)</option>
+                <option value="LAA"{% if home_park == 'LAA' %} selected{% endif %}>Angel Stadium (LAA)</option>
+                <option value="LAD"{% if home_park == 'LAD' %} selected{% endif %}>Dodger Stadium (LAD)</option>
+                <option value="MIA"{% if home_park == 'MIA' %} selected{% endif %}>loanDepot park (MIA)</option>
+                <option value="MIL"{% if home_park == 'MIL' %} selected{% endif %}>American Family Field (MIL)</option>
+                <option value="MIN"{% if home_park == 'MIN' %} selected{% endif %}>Target Field (MIN)</option>
+                <option value="NYM"{% if home_park == 'NYM' %} selected{% endif %}>Citi Field (NYM)</option>
+                <option value="NYY"{% if home_park == 'NYY' %} selected{% endif %}>Yankee Stadium (NYY)</option>
+                <option value="ATH"{% if home_park == 'ATH' %} selected{% endif %}>Sutter Health Park (ATH)</option>
+                <option value="PHI"{% if home_park == 'PHI' %} selected{% endif %}>Citizens Bank Park (PHI)</option>
+                <option value="PIT"{% if home_park == 'PIT' %} selected{% endif %}>PNC Park (PIT)</option>
+                <option value="SD"{% if home_park == 'SD' %} selected{% endif %}>Petco Park (SD)</option>
+                <option value="SEA"{% if home_park == 'SEA' %} selected{% endif %}>T-Mobile Park (SEA)</option>
+                <option value="SF"{% if home_park == 'SF' %} selected{% endif %}>Oracle Park (SF)</option>
+                <option value="STL"{% if home_park == 'STL' %} selected{% endif %}>Busch Stadium (STL)</option>
+                <option value="TB"{% if home_park == 'TB' %} selected{% endif %}>Tropicana Field (TB)</option>
+                <option value="TEX"{% if home_park == 'TEX' %} selected{% endif %}>Globe Life Field (TEX)</option>
+                <option value="TOR"{% if home_park == 'TOR' %} selected{% endif %}>Rogers Centre (TOR)</option>
+                <option value="WSH"{% if home_park == 'WSH' %} selected{% endif %}>Nationals Park (WSH)</option>
             </select>
         </div>
         <div class="zoom-hint">🔍 Scroll to zoom · Drag to pan</div>
@@ -320,19 +371,6 @@
     {% endif %}
 </div>
 
-<!-- ── TAB: Value ─────────────────────────────────────── -->
-<div class="tab-content" id="tab-value">
-    <div id="value-content" style="padding:1.5rem 0;">
-        <p class="text-muted" style="text-align:center;color:var(--text-muted);">Loading...</p>
-    </div>
-</div>
-
-<!-- ── TAB: Defense ───────────────────────────────────── -->
-<div class="tab-content" id="tab-defense">
-    <div id="defense-content" style="padding:1.5rem 0;">
-        <p style="text-align:center;color:var(--text-muted);">Loading...</p>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
@@ -384,9 +422,71 @@ const SWING_DESC  = new Set(['swinging_strike','swinging_strike_blocked','foul',
 const CONTACT_DESC = new Set(['foul','foul_tip','hit_into_play','hit_into_play_no_out',
     'hit_into_play_score','foul_bunt']);
 
+// ── Multi-select widget ───────────────────────────────────
+function initMultiSelect(wrapperId) {
+    const wrap    = document.getElementById(wrapperId);
+    if (!wrap) return;
+    const trigger = wrap.querySelector('.ms-trigger');
+    const dropdown= wrap.querySelector('.ms-dropdown');
+    const allCb   = wrap.querySelector('.ms-all');
+    const boxes   = [...wrap.querySelectorAll('input[type=checkbox]:not(.ms-all)')];
+
+    function updateTrigger() {
+        const selected = boxes.filter(b => b.checked);
+        trigger.innerHTML = selected.length === 0 || allCb.checked
+            ? 'All <span class="ms-arrow">▾</span>'
+            : selected.map(b=>b.value).join(', ') + ' <span class="ms-arrow">▾</span>';
+    }
+
+    allCb.addEventListener('change', () => {
+        if (allCb.checked) boxes.forEach(b => b.checked = false);
+        updateTrigger();
+    });
+    boxes.forEach(b => b.addEventListener('change', () => {
+        if (b.checked) allCb.checked = false;
+        if (boxes.every(x => !x.checked)) allCb.checked = true;
+        updateTrigger();
+    }));
+
+    trigger.addEventListener('click', e => {
+        e.stopPropagation();
+        const open = dropdown.classList.toggle('open');
+        wrap.classList.toggle('open', open);
+    });
+    trigger.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger.click(); }
+    });
+    document.addEventListener('click', e => {
+        if (!wrap.contains(e.target)) { dropdown.classList.remove('open'); wrap.classList.remove('open'); }
+    });
+}
+
+function getMSValue(wrapperId) {
+    const wrap = document.getElementById(wrapperId);
+    if (!wrap) return '';
+    const allCb = wrap.querySelector('.ms-all');
+    if (allCb && allCb.checked) return '';
+    const selected = [...wrap.querySelectorAll('input[type=checkbox]:not(.ms-all)')]
+        .filter(b => b.checked).map(b => b.value);
+    return selected.join(',');
+}
+
+function resetMS(wrapperId) {
+    const wrap = document.getElementById(wrapperId);
+    if (!wrap) return;
+    wrap.querySelector('.ms-all').checked = true;
+    wrap.querySelectorAll('input[type=checkbox]:not(.ms-all)').forEach(b => b.checked = false);
+    const trigger = wrap.querySelector('.ms-trigger');
+    trigger.innerHTML = 'All <span class="ms-arrow">▾</span>';
+}
+
+initMultiSelect('ms-inning');
+initMultiSelect('ms-pitch_type');
+
 // ── Filter helpers ────────────────────────────────────────
 function getFilters() {
     const f = {};
+    // Standard single-value selects
     document.querySelectorAll('#filter-bar .filter-select').forEach(sel => {
         if (sel.value) f[sel.id.replace('f-', '')] = sel.value;
     });
@@ -395,6 +495,12 @@ function getFilters() {
         f.balls = b; f.strikes = s;
         delete f.count;
     }
+    // Multi-select controls
+    const inning = getMSValue('ms-inning');
+    if (inning) f.inning = inning;
+    const pitchType = getMSValue('ms-pitch_type');
+    if (pitchType) f.pitch_type = pitchType;
+
     const oppId = document.getElementById('f-opponent-id').value;
     if (oppId) f['opponent_id'] = oppId;
     return f;
@@ -423,6 +529,8 @@ document.getElementById('apply-filters').addEventListener('click', () => {
 });
 document.getElementById('reset-filters').addEventListener('click', () => {
     document.querySelectorAll('#filter-bar .filter-select').forEach(s => s.value = '');
+    resetMS('ms-inning');
+    resetMS('ms-pitch_type');
     document.getElementById('f-opponent-name').value = '';
     document.getElementById('f-opponent-id').value = '';
     document.getElementById('f-opponent-clear').style.display = 'none';
@@ -503,186 +611,13 @@ function refreshActiveTab() {
     if (activeTab === 'heatmap')  loadHeatMap();
     if (activeTab === 'spray')    PLAYER_TYPE === 'batter' ? loadSpray() : loadMovement();
     if (activeTab === 'advanced') PLAYER_TYPE === 'batter' ? loadBattedBall() : loadVelocity();
-    if (activeTab === 'value')    loadValue();
-    if (activeTab === 'defense')  loadDefense();
 }
 
-// ── VALUE TAB ─────────────────────────────────────────────
-let valueLoaded = false;
-function loadValue() {
-    if (valueLoaded) return;
-    valueLoaded = true;
-    fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/value?season=${PLAYER_SEASON}`)
-        .then(r => r.json())
-        .then(d => renderValue(d))
-        .catch(() => {
-            document.getElementById('value-content').innerHTML =
-                '<p style="text-align:center;color:var(--text-muted);">Value data not available.</p>';
-        });
-}
 
 function fmtSalary(n) {
     if (!n) return 'N/A';
     if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(2) + 'M';
     return '$' + n.toLocaleString();
-}
-
-function fmtDPW(d) {
-    const war = d.war, sal = d.salary;
-    if (sal === null || sal === undefined) return 'No salary data';
-    if (war === null || war === undefined) return 'N/A';
-    if (war === 0) return '∞ (0 WAR)';
-    if (war < 0)   return war.toFixed(1) + ' WAR (below avg)';
-    if (!d.dollars_per_war) return 'N/A';
-    return '$' + d.dollars_per_war.toFixed(1) + 'M / WAR';
-}
-
-function dpwColor(d) {
-    const war = d.war, dpw = d.dollars_per_war;
-    if (war === null || war === undefined) return '#888';
-    if (war <= 0)  return '#e05c5c';      // zero/negative WAR = red
-    if (!dpw)      return '#888';
-    if (dpw < 5)   return '#5cd45c';      // great value = green
-    if (dpw < 10)  return '#e0c860';      // fair value = yellow
-    return '#e05c5c';                     // overpaid = red
-}
-
-function renderValue(d) {
-    const war     = d.war !== null && d.war !== undefined ? d.war.toFixed(1) : 'N/A';
-    const salary  = fmtSalary(d.salary);
-    const dpw     = fmtDPW(d);
-    const dpwClr  = dpwColor(d);
-    const awards  = (d.awards || []);
-
-    const awardsHtml = awards.length
-        ? awards.map(a => `<span class="award-badge">${a}</span>`).join('')
-        : '<span style="color:var(--text-muted);font-size:0.9rem;">No awards this season</span>';
-
-    document.getElementById('value-content').innerHTML = `
-        <div class="value-cards">
-            <div class="value-card">
-                <div class="value-card-label">2025 Salary</div>
-                <div class="value-card-num">${salary}</div>
-            </div>
-            <div class="value-card">
-                <div class="value-card-label">fWAR (FanGraphs)</div>
-                <div class="value-card-num">${war}</div>
-            </div>
-            <div class="value-card">
-                <div class="value-card-label">Cost per WAR</div>
-                <div class="value-card-num" style="color:${dpwClr}">${dpw}</div>
-            </div>
-        </div>
-        <div class="value-awards">
-            <h3 style="margin:1.5rem 0 0.75rem;font-size:1rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">2025 Awards &amp; Honors</h3>
-            <div class="awards-list">${awardsHtml}</div>
-        </div>
-    `;
-}
-
-// ── DEFENSE TAB ───────────────────────────────────────────
-let defenseLoaded = false;
-function loadDefense() {
-    if (defenseLoaded) return;
-    defenseLoaded = true;
-    fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/defense?season=${PLAYER_SEASON}`)
-        .then(r => r.json())
-        .then(d => renderDefense(d))
-        .catch(() => {
-            document.getElementById('defense-content').innerHTML =
-                '<p style="text-align:center;color:var(--text-muted);">Defensive data not available.</p>';
-        });
-}
-
-function renderDefense(d) {
-    const el = document.getElementById('defense-content');
-    if (!d || Object.keys(d).length === 0) {
-        el.innerHTML = '<p style="text-align:center;color:var(--text-muted);">No defensive data available for this player.</p>';
-        return;
-    }
-
-    const fmtNum = (v, dec=1) => (v !== null && v !== undefined) ? Number(v).toFixed(dec) : 'N/A';
-    const signColor = v => (v === null || v === undefined) ? '#888' : (v > 0 ? '#5cd45c' : v < 0 ? '#e05c5c' : 'var(--text)');
-
-    // Stat cards
-    const isPitcher = PLAYER_TYPE === 'pitcher';
-    let cardsHtml = '';
-
-    if (!isPitcher) {
-        cardsHtml += `
-        <div class="value-card">
-            <div class="value-card-label">DRS (Def Runs Saved)</div>
-            <div class="value-card-num" style="color:${signColor(d.drs)}">${fmtNum(d.drs, 0)}</div>
-        </div>
-        <div class="value-card">
-            <div class="value-card-label">Def (FanGraphs)</div>
-            <div class="value-card-num" style="color:${signColor(d.def_runs)}">${fmtNum(d.def_runs)}</div>
-        </div>`;
-        if (d.oaa !== null && d.oaa !== undefined) {
-            cardsHtml += `
-        <div class="value-card">
-            <div class="value-card-label">OAA (Outs Above Avg)</div>
-            <div class="value-card-num" style="color:${signColor(d.oaa)}">${fmtNum(d.oaa, 0)}</div>
-        </div>`;
-        }
-    }
-
-    if (d.sprint_speed !== null && d.sprint_speed !== undefined) {
-        cardsHtml += `
-        <div class="value-card">
-            <div class="value-card-label">Sprint Speed</div>
-            <div class="value-card-num">${fmtNum(d.sprint_speed)} <span style="font-size:1rem;font-weight:400;color:var(--text-muted);">ft/s</span></div>
-        </div>`;
-    }
-
-    // Sprint speed percentile bar
-    let pctBarHtml = '';
-    if (d.sprint_pct !== null && d.sprint_pct !== undefined) {
-        const pct = d.sprint_pct;
-        const pctLabel = pct >= 75 ? 'Elite speed' : pct >= 50 ? 'Above average' : pct >= 25 ? 'Below average' : 'Well below average';
-        pctBarHtml = `
-        <div class="pct-bar-wrap">
-            <div class="pct-bar-label">Sprint Speed Percentile</div>
-            <div class="pct-bar-track">
-                <div class="pct-needle" style="left:${pct}%"></div>
-            </div>
-            <div class="pct-bar-caption">${pct}th percentile — ${pctLabel} (${fmtNum(d.sprint_speed)} ft/s)</div>
-        </div>`;
-    }
-
-    // Fielding details table (batters only)
-    let fieldingHtml = '';
-    if (!isPitcher && d.position) {
-        const fp = d.fielding_pct ? (d.fielding_pct * 100).toFixed(1) + '%' : 'N/A';
-        fieldingHtml = `
-        <h3 style="margin:1.5rem 0 0.75rem;font-size:1rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Fielding — Primary Position</h3>
-        <table class="data-table" style="max-width:600px;">
-            <thead><tr>
-                <th>Pos</th><th>G</th><th>Inn</th><th>E</th><th>Fld%</th>
-            </tr></thead>
-            <tbody><tr>
-                <td>${d.position || '—'}</td>
-                <td>${d.games !== null ? d.games : '—'}</td>
-                <td>${d.innings !== null ? fmtNum(d.innings, 1) : '—'}</td>
-                <td>${d.errors !== null ? d.errors : '—'}</td>
-                <td>${fp}</td>
-            </tr></tbody>
-        </table>`;
-    }
-
-    const note = isPitcher
-        ? '<p style="color:var(--text-muted);font-size:0.85rem;margin-top:1rem;">Fielding value metrics (DRS/Def) are not tracked for pitchers.</p>'
-        : '';
-
-    el.innerHTML = `
-        <div class="value-cards">${cardsHtml}</div>
-        ${pctBarHtml}
-        ${fieldingHtml}
-        ${note}
-        <p style="color:var(--text-muted);font-size:0.8rem;margin-top:2rem;">
-            DRS and Def sourced from FanGraphs. Sprint speed sourced from Baseball Savant (Statcast).
-        </p>
-    `;
 }
 
 // ── SPLITS TAB ────────────────────────────────────────────
@@ -1087,21 +1022,55 @@ function toFeet(hcx, hcy) {
     return [ SCALE*(hcx - OX), SCALE*(OY - hcy) ];
 }
 
-// Build field shapes for Chase Field in feet coordinates
-function makeField() {
+// Park dimensions: LF line, LCF, CF, RCF, RF line (feet from home plate)
+const PARK_DIMS = {
+    'AZ':  { name:'Chase Field',            lf:330, lcf:376, cf:407, rcf:376, rf:334 },
+    'ATL': { name:'Truist Park',            lf:335, lcf:385, cf:400, rcf:375, rf:325 },
+    'BAL': { name:'Camden Yards',           lf:333, lcf:364, cf:400, rcf:373, rf:318 },
+    'BOS': { name:'Fenway Park',            lf:310, lcf:379, cf:420, rcf:380, rf:302 },
+    'CHC': { name:'Wrigley Field',          lf:355, lcf:368, cf:400, rcf:368, rf:353 },
+    'CWS': { name:'Guaranteed Rate Field',  lf:330, lcf:377, cf:400, rcf:372, rf:335 },
+    'CIN': { name:'Great American Ball Park',lf:328, lcf:370, cf:404, rcf:370, rf:325 },
+    'CLE': { name:'Progressive Field',      lf:325, lcf:370, cf:405, rcf:375, rf:325 },
+    'COL': { name:'Coors Field',            lf:347, lcf:390, cf:415, rcf:375, rf:350 },
+    'DET': { name:'Comerica Park',          lf:345, lcf:370, cf:420, rcf:365, rf:330 },
+    'HOU': { name:'Minute Maid Park',       lf:315, lcf:362, cf:409, rcf:373, rf:326 },
+    'KC':  { name:'Kauffman Stadium',       lf:330, lcf:387, cf:410, rcf:387, rf:330 },
+    'LAA': { name:'Angel Stadium',          lf:330, lcf:383, cf:396, rcf:370, rf:330 },
+    'LAD': { name:'Dodger Stadium',         lf:330, lcf:375, cf:395, rcf:375, rf:330 },
+    'MIA': { name:'loanDepot park',         lf:344, lcf:386, cf:407, rcf:392, rf:335 },
+    'MIL': { name:'American Family Field',  lf:344, lcf:371, cf:400, rcf:374, rf:345 },
+    'MIN': { name:'Target Field',           lf:339, lcf:377, cf:403, rcf:367, rf:328 },
+    'NYM': { name:'Citi Field',             lf:335, lcf:379, cf:408, rcf:375, rf:330 },
+    'NYY': { name:'Yankee Stadium',         lf:318, lcf:399, cf:408, rcf:385, rf:314 },
+    'ATH': { name:'Sutter Health Park',     lf:330, lcf:375, cf:400, rcf:375, rf:325 },
+    'PHI': { name:'Citizens Bank Park',     lf:329, lcf:374, cf:401, rcf:369, rf:330 },
+    'PIT': { name:'PNC Park',               lf:325, lcf:389, cf:399, rcf:375, rf:320 },
+    'SD':  { name:'Petco Park',             lf:336, lcf:367, cf:396, rcf:391, rf:322 },
+    'SEA': { name:'T-Mobile Park',          lf:331, lcf:378, cf:401, rcf:381, rf:326 },
+    'SF':  { name:'Oracle Park',            lf:339, lcf:382, cf:399, rcf:421, rf:309 },
+    'STL': { name:'Busch Stadium',          lf:336, lcf:375, cf:400, rcf:375, rf:335 },
+    'TB':  { name:'Tropicana Field',        lf:315, lcf:370, cf:404, rcf:370, rf:322 },
+    'TEX': { name:'Globe Life Field',       lf:329, lcf:372, cf:407, rcf:374, rf:326 },
+    'TOR': { name:'Rogers Centre',          lf:328, lcf:375, cf:400, rcf:375, rf:328 },
+    'WSH': { name:'Nationals Park',         lf:336, lcf:377, cf:402, rcf:370, rf:335 },
+};
+
+// Build field shapes for a given park (defaults to AZ/Chase Field)
+function makeField(parkCode) {
+    const dim = PARK_DIMS[parkCode] || PARK_DIMS['AZ'];
     const shapes = [];
 
-    // ── Outfield wall arc (Chase Field: LF 330, LCF 376, CF 407, RCF 376, RF 334) ──
+    // ── Outfield wall arc ──
     const wallPts = [];
     const N = 80;
     for (let i=0; i<=N; i++) {
-        const t     = i/N;                       // 0=LF line, 1=RF line
-        const theta = (-45 + 90*t) * Math.PI/180;// angle from center
-        // Radius interpolation
-        const r = t <= 0.25 ? 330 + (376-330)*t*4
-                : t <= 0.5  ? 376 + (407-376)*(t-0.25)*4
-                : t <= 0.75 ? 407 - (407-376)*(t-0.5)*4
-                :              376 - (376-334)*(t-0.75)*4;
+        const t     = i/N;
+        const theta = (-45 + 90*t) * Math.PI/180;
+        const r = t <= 0.25 ? dim.lf  + (dim.lcf - dim.lf)  * t * 4
+                : t <= 0.5  ? dim.lcf + (dim.cf  - dim.lcf) * (t-0.25) * 4
+                : t <= 0.75 ? dim.cf  - (dim.cf  - dim.rcf) * (t-0.5)  * 4
+                :              dim.rcf - (dim.rcf - dim.rf)  * (t-0.75) * 4;
         wallPts.push([r*Math.sin(theta), r*Math.cos(theta)]);
     }
     const LF = wallPts[0], RF = wallPts[wallPts.length-1];
@@ -1170,8 +1139,26 @@ function filterBIP(pitches, showMode) {
     return pitches.filter(p => BIP_EVENTS.has(p.events));  // all bip
 }
 
+// Spray chart mode: 'all' | 'compare' | 'at-park'
+let sprayMode = 'all';
+document.querySelectorAll('.spray-subtab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.spray-subtab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        sprayMode = btn.dataset.stab;
+        const parkGroup = document.getElementById('park-selector-group');
+        parkGroup.style.display = (sprayMode === 'all') ? 'none' : '';
+        loadSpray();
+    });
+});
+// Hide park selector by default (all-games mode)
+document.getElementById('park-selector-group').style.display = 'none';
+
 async function loadSpray() {
-    const qs   = buildQS({ season: PLAYER_SEASON });
+    const parkCode = document.getElementById('spray-park').value;
+    let extraQS = { season: PLAYER_SEASON };
+    if (sprayMode === 'at-park') extraQS.stadium = parkCode;
+    const qs   = buildQS(extraQS);
     const resp = await fetch(`/api/batter/${PLAYER_ID}/pitches${qs}`);
     if (!resp.ok) return;
     let pitches = await resp.json();
@@ -1238,31 +1225,39 @@ async function loadSpray() {
             font:{color:Object.values(BB_C)[i],size:12},showarrow:false}));
     }
 
+    const parkCode = document.getElementById('spray-park').value;
+    const parkDim  = PARK_DIMS[parkCode] || PARK_DIMS['AZ'];
+    const parkName = parkDim.name;
+    let titleText  = `Spray Chart · ${pitches.length} batted balls`;
+    if (sprayMode === 'compare') titleText += ` — overlay: ${parkName}`;
+    if (sprayMode === 'at-park') titleText += ` at ${parkName}`;
+
     Plotly.react('spray-chart', [{
         x:xs, y:ys, mode:'markers', type:'scatter', marker,
         text:hover, hovertemplate:'%{text}<extra></extra>',
         name: showMode,
     }], {
         ...BASE_LAYOUT,
-        title:{ text:`Spray Chart · ${pitches.length} batted balls`, font:{size:13,color:SAND} },
+        title:{ text:titleText, font:{size:13,color:SAND} },
         xaxis:{ range:[-300,300], zeroline:false, showgrid:false, showticklabels:false,
                 title:'', scaleanchor:'y', scaleratio:1 },
         yaxis:{ range:[-40,450], zeroline:false, showgrid:false, showticklabels:false, title:'' },
-        shapes: makeField(),
+        shapes: makeField(sprayMode === 'all' ? 'AZ' : parkCode),
         annotations,
         height: 560,
         margin:{ t:50,b:20,l:20,r:20 },
-        dragmode: 'pan',   // default to pan mode for easier exploration
+        dragmode: 'pan',
     }, {
         responsive:true,
         displayModeBar:true,
         modeBarButtonsToRemove:['select2d','lasso2d','toImage'],
-        scrollZoom:true,   // allow scroll-wheel zoom
+        scrollZoom:true,
     });
 }
 
 document.getElementById('spray-show').addEventListener('change', loadSpray);
 document.getElementById('spray-color').addEventListener('change', loadSpray);
+document.getElementById('spray-park').addEventListener('change', loadSpray);
 
 {% endif %}
 
