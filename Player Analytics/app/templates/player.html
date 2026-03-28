@@ -661,6 +661,7 @@ const BAD_STATS = new Set(['strikeouts','whiff_pct']);
 {% endif %}
 
 let panelCount = 0;
+const panelSeq = {};  // tracks latest request seq per panel to discard stale responses
 
 function createPanel(splitType, statKey) {
     panelCount++;
@@ -711,13 +712,16 @@ document.getElementById('add-panel-btn').addEventListener('click', () => {
 });
 
 async function loadPanel(id) {
+    // Increment sequence so any in-flight request for this panel is discarded
+    panelSeq[id] = (panelSeq[id] || 0) + 1;
+    const seq = panelSeq[id];
+
     const div = document.getElementById(id);
     const splitType = div.querySelector('.panel-split').value;
     const statKey   = div.querySelector('.panel-stat').value;
 
     let rows;
     if (hasActiveFilters()) {
-        // Use live endpoint so filters are applied
         const qs = buildQS({ split_type: splitType, season: PLAYER_SEASON });
         const resp = await fetch(`/api/${PLAYER_TYPE}/${PLAYER_ID}/splits_live${qs}`);
         if (!resp.ok) return;
@@ -727,6 +731,9 @@ async function loadPanel(id) {
         if (!resp.ok) return;
         rows = await resp.json();
     }
+
+    // Discard if a newer request has been made for this panel since we started
+    if (panelSeq[id] !== seq) return;
 
     if (SPLIT_SORT[splitType]) {
         rows = [...rows].sort((a, b) => SPLIT_SORT[splitType](a.split_value) - SPLIT_SORT[splitType](b.split_value));
