@@ -189,6 +189,50 @@
     <h3>Home / Away Split</h3>
     <p>Statistics separated by whether the game was played at the player's home park or at an opponent's park. Park factors (altitude, dimensions, air density) can significantly affect numbers, especially at parks like Coors Field.</p>
 
+    <h3>Park Factors</h3>
+    <p>A single number representing how much a ballpark inflates or deflates run scoring relative to the league average. A park factor of 1.00 is perfectly neutral; above 1.00 favors hitters, below 1.00 favors pitchers. Dugout Intel uses these values (sourced from FanGraphs) to compute OPS+, ERA+, and wRC+.</p>
+    <table style="width:100%; border-collapse:collapse; font-size:0.9rem; margin-top:0.75rem;">
+        <thead>
+            <tr style="border-bottom:2px solid var(--border); text-align:left;">
+                <th style="padding:0.4rem 0.75rem 0.4rem 0;">Team</th>
+                <th style="padding:0.4rem 0.75rem;">Ballpark</th>
+                <th style="padding:0.4rem 0; text-align:right;">Park Factor</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Colorado Rockies</td><td style="padding:0.3rem 0.75rem;">Coors Field</td><td style="padding:0.3rem 0; text-align:right; color:var(--red);">1.20</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Boston Red Sox</td><td style="padding:0.3rem 0.75rem;">Fenway Park</td><td style="padding:0.3rem 0; text-align:right; color:var(--red);">1.05</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">New York Yankees</td><td style="padding:0.3rem 0.75rem;">Yankee Stadium</td><td style="padding:0.3rem 0; text-align:right; color:var(--red);">1.04</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Texas Rangers</td><td style="padding:0.3rem 0.75rem;">Globe Life Field</td><td style="padding:0.3rem 0; text-align:right; color:var(--red);">1.04</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Philadelphia Phillies</td><td style="padding:0.3rem 0.75rem;">Citizens Bank Park</td><td style="padding:0.3rem 0; text-align:right; color:var(--red);">1.02</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Baltimore Orioles</td><td style="padding:0.3rem 0.75rem;">Camden Yards</td><td style="padding:0.3rem 0; text-align:right;">1.01</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Chicago Cubs</td><td style="padding:0.3rem 0.75rem;">Wrigley Field</td><td style="padding:0.3rem 0; text-align:right;">1.01</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Cincinnati Reds</td><td style="padding:0.3rem 0.75rem;">Great American Ball Park</td><td style="padding:0.3rem 0; text-align:right;">1.01</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Houston Astros</td><td style="padding:0.3rem 0.75rem;">Minute Maid Park</td><td style="padding:0.3rem 0; text-align:right;">1.01</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Kansas City Royals</td><td style="padding:0.3rem 0.75rem;">Kauffman Stadium</td><td style="padding:0.3rem 0; text-align:right;">1.01</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Toronto Blue Jays</td><td style="padding:0.3rem 0.75rem;">Rogers Centre</td><td style="padding:0.3rem 0; text-align:right;">1.01</td></tr>
+            <tr style="border-top:1px solid var(--border);"><td style="padding:0.3rem 0.75rem 0.3rem 0;">Arizona Diamondbacks</td><td style="padding:0.3rem 0.75rem;">Chase Field</td><td style="padding:0.3rem 0; text-align:right;">1.00</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Chicago White Sox</td><td style="padding:0.3rem 0.75rem;">Guaranteed Rate Field</td><td style="padding:0.3rem 0; text-align:right;">1.00</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Minnesota Twins</td><td style="padding:0.3rem 0.75rem;">Target Field</td><td style="padding:0.3rem 0; text-align:right;">1.00</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Washington Nationals</td><td style="padding:0.3rem 0.75rem;">Nationals Park</td><td style="padding:0.3rem 0; text-align:right;">1.00</td></tr>
+            <tr style="border-top:1px solid var(--border);"><td style="padding:0.3rem 0.75rem 0.3rem 0;">New York Mets</td><td style="padding:0.3rem 0.75rem;">Citi Field</td><td style="padding:0.3rem 0; text-align:right;">0.99</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Tampa Bay Rays</td><td style="padding:0.3rem 0.75rem;">Tropicana Field</td><td style="padding:0.3rem 0; text-align:right;">0.99</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Pittsburgh Pirates</td><td style="padding:0.3rem 0.75rem;">PNC Park</td><td style="padding:0.3rem 0; text-align:right;">0.98</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Atlanta Braves</td><td style="padding:0.3rem 0.75rem;">Truist Park</td><td style="padding:0.3rem 0; text-align:right;">0.97</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Cleveland Guardians</td><td style="padding:0.3rem 0.75rem;">Progressive Field</td><td style="padding:0.3rem 0; text-align:right;">0.97</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Los Angeles Angels</td><td style="padding:0.3rem 0.75rem;">Angel Stadium</td><td style="padding:0.3rem 0; text-align:right;">0.97</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Milwaukee Brewers</td><td style="padding:0.3rem 0.75rem;">American Family Field</td><td style="padding:0.3rem 0; text-align:right;">0.97</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">St. Louis Cardinals</td><td style="padding:0.3rem 0.75rem;">Busch Stadium</td><td style="padding:0.3rem 0; text-align:right;">0.97</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Athletics</td><td style="padding:0.3rem 0.75rem;">Sutter Health Park</td><td style="padding:0.3rem 0; text-align:right;">0.96</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Detroit Tigers</td><td style="padding:0.3rem 0.75rem;">Comerica Park</td><td style="padding:0.3rem 0; text-align:right;">0.96</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Los Angeles Dodgers</td><td style="padding:0.3rem 0.75rem;">Dodger Stadium</td><td style="padding:0.3rem 0; text-align:right;">0.96</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Seattle Mariners</td><td style="padding:0.3rem 0.75rem;">T-Mobile Park</td><td style="padding:0.3rem 0; text-align:right;">0.96</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">San Diego Padres</td><td style="padding:0.3rem 0.75rem;">Petco Park</td><td style="padding:0.3rem 0; text-align:right;">0.95</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">Miami Marlins</td><td style="padding:0.3rem 0.75rem;">loanDepot Park</td><td style="padding:0.3rem 0; text-align:right; color:var(--green, #2d9e5f);">0.94</td></tr>
+            <tr><td style="padding:0.3rem 0.75rem 0.3rem 0;">San Francisco Giants</td><td style="padding:0.3rem 0.75rem;">Oracle Park</td><td style="padding:0.3rem 0; text-align:right; color:var(--green, #2d9e5f);">0.94</td></tr>
+        </tbody>
+    </table>
+
     <h3>Count</h3>
     <p>The number of balls and strikes in a plate appearance (e.g., 3-2 = full count). Hitter-friendly counts (1-0, 2-0, 3-1) allow batters to be more selective; pitcher-friendly counts (0-1, 0-2) let pitchers expand the zone.</p>
 
