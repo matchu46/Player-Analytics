@@ -744,6 +744,14 @@ def api_search():
 # Static pages
 # ---------------------------------------------------------------------------
 
+@app.route("/ads.txt")
+def ads_txt():
+    return Response(
+        "google.com, pub-6203828588530023, DIRECT, f08c47fec0942fa0\n",
+        mimetype="text/plain"
+    )
+
+
 @app.route("/privacy")
 def privacy():
     return render_template("privacy.html")
