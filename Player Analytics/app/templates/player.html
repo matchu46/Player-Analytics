@@ -13,7 +13,7 @@
     <a href="/{{ team.code|lower }}" class="back-link">← {{ team.short_name }}</a>
     <div class="player-meta">
         <img class="player-headshot"
-             src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_120,q_auto:best/v1/people/{{ player.player_id }}/headshot/67/current"
+             src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_120,f_auto,q_auto:best/v1/people/{{ player.player_id }}/headshot/67/current"
              alt="{{ player.full_name }}"
              onerror="this.src='/static/img/silhouette.svg'">
         <div>
@@ -379,7 +379,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-basic-2.35.2.min.js"></script>
 <script>
 // ── Constants ─────────────────────────────────────────────
 const PLAYER_ID     = {{ player.player_id }};

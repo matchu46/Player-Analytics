@@ -85,7 +85,15 @@ from teams import TEAMS, SEASON, SEASON_DATES
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.config["CACHE_TYPE"] = "SimpleCache"
 app.config["CACHE_DEFAULT_TIMEOUT"] = 300  # 5 minutes
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 31536000  # 1 year for static assets
 cache = Cache(app)
+
+STATIC_VERSION = "4"  # bump when CSS/JS changes to bust browser cache
+
+
+@app.context_processor
+def inject_static_version():
+    return {"static_v": STATIC_VERSION}
 
 
 @app.before_request
