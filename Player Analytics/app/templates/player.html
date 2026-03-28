@@ -614,12 +614,6 @@ function refreshActiveTab() {
 }
 
 
-function fmtSalary(n) {
-    if (!n) return 'N/A';
-    if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(2) + 'M';
-    return '$' + n.toLocaleString();
-}
-
 // ── SPLITS TAB ────────────────────────────────────────────
 const BATTER_STATS = [
     {v:'avg',label:'AVG'},{v:'obp',label:'OBP'},{v:'slg',label:'SLG'},
@@ -1225,7 +1219,6 @@ async function loadSpray() {
             font:{color:Object.values(BB_C)[i],size:12},showarrow:false}));
     }
 
-    const parkCode = document.getElementById('spray-park').value;
     const parkDim  = PARK_DIMS[parkCode] || PARK_DIMS['AZ'];
     const parkName = parkDim.name;
     let titleText  = `Spray Chart · ${pitches.length} batted balls`;
