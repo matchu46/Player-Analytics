@@ -425,7 +425,7 @@
             <label>From</label>
             <select id="trends-from" class="filter-select">
                 {% for s in available_seasons %}
-                <option value="{{ s }}"{% if loop.first %} selected{% endif %}>{{ s }}</option>
+                <option value="{{ s }}"{% if loop.last %} selected{% endif %}>{{ s }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -433,7 +433,7 @@
             <label>To</label>
             <select id="trends-to" class="filter-select">
                 {% for s in available_seasons %}
-                <option value="{{ s }}"{% if loop.last %} selected{% endif %}>{{ s }}</option>
+                <option value="{{ s }}"{% if loop.first %} selected{% endif %}>{{ s }}</option>
                 {% endfor %}
             </select>
         </div>
