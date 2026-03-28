@@ -198,6 +198,7 @@
     <button class="tab-btn" data-tab="heatmap">Strike Zone</button>
     <button class="tab-btn" data-tab="spray">{% if player_type == 'batter' %}Spray Chart{% else %}Pitch Movement{% endif %}</button>
     <button class="tab-btn" data-tab="advanced">{% if player_type == 'batter' %}Batted Ball{% else %}Velocity{% endif %}</button>
+    <button class="tab-btn" data-tab="trends">Trends</button>
 </div>
 
 <!-- ── TAB: Splits ────────────────────────────────────── -->
@@ -374,6 +375,70 @@
         <div id="velo-spin-chart" class="chart-box"></div>
     </div>
     {% endif %}
+</div>
+
+<!-- ── TAB: Trends ────────────────────────────────────── -->
+<div class="tab-content" id="tab-trends">
+    <div class="chart-toolbar" style="flex-wrap:wrap;gap:0.5rem;">
+        <div class="filter-group">
+            <label>Stat</label>
+            {% if player_type == 'batter' %}
+            <select id="trends-stat" class="filter-select">
+                <option value="wrc_plus">wRC+</option>
+                <option value="ops_plus">OPS+</option>
+                <option value="avg">AVG</option>
+                <option value="obp">OBP</option>
+                <option value="slg">SLG</option>
+                <option value="ops">OPS</option>
+                <option value="woba">wOBA</option>
+                <option value="babip">BABIP</option>
+                <option value="k_pct">K%</option>
+                <option value="bb_pct">BB%</option>
+                <option value="home_runs">HR</option>
+                <option value="avg_exit_velo">Exit Velo</option>
+                <option value="hard_hit_pct">Hard%</option>
+                <option value="barrel_pct">Barrel%</option>
+            </select>
+            {% else %}
+            <select id="trends-stat" class="filter-select">
+                <optgroup label="Overall">
+                    <option value="era">ERA</option>
+                    <option value="fip">FIP</option>
+                    <option value="era_plus">ERA+</option>
+                    <option value="whip">WHIP</option>
+                    <option value="k_pct">K%</option>
+                    <option value="bb_pct">BB%</option>
+                    <option value="avg_velo">Avg Velo</option>
+                    <option value="avg_spin_rate">Avg Spin Rate</option>
+                    <option value="avg_against">AVG Against</option>
+                    <option value="woba_against">wOBA Against</option>
+                </optgroup>
+                <optgroup label="By Pitch Type">
+                    <option value="pt_velo">Velo by Pitch Type</option>
+                    <option value="pt_spin">Spin by Pitch Type</option>
+                    <option value="pt_usage">Usage% by Pitch Type</option>
+                </optgroup>
+            </select>
+            {% endif %}
+        </div>
+        <div class="filter-group">
+            <label>From</label>
+            <select id="trends-from" class="filter-select">
+                {% for s in available_seasons %}
+                <option value="{{ s }}"{% if loop.first %} selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>To</label>
+            <select id="trends-to" class="filter-select">
+                {% for s in available_seasons %}
+                <option value="{{ s }}"{% if loop.last %} selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div id="trends-chart" style="height:420px;margin-top:0.5rem;"></div>
 </div>
 
 {% endblock %}
@@ -617,6 +682,7 @@ function refreshActiveTab() {
     if (activeTab === 'heatmap')  loadHeatMap();
     if (activeTab === 'spray')    PLAYER_TYPE === 'batter' ? loadSpray() : loadMovement();
     if (activeTab === 'advanced') PLAYER_TYPE === 'batter' ? loadBattedBall() : loadVelocity();
+    if (activeTab === 'trends')   loadTrends();
 }
 
 
@@ -1437,5 +1503,143 @@ window.addEventListener('DOMContentLoaded', () => {
             '<p class="empty" style="padding:2rem">No split data. Run <code>python src/process.py --all</code></p>';
     }
 });
+
+// ── TRENDS TAB ────────────────────────────────────────────
+let trendsData = null;
+
+async function loadTrends() {
+    if (trendsData) { renderTrends(); return; }
+    const url = PLAYER_TYPE === 'batter'
+        ? `/api/batter/${PLAYER_ID}/trends`
+        : `/api/pitcher/${PLAYER_ID}/trends`;
+    const res = await fetch(url);
+    trendsData = await res.json();
+    document.getElementById('trends-stat').addEventListener('change', renderTrends);
+    document.getElementById('trends-from').addEventListener('change', renderTrends);
+    document.getElementById('trends-to').addEventListener('change', renderTrends);
+    renderTrends();
+}
+
+function renderTrends() {
+    const stat  = document.getElementById('trends-stat').value;
+    const fromY = parseInt(document.getElementById('trends-from').value);
+    const toY   = parseInt(document.getElementById('trends-to').value);
+    if (fromY > toY) return;
+    PLAYER_TYPE === 'batter' ? renderBatterTrends(stat, fromY, toY)
+                              : renderPitcherTrends(stat, fromY, toY);
+}
+
+const TREND_LABELS = {
+    wrc_plus:'wRC+', ops_plus:'OPS+', avg:'AVG', obp:'OBP', slg:'SLG', ops:'OPS',
+    woba:'wOBA', babip:'BABIP', k_pct:'K%', bb_pct:'BB%', home_runs:'HR',
+    avg_exit_velo:'Exit Velo (mph)', hard_hit_pct:'Hard Hit%', barrel_pct:'Barrel%',
+    era:'ERA', fip:'FIP', era_plus:'ERA+', whip:'WHIP', avg_velo:'Avg Velo (mph)',
+    avg_spin_rate:'Avg Spin Rate (rpm)', avg_against:'AVG Against', woba_against:'wOBA Against',
+    pt_velo:'Velocity by Pitch Type (mph)', pt_spin:'Spin Rate by Pitch Type (rpm)',
+    pt_usage:'Usage% by Pitch Type',
+};
+
+function fmtTrendY(stat, v) {
+    if (v == null) return null;
+    if (['k_pct','bb_pct','hard_hit_pct','barrel_pct'].includes(stat))
+        return parseFloat((v * 100).toFixed(1));
+    return v;
+}
+
+const TRENDS_LAYOUT_BASE = {
+    ...BASE_LAYOUT,
+    margin: { t: 20, b: 60, l: 65, r: 20 },
+    height: 400,
+};
+
+function renderBatterTrends(stat, fromY, toY) {
+    const rows = trendsData.filter(r => r.season >= fromY && r.season <= toY);
+    if (!rows.length) {
+        document.getElementById('trends-chart').innerHTML =
+            '<p class="empty" style="padding:3rem;text-align:center;">No data for selected range.</p>';
+        return;
+    }
+    const xs = rows.map(r => String(r.season));
+    const ys = rows.map(r => fmtTrendY(stat, r[stat]));
+    const label = TREND_LABELS[stat] || stat;
+    Plotly.react('trends-chart', [{
+        x: xs, y: ys, type: 'scatter', mode: 'lines+markers',
+        line: { color: RED, width: 2.5 }, marker: { color: RED, size: 9 },
+        name: label, connectgaps: false,
+        hovertemplate: `%{x}: <b>%{y}</b><extra></extra>`
+    }], {
+        ...TRENDS_LAYOUT_BASE,
+        xaxis: { title: 'Season', type: 'category', gridcolor: '#333', zeroline: false },
+        yaxis: { title: label, gridcolor: '#333', zeroline: false },
+    }, { responsive: true, scrollZoom: false, displayModeBar: false });
+}
+
+function renderPitcherTrends(stat, fromY, toY) {
+    if (stat.startsWith('pt_')) { renderByPitchTrends(stat, fromY, toY); return; }
+    const rows = (trendsData.overall || []).filter(r => r.season >= fromY && r.season <= toY);
+    if (!rows.length) {
+        document.getElementById('trends-chart').innerHTML =
+            '<p class="empty" style="padding:3rem;text-align:center;">No data for selected range.</p>';
+        return;
+    }
+    const xs = rows.map(r => String(r.season));
+    const ys = rows.map(r => fmtTrendY(stat, r[stat]));
+    const label = TREND_LABELS[stat] || stat;
+    const invertY = ['era','fip','whip','avg_against','woba_against'].includes(stat);
+    Plotly.react('trends-chart', [{
+        x: xs, y: ys, type: 'scatter', mode: 'lines+markers',
+        line: { color: RED, width: 2.5 }, marker: { color: RED, size: 9 },
+        name: label, connectgaps: false,
+        hovertemplate: `%{x}: <b>%{y}</b><extra></extra>`
+    }], {
+        ...TRENDS_LAYOUT_BASE,
+        xaxis: { title: 'Season', type: 'category', gridcolor: '#333', zeroline: false },
+        yaxis: { title: label, gridcolor: '#333', zeroline: false, autorange: invertY ? 'reversed' : true },
+    }, { responsive: true, scrollZoom: false, displayModeBar: false });
+}
+
+function renderByPitchTrends(stat, fromY, toY) {
+    const byPitch  = (trendsData.by_pitch  || []).filter(r => r.season >= fromY && r.season <= toY);
+    const overall  = (trendsData.overall   || []).filter(r => r.season >= fromY && r.season <= toY);
+    if (!byPitch.length) {
+        document.getElementById('trends-chart').innerHTML =
+            '<p class="empty" style="padding:3rem;text-align:center;">No pitch-type data for selected range.</p>';
+        return;
+    }
+    const pitchTypes = [...new Set(byPitch.map(r => r.pitch_type))];
+    const seasons    = [...new Set(byPitch.map(r => r.season))].sort();
+    const label = TREND_LABELS[stat] || stat;
+
+    const traces = pitchTypes.map(pt => {
+        const ptRows = byPitch.filter(r => r.pitch_type === pt);
+        const ys = seasons.map(s => {
+            const row = ptRows.find(r => r.season === s);
+            if (!row) return null;
+            if (stat === 'pt_velo')  return row.avg_velo;
+            if (stat === 'pt_spin')  return row.avg_spin_rate;
+            if (stat === 'pt_usage') {
+                const ov = overall.find(r => r.season === s);
+                if (!ov || !ov.batters_faced) return null;
+                return parseFloat((row.batters_faced / ov.batters_faced * 100).toFixed(1));
+            }
+            return null;
+        });
+        return {
+            x: seasons.map(String), y: ys, type: 'scatter', mode: 'lines+markers',
+            name: PT_NAMES[pt] || pt, connectgaps: false,
+            line: { color: ptColor(pt), width: 2.5 },
+            marker: { color: ptColor(pt), size: 9 },
+            hovertemplate: `%{x}: <b>%{y}</b><extra>${PT_NAMES[pt]||pt}</extra>`
+        };
+    });
+
+    Plotly.react('trends-chart', traces, {
+        ...TRENDS_LAYOUT_BASE,
+        xaxis: { title: 'Season', type: 'category', gridcolor: '#333', zeroline: false },
+        yaxis: { title: label, gridcolor: '#333', zeroline: false },
+        legend: { orientation: 'h', y: -0.18, font: { size: 12 } },
+        margin: { t: 20, b: 90, l: 65, r: 20 },
+    }, { responsive: true, scrollZoom: false, displayModeBar: false });
+}
 </script>
 {% endblock %}
