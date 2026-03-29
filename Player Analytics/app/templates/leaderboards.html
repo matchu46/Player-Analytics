@@ -40,6 +40,35 @@
            class="lb-filter-pill{% if min_ip == v %} active{% endif %}">{{ v }}</a>
         {% endfor %}
     </div>
+    <!-- Position filter -->
+    <div id="pos-filter-batters" class="lb-filter-group" style="margin-top:0.5rem;">
+        <label>Position:</label>
+        <select id="pos-select-batters" class="filter-select" style="margin-left:0.25rem;">
+            <option value="">All</option>
+            <option value="C">C</option>
+            <option value="1B">1B</option>
+            <option value="2B">2B</option>
+            <option value="3B">3B</option>
+            <option value="SS">SS</option>
+            <option value="OF">OF</option>
+            <option value="DH">DH</option>
+        </select>
+    </div>
+    <div id="pos-filter-pitchers" class="lb-filter-group" style="margin-top:0.5rem;display:none;">
+        <label>Role:</label>
+        <select id="pos-select-pitchers" class="filter-select" style="margin-left:0.25rem;">
+            <option value="">All</option>
+            <option value="SP">SP</option>
+            <option value="RP">RP</option>
+        </select>
+    </div>
+    <!-- Team filter -->
+    <div class="lb-filter-group" style="margin-top:0.5rem;">
+        <label>Team:</label>
+        <select id="team-select" class="filter-select" style="margin-left:0.25rem;">
+            <option value="">All Teams</option>
+        </select>
+    </div>
 </div>
 
 <!-- ── Batters table ─────────────────────────────────────── -->
@@ -104,7 +133,8 @@
             data-la="{{ p.avg_launch_angle or 0 }}"
             data-hard_hit="{{ (p.hard_hit_pct or 0) * 100 }}"
             data-barrel="{{ (p.barrel_pct or 0) * 100 }}"
-            data-team="{{ p.team }}">
+            data-team="{{ p.team }}"
+            data-position="{{ p.position or '' }}">
             <td class="rank-col rank-num"></td>
             <td class="name-col"><a href="/batter/{{ p.player_id }}?season={{ season }}">{{ p.full_name }}</a></td>
             <td><a href="/{{ p.team|lower }}?season={{ season }}">{{ p.team }}</a></td>
@@ -191,7 +221,8 @@
             data-hr="{{ p.home_runs_allowed or 0 }}"
             data-velo="{{ p.avg_velo or 0 }}"
             data-spin="{{ p.avg_spin_rate or 0 }}"
-            data-team="{{ p.team }}">
+            data-team="{{ p.team }}"
+            data-position="{{ 'SP' if p.player_id in starter_ids else 'RP' }}">
             <td class="rank-col rank-num"></td>
             <td class="name-col"><a href="/pitcher/{{ p.player_id }}?season={{ season }}">{{ p.full_name }}</a></td>
             <td><a href="/{{ p.team|lower }}?season={{ season }}">{{ p.team }}</a></td>
@@ -242,7 +273,10 @@ function applyTab(tab) {
     Object.entries(filterGroups).forEach(([k, id]) => {
         document.getElementById(id).style.display = k === tab ? '' : 'none';
     });
+    document.getElementById('pos-filter-batters').style.display  = tab === 'batters'  ? '' : 'none';
+    document.getElementById('pos-filter-pitchers').style.display = tab === 'pitchers' ? '' : 'none';
     rankRows(tab === 'batters' ? 'batter-table' : 'pitcher-table');
+    applyExtraFilters(tab);
 }
 
 applyTab(currentTab);
@@ -250,6 +284,44 @@ applyTab(currentTab);
 document.querySelectorAll('.roster-tab').forEach(btn => {
     btn.addEventListener('click', () => applyTab(btn.dataset.tab));
 });
+
+// ── Position / Team filters ───────────────────────────────
+(function() {
+    const teams = new Set();
+    document.querySelectorAll('#batter-table tbody tr, #pitcher-table tbody tr').forEach(tr => {
+        if (tr.dataset.team) teams.add(tr.dataset.team);
+    });
+    const sel = document.getElementById('team-select');
+    [...teams].sort().forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        sel.appendChild(opt);
+    });
+})();
+
+function applyExtraFilters(tab) {
+    tab = tab || currentTab;
+    const tableId  = tab === 'batters' ? 'batter-table' : 'pitcher-table';
+    const posVal   = tab === 'batters'
+        ? document.getElementById('pos-select-batters').value
+        : document.getElementById('pos-select-pitchers').value;
+    const teamVal  = document.getElementById('team-select').value;
+    const ofPos    = new Set(['LF','CF','RF','OF']);
+
+    let rank = 1;
+    document.querySelectorAll(`#${tableId} tbody tr`).forEach(tr => {
+        const pos  = tr.dataset.position || '';
+        const team = tr.dataset.team || '';
+        const posMatch  = !posVal  || pos === posVal || (posVal === 'OF' && ofPos.has(pos));
+        const teamMatch = !teamVal || team === teamVal;
+        tr.style.display = posMatch && teamMatch ? '' : 'none';
+        if (posMatch && teamMatch) tr.querySelector('.rank-num').textContent = rank++;
+    });
+}
+
+document.getElementById('pos-select-batters').addEventListener('change',  () => applyExtraFilters('batters'));
+document.getElementById('pos-select-pitchers').addEventListener('change', () => applyExtraFilters('pitchers'));
+document.getElementById('team-select').addEventListener('change', () => applyExtraFilters());
 
 // ── Sorting ──────────────────────────────────────────────
 const lowerBetter = new Set(['era','fip','whip','bb_pct','k_bb','avg_against','obp_against',
@@ -262,8 +334,9 @@ let sortState = {
 function rankRows(tableId) {
     const tbody = document.querySelector(`#${tableId} tbody`);
     if (!tbody) return;
-    [...tbody.querySelectorAll('tr')].forEach((tr, i) => {
-        tr.querySelector('.rank-num').textContent = i + 1;
+    let rank = 1;
+    tbody.querySelectorAll('tr').forEach(tr => {
+        if (tr.style.display !== 'none') tr.querySelector('.rank-num').textContent = rank++;
     });
 }
 

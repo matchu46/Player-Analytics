@@ -555,6 +555,14 @@ nav a:hover { color: var(--team-secondary); }
     min-height: 320px;
 }
 
+/* ── Recent form toolbar ────────────────────────────────── */
+.recent-toolbar { display:flex; align-items:center; gap:0.4rem; padding:0.4rem 1rem 0; flex-wrap:wrap; }
+.recent-label { font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; }
+.recent-btn { background:none; border:1px solid var(--border); border-radius:999px; color:var(--text-muted); font-size:0.72rem; font-weight:600; padding:0.15rem 0.6rem; cursor:pointer; transition:border-color 0.15s,color 0.15s; }
+.recent-btn:hover { border-color:var(--red); color:var(--text); }
+.recent-btn.active { border-color:var(--red); color:var(--text); background:var(--bg-hover); }
+.recent-games { font-size:0.72rem; color:var(--text-muted); margin-left:0.25rem; }
+
 /* ── Percentile rings ───────────────────────────────────── */
 .percentile-rings { display:flex; flex-wrap:nowrap; gap:0.5rem; overflow-x:auto; padding:0.75rem 1rem 0; }
 .p-ring-wrap { display:flex; flex-direction:column; align-items:center; gap:0.3rem; flex-shrink:0; }

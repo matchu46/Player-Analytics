@@ -1072,6 +1072,72 @@ def api_pitcher_splits_live(player_id: int):
 
 
 # ---------------------------------------------------------------------------
+# API — Recent form (rolling N-day window)
+# ---------------------------------------------------------------------------
+
+@app.route("/api/batter/<int:player_id>/recent")
+def api_batter_recent(player_id: int):
+    import pandas as pd
+    from process import compute_batter_stats
+    window = request.args.get("window", 30, type=int)
+    season = request.args.get("season", SEASON, type=int)
+    dates  = SEASON_DATES.get(season, SEASON_DATES[SEASON])
+
+    max_date_row = query(
+        "SELECT MAX(date(game_date)) as md FROM pitches WHERE batter=? "
+        "AND date(game_date) BETWEEN ? AND ?",
+        (player_id, dates["season_start"], dates["season_end"])
+    )
+    max_date = max_date_row[0]["md"] if max_date_row else None
+    if not max_date:
+        return jsonify({"stats": {}, "games": 0})
+
+    conn = sqlite3.connect(DB_PATH)
+    df = pd.read_sql_query(
+        "SELECT * FROM pitches WHERE batter=? "
+        "AND date(game_date) BETWEEN date(?, ?) AND ?",
+        conn, params=(player_id, max_date, f"-{window} days", max_date)
+    )
+    conn.close()
+    if df.empty:
+        return jsonify({"stats": {}, "games": 0})
+
+    stats = compute_batter_stats(df)
+    return jsonify({"stats": stats, "games": int(df["game_pk"].nunique()), "window": window})
+
+
+@app.route("/api/pitcher/<int:player_id>/recent")
+def api_pitcher_recent(player_id: int):
+    import pandas as pd
+    from process import compute_pitcher_stats
+    window = request.args.get("window", 30, type=int)
+    season = request.args.get("season", SEASON, type=int)
+    dates  = SEASON_DATES.get(season, SEASON_DATES[SEASON])
+
+    max_date_row = query(
+        "SELECT MAX(date(game_date)) as md FROM pitches WHERE pitcher=? "
+        "AND date(game_date) BETWEEN ? AND ?",
+        (player_id, dates["season_start"], dates["season_end"])
+    )
+    max_date = max_date_row[0]["md"] if max_date_row else None
+    if not max_date:
+        return jsonify({"stats": {}, "games": 0})
+
+    conn = sqlite3.connect(DB_PATH)
+    df = pd.read_sql_query(
+        "SELECT * FROM pitches WHERE pitcher=? "
+        "AND date(game_date) BETWEEN date(?, ?) AND ?",
+        conn, params=(player_id, max_date, f"-{window} days", max_date)
+    )
+    conn.close()
+    if df.empty:
+        return jsonify({"stats": {}, "games": 0})
+
+    stats = compute_pitcher_stats(df)
+    return jsonify({"stats": stats, "games": int(df["game_pk"].nunique()), "window": window})
+
+
+# ---------------------------------------------------------------------------
 # API — Raw pitch data (heat maps, spray, movement)
 # ---------------------------------------------------------------------------
 
@@ -1271,6 +1337,21 @@ def leaderboards():
         "SELECT DISTINCT season FROM batter_splits ORDER BY season DESC"
     )]
 
+    # Classify pitchers as SP/RP for leaderboard position filter
+    dates = SEASON_DATES.get(season, SEASON_DATES[SEASON])
+    pitcher_ids = tuple(p["player_id"] for p in pitchers)
+    if pitcher_ids:
+        placeholders = ",".join("?" * len(pitcher_ids))
+        starter_rows = query(
+            f"SELECT pitcher FROM pitches WHERE pitcher IN ({placeholders}) "
+            f"AND inning=1 AND date(game_date) BETWEEN ? AND ? "
+            f"GROUP BY pitcher HAVING COUNT(DISTINCT game_pk) >= 5",
+            pitcher_ids + (dates["season_start"], dates["season_end"])
+        )
+        starter_ids = {r["pitcher"] for r in starter_rows}
+    else:
+        starter_ids = set()
+
     return render_template(
         "leaderboards.html",
         batters=batters,
@@ -1279,6 +1360,7 @@ def leaderboards():
         available_seasons=available_seasons,
         min_pa=min_pa,
         min_ip=min_ip,
+        starter_ids=starter_ids,
     )
 
 

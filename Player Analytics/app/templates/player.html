@@ -36,35 +36,42 @@
 
 <!-- ── Overall stat bar ───────────────────────────────── -->
 {% if overall %}
-<div class="stat-bar">
+<div class="recent-toolbar">
+    <span class="recent-label">Window:</span>
+    <button class="recent-btn active" data-window="season">Full Season</button>
+    <button class="recent-btn" data-window="30">Last 30 Days</button>
+    <button class="recent-btn" data-window="14">Last 14 Days</button>
+    <span class="recent-games" id="recent-games-label"></span>
+</div>
+<div class="stat-bar" id="stat-bar">
     {% if player_type == 'batter' %}
-    <div class="stat-item"><span class="stat-label">PA</span><span class="stat-value">{{ overall.pa or 0 }}</span></div>
-    <div class="stat-item"><span class="stat-label">AVG</span><span class="stat-value">{{ "%.3f"|format(overall.avg or 0) }}</span></div>
-    <div class="stat-item"><span class="stat-label">OBP</span><span class="stat-value">{{ "%.3f"|format(overall.obp or 0) }}</span></div>
-    <div class="stat-item"><span class="stat-label">SLG</span><span class="stat-value">{{ "%.3f"|format(overall.slg or 0) }}</span></div>
-    <div class="stat-item"><span class="stat-label">OPS</span><span class="stat-value">{{ "%.3f"|format(overall.ops or 0) }}</span></div>
-    <div class="stat-item"><span class="stat-label">wOBA</span><span class="stat-value">{{ "%.3f"|format(overall.woba or 0) }}</span></div>
-    <div class="stat-item"><span class="stat-label">HR</span><span class="stat-value">{{ overall.home_runs or 0 }}</span></div>
-    <div class="stat-item"><span class="stat-label">K%</span><span class="stat-value">{{ "%.1f"|format((overall.strikeouts / overall.pa * 100) if overall.pa else 0) }}%</span></div>
-    <div class="stat-item"><span class="stat-label">BB%</span><span class="stat-value">{{ "%.1f"|format((overall.walks / overall.pa * 100) if overall.pa else 0) }}%</span></div>
-    <div class="stat-item"><span class="stat-label">BABIP</span><span class="stat-value">{% if overall.babip %}{{ "%.3f"|format(overall.babip) }}{% else %}—{% endif %}</span></div>
-    <div class="stat-item"><span class="stat-label">wRC+</span><span class="stat-value">{% if overall.wrc_plus is not none %}{{ overall.wrc_plus | int }}{% else %}—{% endif %}</span></div>
-    <div class="stat-item"><span class="stat-label">OPS+</span><span class="stat-value">{% if overall.ops_plus is not none %}{{ overall.ops_plus | int }}{% else %}—{% endif %}</span></div>
-    <div class="stat-item"><span class="stat-label">EV</span><span class="stat-value">{{ overall.avg_exit_velo or '—' }}</span></div>
-    <div class="stat-item"><span class="stat-label">Hard%</span><span class="stat-value">{% if overall.hard_hit_pct %}{{ "%.1f"|format(overall.hard_hit_pct * 100) }}%{% else %}—{% endif %}</span></div>
+    <div class="stat-item" data-stat="pa"><span class="stat-label">PA</span><span class="stat-value">{{ overall.pa or 0 }}</span></div>
+    <div class="stat-item" data-stat="avg"><span class="stat-label">AVG</span><span class="stat-value">{{ "%.3f"|format(overall.avg or 0) }}</span></div>
+    <div class="stat-item" data-stat="obp"><span class="stat-label">OBP</span><span class="stat-value">{{ "%.3f"|format(overall.obp or 0) }}</span></div>
+    <div class="stat-item" data-stat="slg"><span class="stat-label">SLG</span><span class="stat-value">{{ "%.3f"|format(overall.slg or 0) }}</span></div>
+    <div class="stat-item" data-stat="ops"><span class="stat-label">OPS</span><span class="stat-value">{{ "%.3f"|format(overall.ops or 0) }}</span></div>
+    <div class="stat-item" data-stat="woba"><span class="stat-label">wOBA</span><span class="stat-value">{{ "%.3f"|format(overall.woba or 0) }}</span></div>
+    <div class="stat-item" data-stat="home_runs"><span class="stat-label">HR</span><span class="stat-value">{{ overall.home_runs or 0 }}</span></div>
+    <div class="stat-item" data-stat="k_pct"><span class="stat-label">K%</span><span class="stat-value">{{ "%.1f"|format((overall.strikeouts / overall.pa * 100) if overall.pa else 0) }}%</span></div>
+    <div class="stat-item" data-stat="bb_pct"><span class="stat-label">BB%</span><span class="stat-value">{{ "%.1f"|format((overall.walks / overall.pa * 100) if overall.pa else 0) }}%</span></div>
+    <div class="stat-item" data-stat="babip"><span class="stat-label">BABIP</span><span class="stat-value">{% if overall.babip %}{{ "%.3f"|format(overall.babip) }}{% else %}—{% endif %}</span></div>
+    <div class="stat-item" data-stat="wrc_plus"><span class="stat-label">wRC+</span><span class="stat-value">{% if overall.wrc_plus is not none %}{{ overall.wrc_plus | int }}{% else %}—{% endif %}</span></div>
+    <div class="stat-item" data-stat="ops_plus"><span class="stat-label">OPS+</span><span class="stat-value">{% if overall.ops_plus is not none %}{{ overall.ops_plus | int }}{% else %}—{% endif %}</span></div>
+    <div class="stat-item" data-stat="avg_exit_velo"><span class="stat-label">EV</span><span class="stat-value">{{ overall.avg_exit_velo or '—' }}</span></div>
+    <div class="stat-item" data-stat="hard_hit_pct"><span class="stat-label">Hard%</span><span class="stat-value">{% if overall.hard_hit_pct %}{{ "%.1f"|format(overall.hard_hit_pct * 100) }}%{% else %}—{% endif %}</span></div>
     {% else %}
-    <div class="stat-item"><span class="stat-label">ERA</span><span class="stat-value">{{ "%.2f"|format(overall.era) if overall.era is not none else '—' }}</span></div>
-    <div class="stat-item"><span class="stat-label">IP</span><span class="stat-value">{{ overall.innings_pitched or '—' }}</span></div>
-    <div class="stat-item"><span class="stat-label">BF</span><span class="stat-value">{{ overall.batters_faced or 0 }}</span></div>
-    <div class="stat-item"><span class="stat-label">K%</span><span class="stat-value">{{ "%.1f"|format((overall.k_pct or 0) * 100) }}%</span></div>
-    <div class="stat-item"><span class="stat-label">BB%</span><span class="stat-value">{{ "%.1f"|format((overall.bb_pct or 0) * 100) }}%</span></div>
-    <div class="stat-item"><span class="stat-label">FIP</span><span class="stat-value">{% if overall.fip is not none %}{{ "%.2f"|format(overall.fip) }}{% else %}—{% endif %}</span></div>
-    <div class="stat-item"><span class="stat-label">ERA+</span><span class="stat-value">{% if overall.era_plus is not none %}{{ overall.era_plus | int }}{% else %}—{% endif %}</span></div>
-    <div class="stat-item"><span class="stat-label">WHIP</span><span class="stat-value">{{ "%.2f"|format(overall.whip) if overall.whip is not none else '—' }}</span></div>
-    <div class="stat-item"><span class="stat-label">AVG vs</span><span class="stat-value">{{ "%.3f"|format(overall.avg_against or 0) }}</span></div>
-    <div class="stat-item"><span class="stat-label">wOBA vs</span><span class="stat-value">{{ "%.3f"|format(overall.woba_against or 0) }}</span></div>
-    <div class="stat-item"><span class="stat-label">Avg Velo</span><span class="stat-value">{{ overall.avg_velo or '—' }}</span></div>
-    <div class="stat-item"><span class="stat-label">HR</span><span class="stat-value">{{ overall.home_runs_allowed or 0 }}</span></div>
+    <div class="stat-item" data-stat="era"><span class="stat-label">ERA</span><span class="stat-value">{{ "%.2f"|format(overall.era) if overall.era is not none else '—' }}</span></div>
+    <div class="stat-item" data-stat="innings_pitched"><span class="stat-label">IP</span><span class="stat-value">{{ overall.innings_pitched or '—' }}</span></div>
+    <div class="stat-item" data-stat="batters_faced"><span class="stat-label">BF</span><span class="stat-value">{{ overall.batters_faced or 0 }}</span></div>
+    <div class="stat-item" data-stat="k_pct"><span class="stat-label">K%</span><span class="stat-value">{{ "%.1f"|format((overall.k_pct or 0) * 100) }}%</span></div>
+    <div class="stat-item" data-stat="bb_pct"><span class="stat-label">BB%</span><span class="stat-value">{{ "%.1f"|format((overall.bb_pct or 0) * 100) }}%</span></div>
+    <div class="stat-item" data-stat="fip"><span class="stat-label">FIP</span><span class="stat-value">{% if overall.fip is not none %}{{ "%.2f"|format(overall.fip) }}{% else %}—{% endif %}</span></div>
+    <div class="stat-item" data-stat="era_plus"><span class="stat-label">ERA+</span><span class="stat-value">{% if overall.era_plus is not none %}{{ overall.era_plus | int }}{% else %}—{% endif %}</span></div>
+    <div class="stat-item" data-stat="whip"><span class="stat-label">WHIP</span><span class="stat-value">{{ "%.2f"|format(overall.whip) if overall.whip is not none else '—' }}</span></div>
+    <div class="stat-item" data-stat="avg_against"><span class="stat-label">AVG vs</span><span class="stat-value">{{ "%.3f"|format(overall.avg_against or 0) }}</span></div>
+    <div class="stat-item" data-stat="woba_against"><span class="stat-label">wOBA vs</span><span class="stat-value">{{ "%.3f"|format(overall.woba_against or 0) }}</span></div>
+    <div class="stat-item" data-stat="avg_velo"><span class="stat-label">Avg Velo</span><span class="stat-value">{{ overall.avg_velo or '—' }}</span></div>
+    <div class="stat-item" data-stat="home_runs_allowed"><span class="stat-label">HR</span><span class="stat-value">{{ overall.home_runs_allowed or 0 }}</span></div>
     {% endif %}
 </div>
 {% endif %}
@@ -1558,6 +1565,71 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('split-panels').innerHTML =
             '<p class="empty" style="padding:2rem">No split data. Run <code>python src/process.py --all</code></p>';
     }
+});
+
+// ── RECENT FORM ───────────────────────────────────────────
+const BATTER_STAT_FMT = {
+    pa:           v => v,
+    avg:          v => v != null ? v.toFixed(3) : '—',
+    obp:          v => v != null ? v.toFixed(3) : '—',
+    slg:          v => v != null ? v.toFixed(3) : '—',
+    ops:          v => v != null ? v.toFixed(3) : '—',
+    woba:         v => v != null ? v.toFixed(3) : '—',
+    home_runs:    v => v,
+    k_pct:        v => v != null ? (v * 100).toFixed(1) + '%' : '—',
+    bb_pct:       v => v != null ? (v * 100).toFixed(1) + '%' : '—',
+    babip:        v => '—',  // not shown for recent
+    wrc_plus:     v => '—',  // not available for small samples
+    ops_plus:     v => '—',
+    avg_exit_velo:v => v != null ? v.toFixed(1) : '—',
+    hard_hit_pct: v => v != null ? (v * 100).toFixed(1) + '%' : '—',
+};
+const PITCHER_STAT_FMT = {
+    era:            v => v != null ? v.toFixed(2) : '—',
+    innings_pitched:v => v != null ? v : '—',
+    batters_faced:  v => v,
+    k_pct:          v => v != null ? (v * 100).toFixed(1) + '%' : '—',
+    bb_pct:         v => v != null ? (v * 100).toFixed(1) + '%' : '—',
+    fip:            v => '—',  // requires full season
+    era_plus:       v => '—',
+    whip:           v => v != null ? v.toFixed(2) : '—',
+    avg_against:    v => v != null ? v.toFixed(3) : '—',
+    woba_against:   v => v != null ? v.toFixed(3) : '—',
+    avg_velo:       v => v != null ? v.toFixed(1) : '—',
+    home_runs_allowed: v => v,
+};
+
+const fmtMap = PLAYER_TYPE === 'batter' ? BATTER_STAT_FMT : PITCHER_STAT_FMT;
+const originalStatValues = {};
+document.querySelectorAll('#stat-bar [data-stat]').forEach(el => {
+    originalStatValues[el.dataset.stat] = el.querySelector('.stat-value').textContent;
+});
+
+document.querySelectorAll('.recent-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        document.querySelectorAll('.recent-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const w = btn.dataset.window;
+        const label = document.getElementById('recent-games-label');
+        if (w === 'season') {
+            document.querySelectorAll('#stat-bar [data-stat]').forEach(el => {
+                el.querySelector('.stat-value').textContent = originalStatValues[el.dataset.stat];
+            });
+            label.textContent = '';
+            return;
+        }
+        label.textContent = 'Loading…';
+        const url = `/api/${PLAYER_TYPE}/${PLAYER_ID}/recent?window=${w}&season=${PLAYER_SEASON}`;
+        const data = await fetch(url).then(r => r.json());
+        const stats = data.stats || {};
+        document.querySelectorAll('#stat-bar [data-stat]').forEach(el => {
+            const key = el.dataset.stat;
+            const fmt = fmtMap[key];
+            const val = stats[key] !== undefined ? stats[key] : null;
+            el.querySelector('.stat-value').textContent = fmt ? fmt(val) : (val != null ? val : '—');
+        });
+        label.textContent = data.games ? `(${data.games} games)` : '(no data)';
+    });
 });
 
 // ── ARSENAL TAB ───────────────────────────────────────────
