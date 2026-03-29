@@ -485,6 +485,159 @@ def roster(team_code: str):
                            available_seasons=available_seasons)
 
 
+@app.route("/<team_code>/stats")
+@cache.cached(timeout=300, query_string=True)
+def team_stats_page(team_code: str):
+    team_code = team_code.upper()
+    if team_code not in TEAMS:
+        abort(404)
+    team = {**TEAMS[team_code], 'code': team_code}
+    available_seasons = [r["season"] for r in query(
+        "SELECT DISTINCT season FROM players WHERE team=? ORDER BY season DESC", (team_code,)
+    )]
+    season = request.args.get("season", SEASON, type=int)
+    if season not in available_seasons:
+        season = available_seasons[0] if available_seasons else SEASON
+
+    _ip = ("CAST(innings_pitched AS INTEGER)"
+           " + (innings_pitched - CAST(innings_pitched AS INTEGER)) * 10.0 / 3.0")
+
+    batting = query(f"""
+        SELECT SUM(pa) as pa, SUM(ab) as ab, SUM(hits) as hits,
+            SUM(home_runs) as hr, SUM(walks) as walks, SUM(strikeouts) as strikeouts,
+            CASE WHEN SUM(ab)>0 THEN ROUND(CAST(SUM(hits) AS REAL)/SUM(ab),3) END as avg,
+            CASE WHEN SUM(CASE WHEN obp IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN obp IS NOT NULL THEN obp*pa ELSE 0 END)
+                    /SUM(CASE WHEN obp IS NOT NULL THEN pa ELSE 0 END),3) END as obp,
+            CASE WHEN SUM(CASE WHEN slg IS NOT NULL THEN ab ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN slg IS NOT NULL THEN slg*ab ELSE 0 END)
+                    /SUM(CASE WHEN slg IS NOT NULL THEN ab ELSE 0 END),3) END as slg,
+            CASE WHEN SUM(CASE WHEN woba IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN woba IS NOT NULL THEN woba*pa ELSE 0 END)
+                    /SUM(CASE WHEN woba IS NOT NULL THEN pa ELSE 0 END),3) END as woba,
+            CASE WHEN SUM(pa)>0 THEN ROUND(CAST(SUM(strikeouts) AS REAL)/SUM(pa)*100,1) END as k_pct,
+            CASE WHEN SUM(pa)>0 THEN ROUND(CAST(SUM(walks) AS REAL)/SUM(pa)*100,1) END as bb_pct,
+            CASE WHEN SUM(CASE WHEN wrc_plus IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN wrc_plus IS NOT NULL THEN wrc_plus*pa ELSE 0 END)
+                    /SUM(CASE WHEN wrc_plus IS NOT NULL THEN pa ELSE 0 END)) END as wrc_plus,
+            CASE WHEN SUM(CASE WHEN hard_hit_pct IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN hard_hit_pct IS NOT NULL THEN hard_hit_pct*pa ELSE 0 END)
+                    /SUM(CASE WHEN hard_hit_pct IS NOT NULL THEN pa ELSE 0 END)*100,1) END as hard_hit_pct,
+            CASE WHEN SUM(CASE WHEN barrel_pct IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN barrel_pct IS NOT NULL THEN barrel_pct*pa ELSE 0 END)
+                    /SUM(CASE WHEN barrel_pct IS NOT NULL THEN pa ELSE 0 END)*100,1) END as barrel_pct,
+            CASE WHEN SUM(CASE WHEN avg_exit_velo IS NOT NULL THEN pa ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN avg_exit_velo IS NOT NULL THEN avg_exit_velo*pa ELSE 0 END)
+                    /SUM(CASE WHEN avg_exit_velo IS NOT NULL THEN pa ELSE 0 END),1) END as avg_exit_velo
+        FROM batter_splits
+        WHERE team=? AND season=? AND split_type='overall' AND split_value='All'
+    """, (team_code, season))
+
+    pitching = query(f"""
+        SELECT SUM(batters_faced) as bf,
+            ROUND(SUM({_ip}), 1) as ip,
+            SUM(strikeouts) as strikeouts, SUM(walks_allowed) as walks,
+            SUM(home_runs_allowed) as hr,
+            CASE WHEN SUM(CASE WHEN era IS NOT NULL THEN ({_ip}) ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN era IS NOT NULL THEN era*({_ip}) ELSE 0 END)
+                    /SUM(CASE WHEN era IS NOT NULL THEN ({_ip}) ELSE 0 END),2) END as era,
+            CASE WHEN SUM(CASE WHEN fip IS NOT NULL THEN ({_ip}) ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN fip IS NOT NULL THEN fip*({_ip}) ELSE 0 END)
+                    /SUM(CASE WHEN fip IS NOT NULL THEN ({_ip}) ELSE 0 END),2) END as fip,
+            CASE WHEN SUM(CASE WHEN whip IS NOT NULL THEN ({_ip}) ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN whip IS NOT NULL THEN whip*({_ip}) ELSE 0 END)
+                    /SUM(CASE WHEN whip IS NOT NULL THEN ({_ip}) ELSE 0 END),2) END as whip,
+            CASE WHEN SUM(batters_faced)>0 THEN ROUND(CAST(SUM(strikeouts) AS REAL)/SUM(batters_faced)*100,1) END as k_pct,
+            CASE WHEN SUM(batters_faced)>0 THEN ROUND(CAST(SUM(walks_allowed) AS REAL)/SUM(batters_faced)*100,1) END as bb_pct,
+            CASE WHEN SUM(CASE WHEN woba_against IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN woba_against IS NOT NULL THEN woba_against*batters_faced ELSE 0 END)
+                    /SUM(CASE WHEN woba_against IS NOT NULL THEN batters_faced ELSE 0 END),3) END as woba_against,
+            CASE WHEN SUM(CASE WHEN avg_velo IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN avg_velo IS NOT NULL THEN avg_velo*batters_faced ELSE 0 END)
+                    /SUM(CASE WHEN avg_velo IS NOT NULL THEN batters_faced ELSE 0 END),1) END as avg_velo
+        FROM pitcher_splits
+        WHERE team=? AND season=? AND split_type='overall' AND split_value='All'
+    """, (team_code, season))
+
+    batting  = batting[0]  if batting  else {}
+    pitching = pitching[0] if pitching else {}
+    if batting.get('obp') and batting.get('slg'):
+        batting['ops'] = round(batting['obp'] + batting['slg'], 3)
+
+    return render_template("team_stats.html", team=team, season=season,
+                           available_seasons=available_seasons,
+                           batting=batting, pitching=pitching)
+
+
+import bisect
+
+def _pct_rank(sorted_vals: list, player_val, lower_is_better: bool) -> int:
+    if player_val is None or not sorted_vals:
+        return 50
+    rank = bisect.bisect_left(sorted_vals, player_val)
+    pct  = rank / len(sorted_vals) * 100
+    return round(100 - pct if lower_is_better else pct)
+
+def _compute_percentiles(player_id: int, season: int, player_type: str, overall: dict) -> list:
+    if player_type == 'batter':
+        all_rows = query("""
+            SELECT player_id, woba, avg_exit_velo, hard_hit_pct, barrel_pct,
+                   babip, wrc_plus,
+                   CASE WHEN pa>0 THEN CAST(strikeouts AS REAL)/pa END as k_pct,
+                   CASE WHEN pa>0 THEN CAST(walks AS REAL)/pa END as bb_pct
+            FROM batter_splits
+            WHERE season=? AND split_type='overall' AND split_value='All' AND pa>=50
+        """, (season,))
+        pool = {r['player_id']: r for r in all_rows}
+        me   = pool.get(player_id, {})
+        me_k  = (overall.get('strikeouts') or 0) / (overall.get('pa') or 1)
+        me_bb = (overall.get('walks')      or 0) / (overall.get('pa') or 1)
+        metrics = [
+            ('wRC+',       'wrc_plus',      me.get('wrc_plus'),     False),
+            ('wOBA',       'woba',          me.get('woba'),         False),
+            ('Exit Velo',  'avg_exit_velo', me.get('avg_exit_velo'),False),
+            ('Hard Hit%',  'hard_hit_pct',  me.get('hard_hit_pct'), False),
+            ('Barrel%',    'barrel_pct',    me.get('barrel_pct'),   False),
+            ('K%',         'k_pct',         me_k,                   True),
+            ('BB%',        'bb_pct',        me_bb,                  False),
+            ('BABIP',      'babip',         me.get('babip'),        False),
+        ]
+        field_map = {m[1]: m for m in metrics}
+    else:
+        all_rows = query("""
+            SELECT player_id, era, fip, k_pct, bb_pct, avg_velo,
+                   woba_against, whip, avg_spin_rate
+            FROM pitcher_splits
+            WHERE season=? AND split_type='overall' AND split_value='All' AND batters_faced>=30
+        """, (season,))
+        pool = {r['player_id']: r for r in all_rows}
+        me   = pool.get(player_id, {})
+        metrics = [
+            ('ERA',        'era',           me.get('era'),           True),
+            ('FIP',        'fip',           me.get('fip'),           True),
+            ('WHIP',       'whip',          me.get('whip'),          True),
+            ('K%',         'k_pct',         me.get('k_pct'),         False),
+            ('BB%',        'bb_pct',        me.get('bb_pct'),        True),
+            ('Avg Velo',   'avg_velo',      me.get('avg_velo'),      False),
+            ('wOBA vs',    'woba_against',  me.get('woba_against'),  True),
+            ('Spin Rate',  'avg_spin_rate', me.get('avg_spin_rate'), False),
+        ]
+        field_map = {m[1]: m for m in metrics}
+
+    rings = []
+    for label, field, player_val, lower_is_better in metrics:
+        vals = sorted(r[field] for r in all_rows if r.get(field) is not None)
+        pct  = _pct_rank(vals, player_val, lower_is_better)
+        if   pct >= 67: color = '#5cd45c'
+        elif pct >= 33: color = '#f0c040'
+        else:           color = '#e05c5c'
+        circumference = 188.4
+        arc = round(pct / 100 * circumference, 1)
+        rings.append({'label': label, 'pct': pct, 'color': color,
+                      'arc': arc, 'circ': circumference})
+    return rings
+
+
 @app.route("/batter/<int:player_id>")
 def batter_page(player_id: int):
     available_seasons = [r["season"] for r in query(
@@ -522,11 +675,12 @@ def batter_page(player_id: int):
         (player_id, dates["season_start"], dates["season_end"])
     )]
     statcast_code = TEAMS.get(team_code, TEAMS['ARI'])['statcast_code']
+    percentiles = _compute_percentiles(player_id, season, 'batter', overall)
     return render_template("player.html", player=player, overall=overall,
                            split_types=split_types, pitch_types=pitch_types,
                            player_type="batter", team=team,
                            season=season, available_seasons=available_seasons,
-                           home_park=statcast_code)
+                           home_park=statcast_code, percentiles=percentiles)
 
 
 @app.route("/pitcher/<int:player_id>")
@@ -565,11 +719,12 @@ def pitcher_page(player_id: int):
         "AND game_date BETWEEN ? AND ? ORDER BY pitch_type",
         (player_id, dates["season_start"], dates["season_end"])
     )]
+    percentiles = _compute_percentiles(player_id, season, 'pitcher', overall)
     return render_template("player.html", player=player, overall=overall,
                            split_types=split_types, pitch_types=pitch_types,
                            player_type="pitcher", team=team,
                            season=season, available_seasons=available_seasons,
-                           home_park='AZ')
+                           home_park='AZ', percentiles=percentiles)
 
 
 # ---------------------------------------------------------------------------
@@ -803,6 +958,81 @@ def api_pitcher_trends(player_id: int):
         GROUP BY season, split_value ORDER BY season, split_value
     """, [player_id])
     return jsonify({'overall': overall, 'by_pitch': by_pitch})
+
+
+# ---------------------------------------------------------------------------
+# API — Pitch arsenal
+# ---------------------------------------------------------------------------
+
+_PT_NAMES = {
+    'FF':'4-Seam FB','FA':'4-Seam FB','SI':'Sinker','FC':'Cutter','FO':'Forkball',
+    'SL':'Slider','ST':'Sweeper','SV':'Slurve',
+    'CU':'Curveball','KC':'Knuckle Curve','CS':'Slow Curve',
+    'CH':'Changeup','FS':'Splitter',
+    'EP':'Eephus','KN':'Knuckleball','SC':'Screwball','PO':'Pitchout',
+}
+
+@app.route("/api/pitcher/<int:player_id>/arsenal")
+def api_pitcher_arsenal(player_id: int):
+    season = request.args.get("season", SEASON, type=int)
+    dates  = SEASON_DATES.get(season, SEASON_DATES[SEASON])
+
+    splits = query("""
+        SELECT split_value as pitch_type,
+            SUM(batters_faced) as batters_faced,
+            CASE WHEN SUM(CASE WHEN avg_velo IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN avg_velo IS NOT NULL THEN avg_velo*batters_faced ELSE 0 END)
+                    /SUM(CASE WHEN avg_velo IS NOT NULL THEN batters_faced ELSE 0 END),1) END as avg_velo,
+            CASE WHEN SUM(CASE WHEN avg_spin_rate IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN avg_spin_rate IS NOT NULL THEN avg_spin_rate*batters_faced ELSE 0 END)
+                    /SUM(CASE WHEN avg_spin_rate IS NOT NULL THEN batters_faced ELSE 0 END)) END as avg_spin_rate,
+            CASE WHEN SUM(batters_faced)>0
+                THEN ROUND(CAST(SUM(k_pct*batters_faced) AS REAL)/SUM(batters_faced),3) END as k_pct,
+            CASE WHEN SUM(CASE WHEN woba_against IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN woba_against IS NOT NULL THEN woba_against*batters_faced ELSE 0 END)
+                    /SUM(CASE WHEN woba_against IS NOT NULL THEN batters_faced ELSE 0 END),3) END as woba_against,
+            CASE WHEN SUM(CASE WHEN avg_against IS NOT NULL THEN batters_faced ELSE 0 END)>0
+                THEN ROUND(SUM(CASE WHEN avg_against IS NOT NULL THEN avg_against*batters_faced ELSE 0 END)
+                    /SUM(CASE WHEN avg_against IS NOT NULL THEN batters_faced ELSE 0 END),3) END as avg_against
+        FROM pitcher_splits
+        WHERE player_id=? AND season=? AND split_type='pitch_type'
+        GROUP BY split_value
+        ORDER BY SUM(batters_faced) DESC
+    """, (player_id, season))
+
+    total_bf = sum(r["batters_faced"] or 0 for r in splits)
+
+    whiff_rows = query("""
+        SELECT pitch_type,
+            ROUND(CAST(SUM(CASE WHEN description IN
+                ('swinging_strike','swinging_strike_blocked','missed_bunt')
+                THEN 1 ELSE 0 END) AS REAL) /
+            NULLIF(SUM(CASE WHEN description IN
+                ('swinging_strike','swinging_strike_blocked',
+                 'foul','foul_tip','hit_into_play','hit_into_play_no_out',
+                 'hit_into_play_score','foul_bunt','missed_bunt')
+                THEN 1 ELSE 0 END), 0) * 100, 1) as whiff_pct
+        FROM pitches
+        WHERE pitcher=? AND date(game_date) BETWEEN ? AND ?
+          AND pitch_type IS NOT NULL
+        GROUP BY pitch_type
+    """, (player_id, dates["season_start"], dates["season_end"]))
+    whiff_map = {r["pitch_type"]: r["whiff_pct"] for r in whiff_rows}
+
+    result = []
+    for r in splits:
+        pt = r["pitch_type"]
+        result.append({
+            "pitch_type":    pt,
+            "pitch_name":    _PT_NAMES.get(pt, pt),
+            "usage_pct":     round(r["batters_faced"] / total_bf * 100, 1) if total_bf > 0 else 0,
+            "avg_velo":      r["avg_velo"],
+            "avg_spin_rate": r["avg_spin_rate"],
+            "whiff_pct":     whiff_map.get(pt),
+            "avg_against":   r["avg_against"],
+            "woba_against":  r["woba_against"],
+        })
+    return jsonify(result)
 
 
 # ---------------------------------------------------------------------------

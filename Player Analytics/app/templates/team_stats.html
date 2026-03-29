@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ team.short_name }} {{ season }} Team Stats | Dugout Intel{% endblock %}
+{% block meta_description %}{{ team.full_name }} {{ season }} team batting and pitching stats — ERA, wOBA, wRC+, K%, barrel rate and more on Dugout Intel.{% endblock %}
+{% block og_url %}/{{ team.code|lower }}/stats{% endblock %}
+{% block canonical_url %}/{{ team.code|lower }}/stats{% endblock %}
+
+{% block content %}
+<div class="player-header" style="padding-bottom:1rem;">
+    <a href="/{{ team.code|lower }}" class="back-link">← {{ team.short_name }} Roster</a>
+    <div class="player-meta">
+        <div>
+            <h1 style="font-size:1.6rem;margin:0;">{{ team.full_name }}</h1>
+            <p class="position-label">{{ season }} Team Stats</p>
+            {% if available_seasons|length > 1 %}
+            <div class="season-selector" style="margin-top:0.5rem;">
+                {% for s in available_seasons %}
+                <a href="/{{ team.code|lower }}/stats?season={{ s }}"
+                   class="season-pill{% if s == season %} active{% endif %}">{{ s }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="team-stats-grid">
+
+    <!-- Batting -->
+    <div class="team-stat-card">
+        <h2 class="team-stat-card-title">Team Batting</h2>
+        <table class="team-stat-table">
+            <tbody>
+                <tr><td class="ts-label">PA</td><td class="ts-val">{{ batting.pa or '—' }}</td></tr>
+                <tr><td class="ts-label">AB</td><td class="ts-val">{{ batting.ab or '—' }}</td></tr>
+                <tr><td class="ts-label">Hits</td><td class="ts-val">{{ batting.hits or '—' }}</td></tr>
+                <tr><td class="ts-label">HR</td><td class="ts-val">{{ batting.hr or '—' }}</td></tr>
+                <tr><td class="ts-label">BB</td><td class="ts-val">{{ batting.walks or '—' }}</td></tr>
+                <tr><td class="ts-label">K</td><td class="ts-val">{{ batting.strikeouts or '—' }}</td></tr>
+                <tr class="ts-divider"><td colspan="2"></td></tr>
+                <tr><td class="ts-label">AVG</td><td class="ts-val">{{ "%.3f"|format(batting.avg) if batting.avg else '—' }}</td></tr>
+                <tr><td class="ts-label">OBP</td><td class="ts-val">{{ "%.3f"|format(batting.obp) if batting.obp else '—' }}</td></tr>
+                <tr><td class="ts-label">SLG</td><td class="ts-val">{{ "%.3f"|format(batting.slg) if batting.slg else '—' }}</td></tr>
+                <tr><td class="ts-label">OPS</td><td class="ts-val">{{ "%.3f"|format(batting.ops) if batting.ops else '—' }}</td></tr>
+                <tr><td class="ts-label">wOBA</td><td class="ts-val">{{ "%.3f"|format(batting.woba) if batting.woba else '—' }}</td></tr>
+                <tr><td class="ts-label">wRC+</td><td class="ts-val">{{ batting.wrc_plus|int if batting.wrc_plus else '—' }}</td></tr>
+                <tr class="ts-divider"><td colspan="2"></td></tr>
+                <tr><td class="ts-label">K%</td><td class="ts-val">{{ batting.k_pct or '—' }}%</td></tr>
+                <tr><td class="ts-label">BB%</td><td class="ts-val">{{ batting.bb_pct or '—' }}%</td></tr>
+                <tr><td class="ts-label">Hard Hit%</td><td class="ts-val">{{ batting.hard_hit_pct or '—' }}%</td></tr>
+                <tr><td class="ts-label">Barrel%</td><td class="ts-val">{{ batting.barrel_pct or '—' }}%</td></tr>
+                <tr><td class="ts-label">Avg Exit Velo</td><td class="ts-val">{{ batting.avg_exit_velo or '—' }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pitching -->
+    <div class="team-stat-card">
+        <h2 class="team-stat-card-title">Team Pitching</h2>
+        <table class="team-stat-table">
+            <tbody>
+                <tr><td class="ts-label">BF</td><td class="ts-val">{{ pitching.bf or '—' }}</td></tr>
+                <tr><td class="ts-label">IP</td><td class="ts-val">{{ pitching.ip or '—' }}</td></tr>
+                <tr><td class="ts-label">K</td><td class="ts-val">{{ pitching.strikeouts or '—' }}</td></tr>
+                <tr><td class="ts-label">BB</td><td class="ts-val">{{ pitching.walks or '—' }}</td></tr>
+                <tr><td class="ts-label">HR</td><td class="ts-val">{{ pitching.hr or '—' }}</td></tr>
+                <tr class="ts-divider"><td colspan="2"></td></tr>
+                <tr><td class="ts-label">ERA</td><td class="ts-val">{{ "%.2f"|format(pitching.era) if pitching.era else '—' }}</td></tr>
+                <tr><td class="ts-label">FIP</td><td class="ts-val">{{ "%.2f"|format(pitching.fip) if pitching.fip else '—' }}</td></tr>
+                <tr><td class="ts-label">WHIP</td><td class="ts-val">{{ "%.2f"|format(pitching.whip) if pitching.whip else '—' }}</td></tr>
+                <tr><td class="ts-label">wOBA Against</td><td class="ts-val">{{ "%.3f"|format(pitching.woba_against) if pitching.woba_against else '—' }}</td></tr>
+                <tr class="ts-divider"><td colspan="2"></td></tr>
+                <tr><td class="ts-label">K%</td><td class="ts-val">{{ pitching.k_pct or '—' }}%</td></tr>
+                <tr><td class="ts-label">BB%</td><td class="ts-val">{{ pitching.bb_pct or '—' }}%</td></tr>
+                <tr><td class="ts-label">Avg Velo</td><td class="ts-val">{{ pitching.avg_velo or '—' }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<p style="margin:2rem 1rem 0;color:var(--text-muted);font-size:0.75rem;">
+    Stats aggregated from all players on the {{ season }} {{ team.full_name }} roster.
+    wRC+ is a PA-weighted average across individual players (park-unadjusted).
+    <a href="/glossary" style="color:var(--red);">Glossary</a>
+</p>
+{% endblock %}

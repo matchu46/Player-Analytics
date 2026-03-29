@@ -69,6 +69,28 @@
 </div>
 {% endif %}
 
+<!-- ── Percentile rings ───────────────────────────────── -->
+{% if percentiles %}
+<div class="percentile-rings">
+    {% for ring in percentiles %}
+    <div class="p-ring-wrap">
+        <svg viewBox="0 0 80 80" class="p-ring-svg">
+            <circle cx="40" cy="40" r="30" fill="none" stroke="#2a2a2a" stroke-width="8"/>
+            <circle cx="40" cy="40" r="30" fill="none"
+                    stroke="{{ ring.color }}" stroke-width="8"
+                    stroke-dasharray="{{ ring.arc }} {{ ring.circ }}"
+                    stroke-dashoffset="47.1"
+                    stroke-linecap="round"
+                    transform="rotate(-90 40 40)"/>
+            <text x="40" y="45" text-anchor="middle" font-size="17" font-weight="600" fill="#e8e8e8">{{ ring.pct }}</text>
+        </svg>
+        <span class="p-ring-label">{{ ring.label }}</span>
+    </div>
+    {% endfor %}
+</div>
+<p class="p-ring-note">Percentile ranks vs. all qualified MLB players in {{ season }}. Green ≥ 67th, yellow 33–66th, red ≤ 33rd.</p>
+{% endif %}
+
 <!-- ── Player intro text ──────────────────────────────── -->
 <p class="player-intro">
     {% if player_type == 'batter' %}
@@ -198,6 +220,7 @@
     <button class="tab-btn" data-tab="heatmap">Strike Zone</button>
     <button class="tab-btn" data-tab="spray">{% if player_type == 'batter' %}Spray Chart{% else %}Pitch Movement{% endif %}</button>
     <button class="tab-btn" data-tab="advanced">{% if player_type == 'batter' %}Batted Ball{% else %}Velocity{% endif %}</button>
+    {% if player_type == 'pitcher' %}<button class="tab-btn" data-tab="arsenal">Arsenal</button>{% endif %}
     <button class="tab-btn" data-tab="trends">Trends</button>
 </div>
 
@@ -376,6 +399,27 @@
     </div>
     {% endif %}
 </div>
+
+{% if player_type == 'pitcher' %}
+<!-- ── TAB: Arsenal ───────────────────────────────────── -->
+<div class="tab-content" id="tab-arsenal">
+    <div id="arsenal-loading" style="padding:2rem;color:var(--text-muted);">Loading…</div>
+    <table class="data-table arsenal-table" id="arsenal-table" style="display:none;">
+        <thead>
+            <tr>
+                <th>Pitch</th>
+                <th class="num">Usage%</th>
+                <th class="num">Velo</th>
+                <th class="num">Spin</th>
+                <th class="num">Whiff%</th>
+                <th class="num">AVG Against</th>
+                <th class="num">wOBA Against</th>
+            </tr>
+        </thead>
+        <tbody id="arsenal-body"></tbody>
+    </table>
+</div>
+{% endif %}
 
 <!-- ── TAB: Trends ────────────────────────────────────── -->
 <div class="tab-content" id="tab-trends">
@@ -693,6 +737,7 @@ function refreshActiveTab() {
     if (activeTab === 'heatmap')  loadHeatMap();
     if (activeTab === 'spray')    PLAYER_TYPE === 'batter' ? loadSpray() : loadMovement();
     if (activeTab === 'advanced') PLAYER_TYPE === 'batter' ? loadBattedBall() : loadVelocity();
+    if (activeTab === 'arsenal')  loadArsenal();
     if (activeTab === 'trends')   loadTrends();
 }
 
@@ -1514,6 +1559,44 @@ window.addEventListener('DOMContentLoaded', () => {
             '<p class="empty" style="padding:2rem">No split data. Run <code>python src/process.py --all</code></p>';
     }
 });
+
+// ── ARSENAL TAB ───────────────────────────────────────────
+let arsenalLoaded = false;
+
+async function loadArsenal() {
+    if (arsenalLoaded) return;
+    const res  = await fetch(`/api/pitcher/${PLAYER_ID}/arsenal?season=${PLAYER_SEASON}`);
+    const data = await res.json();
+    arsenalLoaded = true;
+
+    const loading = document.getElementById('arsenal-loading');
+    const table   = document.getElementById('arsenal-table');
+    const tbody   = document.getElementById('arsenal-body');
+
+    if (!data.length) {
+        loading.textContent = 'No pitch data available.';
+        return;
+    }
+
+    const fmt3 = v => v != null ? v.toFixed(3) : '—';
+    const fmt1 = v => v != null ? v.toFixed(1) : '—';
+    const fmtI = v => v != null ? Math.round(v) : '—';
+
+    tbody.innerHTML = data.map(r => `
+        <tr>
+            <td><span class="pt-dot" style="background:${ptColor(r.pitch_type)}"></span>${r.pitch_name}</td>
+            <td class="num">${fmt1(r.usage_pct)}%</td>
+            <td class="num">${fmt1(r.avg_velo)}</td>
+            <td class="num">${fmtI(r.avg_spin_rate)}</td>
+            <td class="num">${r.whiff_pct != null ? r.whiff_pct + '%' : '—'}</td>
+            <td class="num">${fmt3(r.avg_against)}</td>
+            <td class="num">${fmt3(r.woba_against)}</td>
+        </tr>
+    `).join('');
+
+    loading.style.display = 'none';
+    table.style.display   = '';
+}
 
 // ── TRENDS TAB ────────────────────────────────────────────
 let trendsData = null;
