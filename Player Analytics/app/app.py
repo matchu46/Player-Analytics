@@ -88,7 +88,7 @@ app.config["CACHE_DEFAULT_TIMEOUT"] = 300  # 5 minutes
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 31536000  # 1 year for static assets
 cache = Cache(app)
 
-STATIC_VERSION = "4"  # bump when CSS/JS changes to bust browser cache
+STATIC_VERSION = "5"  # bump when CSS/JS changes to bust browser cache
 
 
 @app.context_processor
