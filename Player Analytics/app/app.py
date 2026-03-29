@@ -1406,7 +1406,6 @@ def sitemap():
         code = r["team"].lower()
         xml_lines.append(url_entry(f"{base}/{code}",          changefreq="daily",  priority="0.8"))
         xml_lines.append(url_entry(f"{base}/{code}/stats",    changefreq="daily",  priority="0.7"))
-        xml_lines.append(url_entry(f"{base}/{code}/payroll",  changefreq="weekly", priority="0.6"))
 
     for p in players:
         route = "pitcher" if p["position_type"] == "Pitcher" else "batter"
