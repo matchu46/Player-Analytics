@@ -101,6 +101,9 @@ def force_https():
     # Railway sets X-Forwarded-Proto header; redirect http -> https in production
     if request.headers.get("X-Forwarded-Proto") == "http":
         return redirect(request.url.replace("http://", "https://", 1), code=301)
+    # Redirect www → non-www
+    if request.host.startswith("www."):
+        return redirect("https://dugoutintel.com" + request.full_path.rstrip("?"), 301)
 
 
 # ---------------------------------------------------------------------------
