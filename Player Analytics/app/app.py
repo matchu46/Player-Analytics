@@ -1374,21 +1374,44 @@ def leaderboards():
 def sitemap():
     """Generate sitemap for all player pages + static pages."""
     base = "https://dugoutintel.com"
+    today = __import__("datetime").date.today().isoformat()
+
     players = query(
         f"SELECT player_id, position_type FROM players WHERE season = {SEASON}"
     )
     available_teams = query("SELECT DISTINCT team FROM players")
-    urls = [base + "/", base + "/leaderboards", base + "/about", base + "/glossary", base + "/privacy"]
+
+    def url_entry(loc, lastmod=today, changefreq="weekly", priority="0.5"):
+        return (
+            f"  <url>"
+            f"<loc>{loc}</loc>"
+            f"<lastmod>{lastmod}</lastmod>"
+            f"<changefreq>{changefreq}</changefreq>"
+            f"<priority>{priority}</priority>"
+            f"</url>"
+        )
+
+    xml_lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        # Static pages
+        url_entry(base + "/",             changefreq="daily",   priority="1.0"),
+        url_entry(base + "/leaderboards", changefreq="daily",   priority="0.9"),
+        url_entry(base + "/glossary",     changefreq="monthly", priority="0.6"),
+        url_entry(base + "/about",        changefreq="monthly", priority="0.5"),
+        url_entry(base + "/privacy",      changefreq="yearly",  priority="0.3"),
+    ]
+
     for r in available_teams:
-        code = r['team'].lower()
-        urls.append(f"{base}/{code}")
+        code = r["team"].lower()
+        xml_lines.append(url_entry(f"{base}/{code}",          changefreq="daily",  priority="0.8"))
+        xml_lines.append(url_entry(f"{base}/{code}/stats",    changefreq="daily",  priority="0.7"))
+        xml_lines.append(url_entry(f"{base}/{code}/payroll",  changefreq="weekly", priority="0.6"))
+
     for p in players:
         route = "pitcher" if p["position_type"] == "Pitcher" else "batter"
-        urls.append(f"{base}/{route}/{p['player_id']}")
-    xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>',
-                 '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for url in urls:
-        xml_lines.append(f"  <url><loc>{url}</loc></url>")
+        xml_lines.append(url_entry(f"{base}/{route}/{p['player_id']}", changefreq="daily", priority="0.7"))
+
     xml_lines.append("</urlset>")
     return Response("\n".join(xml_lines), mimetype="application/xml")
 
