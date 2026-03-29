@@ -39,8 +39,10 @@
 <div class="recent-toolbar">
     <span class="recent-label">Window:</span>
     <button class="recent-btn active" data-window="season">Full Season</button>
+    {% if season == 2026 %}
     <button class="recent-btn" data-window="30">Last 30 Days</button>
     <button class="recent-btn" data-window="14">Last 14 Days</button>
+    {% endif %}
     <span class="recent-games" id="recent-games-label"></span>
 </div>
 <div class="stat-bar" id="stat-bar">
