@@ -574,9 +574,9 @@ def team_stats_page(team_code: str):
 
 import bisect
 
-def _pct_rank(sorted_vals: list, player_val, lower_is_better: bool) -> int:
+def _pct_rank(sorted_vals: list, player_val, lower_is_better: bool):
     if player_val is None or not sorted_vals:
-        return 50
+        return None
     rank = bisect.bisect_left(sorted_vals, player_val)
     pct  = rank / len(sorted_vals) * 100
     return round(100 - pct if lower_is_better else pct)
@@ -628,16 +628,20 @@ def _compute_percentiles(player_id: int, season: int, player_type: str, overall:
         field_map = {m[1]: m for m in metrics}
 
     rings = []
+    circumference = 188.4
     for label, field, player_val, lower_is_better in metrics:
         vals = sorted(r[field] for r in all_rows if r.get(field) is not None)
         pct  = _pct_rank(vals, player_val, lower_is_better)
-        if   pct >= 67: color = '#5cd45c'
-        elif pct >= 33: color = '#f0c040'
-        else:           color = '#e05c5c'
-        circumference = 188.4
-        arc = round(pct / 100 * circumference, 1)
-        rings.append({'label': label, 'pct': pct, 'color': color,
-                      'arc': arc, 'circ': circumference})
+        if pct is None:
+            rings.append({'label': label, 'pct': None, 'color': '#555',
+                          'arc': 0, 'gap': circumference, 'circ': circumference})
+        else:
+            if   pct >= 67: color = '#5cd45c'
+            elif pct >= 33: color = '#f0c040'
+            else:           color = '#e05c5c'
+            arc = round(pct / 100 * circumference, 1)
+            rings.append({'label': label, 'pct': pct, 'color': color,
+                          'arc': arc, 'gap': round(circumference - arc, 1), 'circ': circumference})
     return rings
 
 
@@ -1299,7 +1303,8 @@ def leaderboards():
 
     batters = query(
         """
-        SELECT b.player_id, p.full_name, p.team, p.position,
+        SELECT b.player_id, p.full_name,
+               GROUP_CONCAT(DISTINCT p.team) as team, p.position,
                b.pa, b.ab, b.hits, b.singles, b.doubles, b.triples,
                b.home_runs, b.rbi, b.walks, b.strikeouts, b.hbp,
                b.avg, b.obp, b.slg, b.ops, b.woba,
@@ -1312,6 +1317,7 @@ def leaderboards():
         FROM batter_splits b
         JOIN players p ON b.player_id = p.player_id AND b.season = p.season
         WHERE b.season = ? AND b.split_type = 'overall' AND b.pa >= ?
+        GROUP BY b.player_id
         ORDER BY b.woba DESC
         """,
         (season, min_pa)
@@ -1319,7 +1325,8 @@ def leaderboards():
 
     pitchers = query(
         """
-        SELECT b.player_id, p.full_name, p.team, p.position,
+        SELECT b.player_id, p.full_name,
+               GROUP_CONCAT(DISTINCT p.team) as team, p.position,
                b.era, b.whip, b.innings_pitched, b.batters_faced,
                b.strikeouts, b.walks_allowed, b.hits_allowed, b.hbp,
                b.home_runs_allowed,
@@ -1331,6 +1338,7 @@ def leaderboards():
         JOIN players p ON b.player_id = p.player_id AND b.season = p.season
         WHERE b.season = ? AND b.split_type = 'overall'
               AND b.innings_pitched >= ?
+        GROUP BY b.player_id
         ORDER BY b.era ASC
         """,
         (season, min_ip)
