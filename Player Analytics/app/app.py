@@ -1340,18 +1340,17 @@ def leaderboards():
         "SELECT DISTINCT season FROM batter_splits ORDER BY season DESC"
     )]
 
-    # Classify pitchers as SP/RP for leaderboard position filter
-    dates = SEASON_DATES.get(season, SEASON_DATES[SEASON])
+    # Classify pitchers as SP/RP using pre-computed pitcher_splits (inning=1, BF threshold)
     pitcher_ids = tuple(p["player_id"] for p in pitchers)
     if pitcher_ids:
         placeholders = ",".join("?" * len(pitcher_ids))
         starter_rows = query(
-            f"SELECT pitcher FROM pitches WHERE pitcher IN ({placeholders}) "
-            f"AND inning=1 AND date(game_date) BETWEEN ? AND ? "
-            f"GROUP BY pitcher HAVING COUNT(DISTINCT game_pk) >= 5",
-            pitcher_ids + (dates["season_start"], dates["season_end"])
+            f"SELECT player_id FROM pitcher_splits "
+            f"WHERE player_id IN ({placeholders}) AND season=? "
+            f"AND split_type='inning' AND split_value='1' AND batters_faced >= 25",
+            pitcher_ids + (season,)
         )
-        starter_ids = {r["pitcher"] for r in starter_rows}
+        starter_ids = {r["player_id"] for r in starter_rows}
     else:
         starter_ids = set()
 
