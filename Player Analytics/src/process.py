@@ -184,7 +184,7 @@ def compute_pitcher_stats(df: pd.DataFrame) -> dict:
     avg_against = hits / ab if ab > 0 else None
     k_pct = ks / bf if bf > 0 else None
     bb_pct = walks / bf if bf > 0 else None
-    k_bb = ks / walks if walks > 0 else None
+    k_bb = (ks - walks) / bf if bf > 0 else None
 
     obp_denom = ab + walks + hbp
     obp_against = (hits + walks + hbp) / obp_denom if obp_denom > 0 else None
