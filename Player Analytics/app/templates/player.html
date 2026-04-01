@@ -519,6 +519,7 @@ const PLAYER_ID     = {{ player.player_id }};
 const PLAYER_TYPE   = "{{ player_type }}";
 const PLAYER_SEASON = {{ season }};
 const SPLIT_TYPES = {{ split_types | tojson }};
+const PITCH_DATA_MIN_SEASON = {{ pitch_data_min_season }};
 
 const RED   = '#A71930';
 const SAND  = '#E3D4AD';
@@ -995,12 +996,18 @@ function filterPitchesByMode(pitches, mode) {
     }
 }
 
+function noPitchDataMsg(containerId) {
+    const el = document.getElementById(containerId);
+    if (el) el.innerHTML = `<p style="color:var(--text-muted);padding:2rem;text-align:center;">Chart data not available for seasons before ${PITCH_DATA_MIN_SEASON}.</p>`;
+}
+
 async function loadHeatMap() {
     const qs  = buildQS({ season: PLAYER_SEASON });
     const url = `/api/${PLAYER_TYPE}/${PLAYER_ID}/pitches${qs}`;
     const resp = await fetch(url);
     if (!resp.ok) return;
     let pitches = await resp.json();
+    if (pitches.error === 'no_pitch_data') { noPitchDataMsg('tab-strikezone'); return; }
 
     const mode      = document.getElementById('hm-filter').value;
     const ptFilter  = document.getElementById('hm-pitch-type').value;
@@ -1306,6 +1313,7 @@ async function loadSpray() {
     const resp = await fetch(`/api/batter/${PLAYER_ID}/pitches${qs}`);
     if (!resp.ok) return;
     let pitches = await resp.json();
+    if (pitches.error === 'no_pitch_data') { noPitchDataMsg('tab-spray'); return; }
 
     const showMode  = document.getElementById('spray-show').value;
     const colorMode = document.getElementById('spray-color').value;
@@ -1410,6 +1418,7 @@ async function loadMovement() {
     const resp = await fetch(`/api/pitcher/${PLAYER_ID}/movement?season=${PLAYER_SEASON}`);
     if (!resp.ok) return;
     const pitches = await resp.json();
+    if (pitches.error === 'no_pitch_data') { noPitchDataMsg('tab-movement'); return; }
     const colorMode = document.getElementById('movement-color').value;
 
     const byType = {};
@@ -1451,6 +1460,7 @@ async function loadBattedBall() {
     const resp = await fetch(`/api/batter/${PLAYER_ID}/pitches${qs}`);
     if (!resp.ok) return;
     let pitches = await resp.json();
+    if (pitches.error === 'no_pitch_data') { noPitchDataMsg('tab-batted'); return; }
 
     const showMode  = document.getElementById('bb-show').value;
     const colorMode = document.getElementById('bb-color').value;
@@ -1513,6 +1523,7 @@ async function loadVelocity() {
     const resp = await fetch(`/api/pitcher/${PLAYER_ID}/velocity?season=${PLAYER_SEASON}`);
     if (!resp.ok) return;
     const data = await resp.json();
+    if (data.error === 'no_pitch_data') { noPitchDataMsg('tab-velocity'); return; }
 
     Plotly.react('velo-usage-chart', [{
         x:data.map(r=>r.pitch_type), y:data.map(r=>r.usage_pct),

@@ -89,7 +89,8 @@ app.config["CACHE_THRESHOLD"] = 100        # max cached items before eviction
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 31536000  # 1 year for static assets
 cache = Cache(app)
 
-STATIC_VERSION = "5"  # bump when CSS/JS changes to bust browser cache
+STATIC_VERSION = "6"  # bump when CSS/JS changes to bust browser cache
+PITCH_DATA_MIN_SEASON = 2022  # raw pitches only stored for 2022+ in prod DB
 
 
 @app.context_processor
@@ -691,7 +692,8 @@ def batter_page(player_id: int):
                            split_types=split_types, pitch_types=pitch_types,
                            player_type="batter", team=team,
                            season=season, available_seasons=available_seasons,
-                           home_park=statcast_code, percentiles=percentiles)
+                           home_park=statcast_code, percentiles=percentiles,
+                           pitch_data_min_season=PITCH_DATA_MIN_SEASON)
 
 
 @app.route("/pitcher/<int:player_id>")
@@ -735,6 +737,7 @@ def pitcher_page(player_id: int):
                            split_types=split_types, pitch_types=pitch_types,
                            player_type="pitcher", team=team,
                            season=season, available_seasons=available_seasons,
+                           pitch_data_min_season=PITCH_DATA_MIN_SEASON,
                            home_park='AZ', percentiles=percentiles)
 
 
@@ -1154,6 +1157,9 @@ def api_pitcher_recent(player_id: int):
 
 @app.route("/api/batter/<int:player_id>/pitches")
 def api_batter_pitches(player_id: int):
+    season = request.args.get("season", SEASON, type=int)
+    if season < PITCH_DATA_MIN_SEASON:
+        return jsonify({"error": "no_pitch_data", "min_season": PITCH_DATA_MIN_SEASON})
     where, params = build_pitch_filter("batter", player_id)
     rows = query(
         f"SELECT plate_x, plate_z, type, description, events, bb_type, "
@@ -1167,6 +1173,9 @@ def api_batter_pitches(player_id: int):
 
 @app.route("/api/pitcher/<int:player_id>/pitches")
 def api_pitcher_pitches(player_id: int):
+    season = request.args.get("season", SEASON, type=int)
+    if season < PITCH_DATA_MIN_SEASON:
+        return jsonify({"error": "no_pitch_data", "min_season": PITCH_DATA_MIN_SEASON})
     where, params = build_pitch_filter("pitcher", player_id)
     rows = query(
         f"SELECT plate_x, plate_z, type, description, events, pitch_type, "
@@ -1180,6 +1189,8 @@ def api_pitcher_pitches(player_id: int):
 @app.route("/api/pitcher/<int:player_id>/movement")
 def api_pitcher_movement(player_id: int):
     season = request.args.get("season", SEASON, type=int)
+    if season < PITCH_DATA_MIN_SEASON:
+        return jsonify({"error": "no_pitch_data", "min_season": PITCH_DATA_MIN_SEASON})
     dates  = SEASON_DATES.get(season, SEASON_DATES[SEASON])
     rows = query(
         "SELECT pitch_type, pfx_x, pfx_z, release_speed, release_spin_rate "
@@ -1194,6 +1205,8 @@ def api_pitcher_movement(player_id: int):
 @app.route("/api/pitcher/<int:player_id>/velocity")
 def api_pitcher_velocity(player_id: int):
     season = request.args.get("season", SEASON, type=int)
+    if season < PITCH_DATA_MIN_SEASON:
+        return jsonify({"error": "no_pitch_data", "min_season": PITCH_DATA_MIN_SEASON})
     dates  = SEASON_DATES.get(season, SEASON_DATES[SEASON])
     rows = query(
         "SELECT pitch_type, COUNT(*) as pitches, "
