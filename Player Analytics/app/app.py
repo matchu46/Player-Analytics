@@ -85,6 +85,7 @@ from teams import TEAMS, SEASON, SEASON_DATES
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.config["CACHE_TYPE"] = "SimpleCache"
 app.config["CACHE_DEFAULT_TIMEOUT"] = 300  # 5 minutes
+app.config["CACHE_THRESHOLD"] = 100        # max cached items before eviction
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 31536000  # 1 year for static assets
 cache = Cache(app)
 
@@ -113,6 +114,9 @@ def force_https():
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA cache_size = -2000")   # 2MB page cache per connection
+    conn.execute("PRAGMA temp_store = MEMORY")  # temp tables in memory (faster)
+    conn.execute("PRAGMA mmap_size = 0")        # disable memory-mapped I/O
     return conn
 
 
