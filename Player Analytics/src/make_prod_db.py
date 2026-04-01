@@ -49,7 +49,7 @@ def main():
     size_mb = os.path.getsize(PROD_DB) / 1024 / 1024
     print(f"Prod DB size: {size_mb:.0f} MB")
 
-    print(f"Compressing → {PROD_GZ} ...")
+    print(f"Compressing to {PROD_GZ} ...")
     with open(PROD_DB, "rb") as f_in, gzip.open(PROD_GZ, "wb", compresslevel=6) as f_out:
         shutil.copyfileobj(f_in, f_out)
 
