@@ -1,0 +1,13 @@
+User-agent: *
+Disallow: /api/
+Crawl-delay: 10
+
+User-agent: Googlebot
+Disallow:
+Crawl-delay: 0
+
+User-agent: Bingbot
+Disallow:
+Crawl-delay: 0
+
+Sitemap: https://dugoutintel.com/sitemap.xml
