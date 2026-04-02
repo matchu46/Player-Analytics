@@ -1137,6 +1137,24 @@ nav a:hover { color: var(--team-secondary); }
     .teams-row { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 768px) {
+    .site-header { padding: 0 0.75rem; }
+    .header-inner {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 0.4rem 0;
+        gap: 0.25rem 0.75rem;
+        align-items: center;
+    }
+    .logo { order: 1; flex-shrink: 0; }
+    nav { order: 2; margin-left: auto; gap: 0.6rem; flex-wrap: wrap; }
+    nav a { font-size: 0.78rem; }
+    .global-search {
+        order: 3;
+        flex: none;
+        width: 100%;
+        max-width: 100%;
+        padding-bottom: 0.35rem;
+    }
     .stat-bar { gap: 0.3rem; }
     .stat-item { padding: 0.15rem 0.35rem; min-width: 44px; }
     .stat-value { font-size: 1rem; }
