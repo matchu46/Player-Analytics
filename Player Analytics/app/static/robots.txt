@@ -22,4 +22,7 @@ Disallow: /
 User-agent: DotBot
 Disallow: /
 
+User-agent: Barkrowler
+Disallow: /
+
 Sitemap: https://dugoutintel.com/sitemap.xml
