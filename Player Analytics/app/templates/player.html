@@ -1,4 +1,8 @@
 {% extends "base.html" %}
+{% block extra_head %}
+<link rel="preconnect" href="https://cdn.plot.ly">
+<link rel="preconnect" href="https://img.mlbstatic.com">
+{% endblock %}
 {% block title %}{{ player.full_name }} Stats & Splits | Dugout Intel{% endblock %}
 {% block meta_description %}{{ player.full_name }} {{ season }} stats — Statcast splits, {% if player_type == 'pitcher' %}ERA, WHIP, K%, BB%, pitch movement, and velocity{% else %}spray chart, wOBA, barrel rate, hard-hit%, and situational splits{% endif %} on Dugout Intel.{% endblock %}
 {% block meta_keywords %}{{ player.full_name }} stats, {{ player.full_name }} Statcast, {{ player.full_name }} {{ season }}, {{ player.full_name }} splits, {{ player.full_name }} analytics{% endblock %}

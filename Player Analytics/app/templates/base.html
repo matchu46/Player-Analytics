@@ -21,11 +21,10 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="https://dugoutintel.com{% block canonical_url %}{% endblock %}">
     <!-- Preconnect to CDN origins for faster resource loading -->
-    <link rel="preconnect" href="https://cdn.plot.ly">
     <link rel="preconnect" href="https://www.googletagmanager.com">
     <link rel="preconnect" href="https://pagead2.googlesyndication.com">
     <link rel="preconnect" href="https://a.espncdn.com">
-    <link rel="preconnect" href="https://img.mlbstatic.com">
+    {% block extra_head %}{% endblock %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ static_v }}">
     {% if team is defined and team %}
     <style>:root {
