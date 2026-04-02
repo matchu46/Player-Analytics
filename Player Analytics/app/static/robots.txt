@@ -10,4 +10,16 @@ User-agent: Bingbot
 Disallow:
 Crawl-delay: 0
 
+User-agent: AmazonBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
 Sitemap: https://dugoutintel.com/sitemap.xml
