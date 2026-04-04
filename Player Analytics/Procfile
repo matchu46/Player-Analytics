@@ -1,1 +1,1 @@
-web: gunicorn --chdir app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 60 --keep-alive 5 app:app
+web: gunicorn --chdir app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 60 --keep-alive 5 --max-requests 500 --max-requests-jitter 50 app:app
