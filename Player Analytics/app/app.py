@@ -1301,11 +1301,6 @@ def robots():
     return app.send_static_file("robots.txt")
 
 
-@app.route("/ads.txt")
-def ads_txt():
-    return app.send_static_file("ads.txt")
-
-
 @app.route("/privacy")
 def privacy():
     return render_template("privacy.html")
