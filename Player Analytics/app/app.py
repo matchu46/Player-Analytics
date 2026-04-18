@@ -17,7 +17,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
 DB_PATH  = os.environ.get("DB_PATH", os.path.join(DATA_DIR, "db", "baseball.db"))
 DB_GZ     = os.path.join(DATA_DIR, "db", "baseball_prod.db.gz")
-DB_GZ_URL = "https://github.com/matchu46/Player-Analytics/releases/download/db-prod-v3/baseball_prod.db.gz"
+DB_GZ_URL = "https://github.com/matchu46/Player-Analytics/releases/download/db-prod-v4/baseball_prod.db.gz"
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 STATIC_DIR   = os.path.join(BASE_DIR, "static")
 
