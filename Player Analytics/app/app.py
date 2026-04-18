@@ -69,7 +69,7 @@ def _migrate_columns():
     for col in ['babip', 'ops_plus', 'wrc_plus']:
         if col not in b_cols:
             conn.execute(f"ALTER TABLE batter_splits ADD COLUMN {col} REAL")
-    for col in ['fip', 'era_plus']:
+    for col in ['fip', 'era_plus', 'whiff_pct']:
         if col not in p_cols:
             conn.execute(f"ALTER TABLE pitcher_splits ADD COLUMN {col} REAL")
     conn.commit()
