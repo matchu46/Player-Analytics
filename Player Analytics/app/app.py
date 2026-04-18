@@ -1352,7 +1352,7 @@ def leaderboards():
                b.era, b.whip, b.innings_pitched, b.batters_faced,
                b.strikeouts, b.walks_allowed, b.hits_allowed, b.hbp,
                b.home_runs_allowed,
-               b.k_pct, b.bb_pct, b.k_bb,
+               b.k_pct, b.bb_pct, b.k_bb, b.whiff_pct,
                b.avg_against, b.obp_against, b.slg_against, b.woba_against,
                b.avg_velo, b.avg_spin_rate,
                b.fip, b.era_plus
