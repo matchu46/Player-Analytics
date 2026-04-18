@@ -465,17 +465,17 @@ def roster(team_code: str):
     twp = [dict(p) for p in batters if p["position_type"] == "Two-Way Player"]
     pitchers_for_tab = pitchers + twp
 
-    # Classify pitchers as SP vs RP: starters pitched in inning 1 in 3+ games
+    # Classify pitchers as SP vs RP: starters have pitched into inning 5+
     pitcher_ids = tuple(p["player_id"] for p in pitchers_for_tab)
     if pitcher_ids:
         placeholders = ",".join("?" * len(pitcher_ids))
         starter_rows = query(
-            f"SELECT pitcher FROM pitches "
-            f"WHERE pitcher IN ({placeholders}) AND inning = 1 "
-            f"GROUP BY pitcher HAVING COUNT(DISTINCT game_pk) >= 3",
-            pitcher_ids
+            f"SELECT DISTINCT player_id FROM pitcher_splits "
+            f"WHERE player_id IN ({placeholders}) AND season=? "
+            f"AND split_type='inning' AND CAST(split_value AS INTEGER) >= 5",
+            pitcher_ids + (season,)
         )
-        starter_ids = {r["pitcher"] for r in starter_rows}
+        starter_ids = {r["player_id"] for r in starter_rows}
     else:
         starter_ids = set()
 
@@ -1370,14 +1370,14 @@ def leaderboards():
         "SELECT DISTINCT season FROM batter_splits ORDER BY season DESC"
     )]
 
-    # Classify pitchers as SP/RP using pre-computed pitcher_splits (inning=1, BF threshold)
+    # Classify pitchers as SP/RP: starters have pitched into inning 5+
     pitcher_ids = tuple(p["player_id"] for p in pitchers)
     if pitcher_ids:
         placeholders = ",".join("?" * len(pitcher_ids))
         starter_rows = query(
-            f"SELECT player_id FROM pitcher_splits "
+            f"SELECT DISTINCT player_id FROM pitcher_splits "
             f"WHERE player_id IN ({placeholders}) AND season=? "
-            f"AND split_type='inning' AND split_value='1' AND batters_faced >= 25",
+            f"AND split_type='inning' AND CAST(split_value AS INTEGER) >= 5",
             pitcher_ids + (season,)
         )
         starter_ids = {r["player_id"] for r in starter_rows}
