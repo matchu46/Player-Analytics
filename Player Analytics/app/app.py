@@ -89,7 +89,7 @@ app.config["CACHE_THRESHOLD"] = 100        # max cached items before eviction
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 31536000  # 1 year for static assets
 cache = Cache(app)
 
-STATIC_VERSION = "7"  # bump when CSS/JS changes to bust browser cache
+STATIC_VERSION = "8"  # bump when CSS/JS changes to bust browser cache
 PITCH_DATA_MIN_SEASON = 2022  # raw pitches only stored for 2022+ in prod DB
 
 
@@ -1384,6 +1384,9 @@ def leaderboards():
     else:
         starter_ids = set()
 
+    team_meta = {code: {'league': info['league'], 'division': info['division']}
+                 for code, info in TEAMS.items()}
+
     return render_template(
         "leaderboards.html",
         batters=batters,
@@ -1393,6 +1396,7 @@ def leaderboards():
         min_pa=min_pa,
         min_ip=min_ip,
         starter_ids=starter_ids,
+        team_meta=team_meta,
     )
 
 
