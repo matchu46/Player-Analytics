@@ -286,33 +286,9 @@
 const tabs = { batters:'tab-batters', pitchers:'tab-pitchers' };
 const filterGroups = { batters:'filter-batters', pitchers:'filter-pitchers' };
 let currentTab = new URLSearchParams(location.search).get('tab') === 'pitchers' ? 'pitchers' : 'batters';
-
-function applyTab(tab) {
-    currentTab = tab;
-    document.querySelectorAll('.roster-tab').forEach(b => {
-        b.classList.toggle('active', b.dataset.tab === tab);
-    });
-    Object.entries(tabs).forEach(([k, id]) => {
-        document.getElementById(id).style.display = k === tab ? '' : 'none';
-    });
-    Object.entries(filterGroups).forEach(([k, id]) => {
-        document.getElementById(id).style.display = k === tab ? '' : 'none';
-    });
-    document.getElementById('pos-filter-batters').style.display  = tab === 'batters'  ? '' : 'none';
-    document.getElementById('pos-filter-pitchers').style.display = tab === 'pitchers' ? '' : 'none';
-    rankRows(tab === 'batters' ? 'batter-table' : 'pitcher-table');
-    applyExtraFilters(tab);
-}
-
-applyTab(currentTab);
-
-document.querySelectorAll('.roster-tab').forEach(btn => {
-    btn.addEventListener('click', () => applyTab(btn.dataset.tab));
-});
-
 const TEAM_META = {{ team_meta | tojson }};
 
-// ── Position / Team filters ───────────────────────────────
+// ── Populate team dropdown ────────────────────────────────
 (function() {
     const teams = new Set();
     document.querySelectorAll('#batter-table tbody tr, #pitcher-table tbody tr').forEach(tr => {
@@ -339,10 +315,10 @@ function applyExtraFilters(tab) {
 
     let rank = 1;
     document.querySelectorAll(`#${tableId} tbody tr`).forEach(tr => {
-        const pos      = tr.dataset.position || '';
-        const teamRaw  = tr.dataset.team || '';
-        const firstTeam= teamRaw.split(',')[0].trim();
-        const meta     = TEAM_META[firstTeam] || {};
+        const pos       = tr.dataset.position || '';
+        const teamRaw   = tr.dataset.team || '';
+        const firstTeam = teamRaw.split(',')[0].trim();
+        const meta      = TEAM_META[firstTeam] || {};
         const posMatch      = !posVal      || pos === posVal || (posVal === 'OF' && ofPos.has(pos));
         const teamMatch     = !teamVal     || teamRaw.split(',').map(t=>t.trim()).includes(teamVal);
         const leagueMatch   = !leagueVal   || meta.league === leagueVal;
@@ -352,6 +328,29 @@ function applyExtraFilters(tab) {
         if (show) tr.querySelector('.rank-num').textContent = rank++;
     });
 }
+
+function applyTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.roster-tab').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    Object.entries(tabs).forEach(([k, id]) => {
+        document.getElementById(id).style.display = k === tab ? '' : 'none';
+    });
+    Object.entries(filterGroups).forEach(([k, id]) => {
+        document.getElementById(id).style.display = k === tab ? '' : 'none';
+    });
+    document.getElementById('pos-filter-batters').style.display  = tab === 'batters'  ? '' : 'none';
+    document.getElementById('pos-filter-pitchers').style.display = tab === 'pitchers' ? '' : 'none';
+    rankRows(tab === 'batters' ? 'batter-table' : 'pitcher-table');
+    applyExtraFilters(tab);
+}
+
+applyTab(currentTab);
+
+document.querySelectorAll('.roster-tab').forEach(btn => {
+    btn.addEventListener('click', () => applyTab(btn.dataset.tab));
+});
 
 document.getElementById('pos-select-batters').addEventListener('change',  () => applyExtraFilters('batters'));
 document.getElementById('pos-select-pitchers').addEventListener('change', () => applyExtraFilters('pitchers'));
